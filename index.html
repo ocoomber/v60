@@ -45,27 +45,29 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg3);
     color: var(--text);
-    min-height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
     display: flex;
-    align-items: flex-start;
+    align-items: stretch;
     justify-content: center;
-    padding: 24px 16px 48px;
   }
   .app {
     width: 100%;
-    max-width: 420px;
+    max-width: 480px;
     background: var(--bg);
-    border-radius: 20px;
-    padding: 24px 20px;
-    box-shadow: 0 2px 24px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    padding: 20px 20px env(safe-area-inset-bottom, 24px);
+    padding-top: max(20px, env(safe-area-inset-top));
   }
-  .screen { display: none; }
-  .screen.active { display: block; }
-  .app-header { display: flex; align-items: center; justify-content: space-between; margin: 0 0 24px; }
+  .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+  .screen.active { display: flex; }
+  .app-header { display: flex; align-items: center; justify-content: space-between; margin: 0; }
   .app-title { font-size: 18px; font-weight: 600; color: var(--text); }
   .icon-btn { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 7px 12px; cursor: pointer; color: var(--text2); font-size: 13px; }
   .icon-btn:hover { background: var(--bg2); }
-  .group { margin: 0 0 20px; }
+  .group { margin: 0; }
   .group-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 10px; display: block; }
   .seg { display: flex; border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .seg-btn { flex: 1; padding: 10px 0; background: none; border: none; border-right: 0.5px solid var(--border); font-size: 14px; cursor: pointer; color: var(--text2); transition: all 0.15s; }
@@ -76,36 +78,37 @@
   .step-val { font-size: 22px; font-weight: 600; color: var(--text); min-width: 52px; text-align: center; }
   .step-btn { width: 36px; height: 36px; border-radius: 50%; border: 0.5px solid var(--border2); background: var(--bg); font-size: 20px; cursor: pointer; color: var(--text); display: flex; align-items: center; justify-content: center; }
   .step-btn:hover { background: var(--bg3); }
-  .summary { background: var(--bg2); border-radius: var(--radius-lg); padding: 14px 16px; margin: 0 0 14px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .summary { background: var(--bg2); border-radius: var(--radius-lg); padding: 14px 16px; margin: 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .sum-item { text-align: center; }
   .sum-val { font-size: 20px; font-weight: 600; color: var(--text); }
   .sum-lbl { font-size: 11px; color: var(--text3); margin-top: 3px; }
-  .temp-note { font-size: 13px; color: var(--text2); background: var(--bg2); border-radius: var(--radius); padding: 10px 14px; margin: 0 0 20px; border-left: 3px solid var(--green); line-height: 1.5; }
+  .temp-note { font-size: 13px; color: var(--text2); background: var(--bg2); border-radius: var(--radius); padding: 10px 14px; margin: 0; border-left: 3px solid var(--green); line-height: 1.5; }
   .btn-go { background: var(--green); border: none; border-radius: var(--radius-lg); color: #fff; font-size: 16px; font-weight: 600; padding: 14px; cursor: pointer; width: 100%; transition: background 0.15s; }
   .btn-go:hover { background: var(--green-dark); }
   .btn-secondary { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 14px; padding: 10px 20px; cursor: pointer; color: var(--text2); transition: background 0.15s; }
   .btn-secondary:hover { background: var(--bg2); }
-  .status-bar { display: flex; gap: 8px; margin: 0 0 16px; }
+  #screenSettings { justify-content: space-between; }
+  #screenBrew { gap: clamp(8px, 3dvh, 24px); }
   .pill { font-size: 11px; padding: 4px 10px; border-radius: 20px; background: var(--bg2); color: var(--text3); border: 0.5px solid var(--border); transition: all 0.3s; }
   .pill.on { background: var(--green-light); color: var(--green-dark); border-color: var(--green-mid); }
-  .ring-outer { position: relative; width: 200px; height: 200px; margin: 0 auto 8px; }
-  .ring-svg { width: 200px; height: 200px; transform: rotate(-90deg); }
+  .ring-outer { position: relative; width: min(280px, 68vw); height: min(280px, 68vw); margin: 0 auto; }
+  .ring-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
   .ring-track { fill: none; stroke: var(--bg3); stroke-width: 6; }
   .ring-fill { fill: none; stroke: var(--green-teal); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
   .ring-fill.done-ring { stroke: var(--green); }
-  .ring-inner { position: absolute; top: 0; left: 0; width: 200px; height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .clock { font-size: 58px; font-weight: 300; font-variant-numeric: tabular-nums; color: var(--text); line-height: 1; letter-spacing: -2px; transition: color 0.3s; }
   .clock.running { color: var(--green); }
   .clock.done-c { color: var(--text3); }
-  .phase { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; margin-bottom: 16px; text-align: center; }
-  .prompt-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; margin: 0 0 12px; min-height: 88px; transition: border-color 0.3s; }
+  .phase { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin: 0; text-align: center; }
+  .prompt-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; margin: 0; min-height: 80px; transition: border-color 0.3s; }
   .prompt-action { font-size: 20px; font-weight: 600; color: var(--text); margin: 0 0 6px; }
   .prompt-detail { font-size: 14px; color: var(--text2); line-height: 1.6; }
-  .water-wrap { margin: 0 0 16px; }
+  .water-wrap { margin: 0; }
   .water-lbl { font-size: 12px; color: var(--text3); margin: 0 0 6px; }
   .water-bar { height: 6px; border-radius: 3px; background: var(--bg3); overflow: hidden; }
   .water-fill { height: 100%; background: var(--green-teal); border-radius: 3px; transition: width 1s linear; }
-  .upcoming { margin: 0 0 20px; }
+  .upcoming { margin: 0; }
   .up-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 8px; }
   .up-row { display: flex; gap: 8px; }
   .up-item { flex: 1; background: var(--bg2); border-radius: var(--radius); padding: 8px 10px; }
