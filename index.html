@@ -93,6 +93,14 @@
   .dose-stepper .step-val { font-size: 32px; min-width: 70px; }
   .dose-stepper .step-btn { width: 44px; height: 44px; font-size: 24px; }
   .dose-hint { font-size: 12px; color: var(--text3); margin-top: 8px; text-align: center; }
+  .help-scroll { flex: 1; overflow-y: auto; margin-top: 4px; }
+  .help-sec { margin-bottom: 22px; }
+  .help-h { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 10px; }
+  .help-p { font-size: 14px; color: var(--text2); line-height: 1.55; margin-bottom: 8px; }
+  .help-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; }
+  .help-k { font-size: 14px; font-weight: 500; color: var(--text); }
+  .help-v { font-size: 14px; color: var(--green); font-variant-numeric: tabular-nums; }
+  .help-note { font-size: 12px; color: var(--text3); line-height: 1.45; margin-top: 2px; }
   .pour-row { background: var(--bg2); border-radius: var(--radius); padding: 8px 10px; margin-top: 8px; }
   .pr-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
   .pr-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -141,7 +149,7 @@
 
   <!-- Settings screen -->
   <div class="screen active" id="screenSettings">
-    <div class="app-header"><span class="app-title">V60</span></div>
+    <div class="app-header"><span class="app-title">V60</span><button class="icon-btn" onclick="showScreen('help')">Guide</button></div>
     <div class="group"><span class="group-label">Method</span>
       <div class="seg" id="methodSeg">
         <button class="seg-btn" data-val="balanced" onclick="setMethod('balanced')">Balanced</button>
@@ -163,15 +171,7 @@
       <div id="pourEditor"></div>
       <div class="pour-add"><button class="btn-secondary" onclick="addPour()">+ Add pour</button></div>
     </div>
-    <div class="group"><span class="group-label">Roast</span>
-      <div class="seg" id="roastSeg">
-        <button class="seg-btn" data-val="light" onclick="setRoast('light')">Light</button>
-        <button class="seg-btn" data-val="medium" onclick="setRoast('medium')">Medium</button>
-        <button class="seg-btn" data-val="dark" onclick="setRoast('dark')">Dark</button>
-      </div>
-    </div>
     <div class="summary" id="summaryCard"></div>
-    <div class="temp-note" id="tempNote"></div>
     <button class="btn-go" onclick="startBrew()">Start brew</button>
   </div>
 
@@ -210,6 +210,28 @@
     </div>
   </div>
 
+  <!-- Guide screen -->
+  <div class="screen" id="screenHelp">
+    <div class="app-header"><span class="app-title">Guide</span><button class="icon-btn" onclick="showScreen('settings')">Done</button></div>
+    <div class="help-scroll">
+      <div class="help-sec">
+        <h3 class="help-h">Roast &amp; water temperature</h3>
+        <p class="help-p">The app doesn't ask your roast — just set your kettle to match it.</p>
+        <div id="helpTemps"></div>
+      </div>
+      <div class="help-sec">
+        <h3 class="help-h">The methods</h3>
+        <div id="helpMethods"></div>
+      </div>
+      <div class="help-sec">
+        <h3 class="help-h">Dialling it in</h3>
+        <p class="help-p"><b>Grind:</b> if the brew finishes too fast and tastes weak/sour, grind finer. Too slow and bitter, grind coarser.</p>
+        <p class="help-p"><b>Dose:</b> pick a method, then set how much coffee you want to spend — water and every pour scale to it.</p>
+        <p class="help-p"><b>Custom:</b> each pour is a cumulative target. Make pour 1 smaller than pour 2 for a sweeter cup, or the reverse for more brightness.</p>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>/*! NoSleep.min.js v0.12.0 - git.io/vfn01 - Rich Tibbett - MIT license */
@@ -223,7 +245,7 @@ const STORAGE_KEY = 'v60-settings';
 // recipe scales with whatever dose you pick. The last pour is the full brew.
 const DEFAULT_POURS = [ {at:0,f:0.2}, {at:45,f:0.4}, {at:90,f:0.6}, {at:135,f:0.8}, {at:180,f:1} ];
 
-let settings = { dose:15, roast:'medium', method:'balanced', customPours: DEFAULT_POURS.map(p => ({...p})) };
+let settings = { dose:15, method:'balanced', customPours: DEFAULT_POURS.map(p => ({...p})) };
 let elapsed=0, interval=null, started=false, finished=false, paused=false, currentCue=0, cues=[];
 let noSleep=null, audioCtx=null;
 
@@ -248,7 +270,6 @@ function applySettings() {
   $('doseVal').textContent = settings.dose + 'g';
   $('doseHint').textContent = settings.dose === m.dose ? `${m.name} suggests ${m.dose}g` : `${m.name} suggests ${m.dose}g · you set ${settings.dose}g`;
   document.querySelectorAll('#methodSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.method));
-  document.querySelectorAll('#roastSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.roast));
   $('methodNote').textContent = m.note;
   if(settings.method === 'custom') { $('customGroup').style.display = 'block'; renderPourEditor(); }
   else $('customGroup').style.display = 'none';
@@ -256,13 +277,13 @@ function applySettings() {
 }
 function updateSummary() {
   const total = totalWater();
+  const preview = buildCues();
+  const finish = preview[preview.length-1].at;
   $('summaryCard').innerHTML = `
     <div class="sum-item"><div class="sum-val">${settings.dose}g</div><div class="sum-lbl">Coffee</div></div>
     <div class="sum-item"><div class="sum-val">${total}g</div><div class="sum-lbl">Water</div></div>
-    <div class="sum-item"><div class="sum-val">${ROAST_TEMPS[settings.roast]}</div><div class="sum-lbl">Temp</div></div>`;
-  $('tempNote').textContent = ROAST_NOTES[settings.roast];
+    <div class="sum-item"><div class="sum-val">~${fmt(finish)}</div><div class="sum-lbl">Time</div></div>`;
 }
-function setRoast(v) { settings.roast=v; saveSettings(); applySettings(); }
 function adjustDose(d) { settings.dose=Math.max(8,Math.min(40,settings.dose+d)); saveSettings(); applySettings(); }
 function setMethod(m) { settings.method=m; settings.dose=METHODS[m].dose; saveSettings(); applySettings(); }
 
@@ -474,7 +495,7 @@ function startBrew() {
   const ring = $('ringFill');
   if(ring) { ring.style.strokeDashoffset = '552.9'; ring.classList.remove('done-ring'); }
   $('phaseLbl').textContent='Ready';
-  $('promptAction').textContent=`${settings.dose}g coffee · ${total}g water at ${ROAST_TEMPS[settings.roast]}`;
+  $('promptAction').textContent=`${settings.dose}g coffee · ${total}g water`;
   $('promptDetail').textContent='Filter rinsed, bed levelled. Hit start when ready.';
   $('waterSection').style.display='none';
   $('brewBtn').textContent='Start';
@@ -550,12 +571,24 @@ function handlePauseBtn() {
   }
 }
 
-function backToSettings() {
-  clearInterval(interval);
-  $('screenBrew').classList.remove('active');
-  $('screenSettings').classList.add('active');
+function backToSettings() { clearInterval(interval); showScreen('settings'); }
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('screen' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
 }
 
+// Populate the Guide page from the same data the brewer uses.
+function buildHelp() {
+  $('helpTemps').innerHTML = ['light','medium','dark'].map(r => `
+    <div class="help-row"><span class="help-k">${r[0].toUpperCase()+r.slice(1)}</span><span class="help-v">${ROAST_TEMPS[r]}</span></div>
+    <p class="help-note">${ROAST_NOTES[r]}</p>`).join('');
+  $('helpMethods').innerHTML = Object.values(METHODS).map(m => `
+    <div class="help-row"><span class="help-k">${m.name}</span><span class="help-v">${m.ratio % 1 ? m.ratio.toFixed(1) : m.ratio}:1</span></div>
+    <p class="help-note">${m.note}</p>`).join('');
+}
+
+buildHelp();
 loadSettings();
 
 // Acquire wake lock on first user interaction so screen stays on across both screens
