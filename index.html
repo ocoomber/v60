@@ -89,6 +89,10 @@
   .btn-secondary:hover { background: var(--bg2); }
   #screenSettings { justify-content: space-between; gap: 12px; overflow-y: auto; }
   .method-note { font-size: 12px; color: var(--text2); line-height: 1.5; margin-top: 8px; }
+  .dose-stepper { padding: 14px 18px; justify-content: center; gap: 20px; }
+  .dose-stepper .step-val { font-size: 32px; min-width: 70px; }
+  .dose-stepper .step-btn { width: 44px; height: 44px; font-size: 24px; }
+  .dose-hint { font-size: 12px; color: var(--text3); margin-top: 8px; text-align: center; }
   .pour-row { background: var(--bg2); border-radius: var(--radius); padding: 8px 10px; margin-top: 8px; }
   .pr-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
   .pr-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -147,6 +151,14 @@
       </div>
       <div class="method-note" id="methodNote"></div>
     </div>
+    <div class="group dose-group"><span class="group-label">Coffee dose — how much are you spending?</span>
+      <div class="stepper dose-stepper">
+        <button class="step-btn" onclick="adjustDose(-1)">−</button>
+        <span class="step-val" id="doseVal">15g</span>
+        <button class="step-btn" onclick="adjustDose(1)">+</button>
+      </div>
+      <div class="dose-hint" id="doseHint"></div>
+    </div>
     <div class="group" id="customGroup" style="display:none"><span class="group-label">Custom pours</span>
       <div id="pourEditor"></div>
       <div class="pour-add"><button class="btn-secondary" onclick="addPour()">+ Add pour</button></div>
@@ -156,20 +168,6 @@
         <button class="seg-btn" data-val="light" onclick="setRoast('light')">Light</button>
         <button class="seg-btn" data-val="medium" onclick="setRoast('medium')">Medium</button>
         <button class="seg-btn" data-val="dark" onclick="setRoast('dark')">Dark</button>
-      </div>
-    </div>
-    <div class="group"><span class="group-label">Dose</span>
-      <div class="stepper">
-        <button class="step-btn" onclick="adjustDose(-1)">−</button>
-        <span class="step-val" id="doseVal">13g</span>
-        <button class="step-btn" onclick="adjustDose(1)">+</button>
-      </div>
-    </div>
-    <div class="group" id="ratioGroup"><span class="group-label">Ratio (water : coffee)</span>
-      <div class="seg" id="ratioSeg">
-        <button class="seg-btn" data-val="15" onclick="setRatio(15)">15:1</button>
-        <button class="seg-btn" data-val="16" onclick="setRatio(16)">16:1</button>
-        <button class="seg-btn" data-val="17" onclick="setRatio(17)">17:1</button>
       </div>
     </div>
     <div class="summary" id="summaryCard"></div>
@@ -221,8 +219,11 @@ const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C'
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
 
-let settings = { dose:13, ratio:16, roast:'medium', method:'balanced',
-  customPours:[ {at:0,g:50}, {at:45,g:100}, {at:90,g:150}, {at:135,g:200}, {at:180,g:250} ] };
+// Custom pours are stored as cumulative fractions of the total water, so the
+// recipe scales with whatever dose you pick. The last pour is the full brew.
+const DEFAULT_POURS = [ {at:0,f:0.2}, {at:45,f:0.4}, {at:90,f:0.6}, {at:135,f:0.8}, {at:180,f:1} ];
+
+let settings = { dose:15, roast:'medium', method:'balanced', customPours: DEFAULT_POURS.map(p => ({...p})) };
 let elapsed=0, interval=null, started=false, finished=false, paused=false, currentCue=0, cues=[];
 let noSleep=null, audioCtx=null;
 
@@ -233,21 +234,24 @@ function loadSettings() {
     const s = localStorage.getItem(STORAGE_KEY);
     if(s) { const parsed = JSON.parse(s); if(parsed && typeof parsed === 'object') settings = { ...settings, ...parsed }; }
   } catch(e) {}
+  // Migrate older saves (absolute-gram pours, or missing data) to fractions.
+  if(!Array.isArray(settings.customPours) || !settings.customPours.every(p => typeof p.f === 'number')) {
+    settings.customPours = DEFAULT_POURS.map(p => ({...p}));
+  }
   applySettings();
 }
 function saveSettings() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch(e) {}
 }
 function applySettings() {
+  const m = METHODS[settings.method];
   $('doseVal').textContent = settings.dose + 'g';
+  $('doseHint').textContent = settings.dose === m.dose ? `${m.name} suggests ${m.dose}g` : `${m.name} suggests ${m.dose}g · you set ${settings.dose}g`;
   document.querySelectorAll('#methodSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.method));
   document.querySelectorAll('#roastSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.roast));
-  document.querySelectorAll('#ratioSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val == settings.ratio));
-  $('methodNote').textContent = METHODS[settings.method].note;
-  const isCustom = settings.method === 'custom';
-  $('customGroup').style.display = isCustom ? 'block' : 'none';
-  $('ratioGroup').style.display = isCustom ? 'none' : 'block';
-  if(isCustom) renderPourEditor();
+  $('methodNote').textContent = m.note;
+  if(settings.method === 'custom') { $('customGroup').style.display = 'block'; renderPourEditor(); }
+  else $('customGroup').style.display = 'none';
   updateSummary();
 }
 function updateSummary() {
@@ -259,32 +263,33 @@ function updateSummary() {
   $('tempNote').textContent = ROAST_NOTES[settings.roast];
 }
 function setRoast(v) { settings.roast=v; saveSettings(); applySettings(); }
-function setRatio(v) { settings.ratio=v; saveSettings(); applySettings(); }
-function adjustDose(d) { settings.dose=Math.max(8,Math.min(30,settings.dose+d)); saveSettings(); applySettings(); }
-function setMethod(m) { settings.method=m; settings.ratio=METHODS[m].ratio; saveSettings(); applySettings(); }
+function adjustDose(d) { settings.dose=Math.max(8,Math.min(40,settings.dose+d)); saveSettings(); applySettings(); }
+function setMethod(m) { settings.method=m; settings.dose=METHODS[m].dose; saveSettings(); applySettings(); }
 
-// Total water for the current method. For custom recipes the pour list defines
-// it (the last cumulative target); otherwise it's dose × ratio.
+// Total water = dose × the method's ratio. For custom recipes the last pour's
+// fraction scales that (usually 1 = the full brew). Everything derives from dose.
 function totalWater() {
+  const m = METHODS[settings.method];
   if(settings.method === 'custom') {
     const p = settings.customPours;
-    return p.length ? p[p.length-1].g : 0;
+    return p.length ? Math.round(settings.dose * m.ratio * p[p.length-1].f) : 0;
   }
-  return Math.round(settings.dose * settings.ratio);
+  return Math.round(settings.dose * m.ratio);
 }
 
-// --- Custom pour editor ---
+// --- Custom pour editor (pours stored as cumulative fractions of total) ---
+function pourGrams(f) { return Math.round(settings.dose * METHODS.custom.ratio * f); }
 function renderPourEditor() {
   const pours = settings.customPours;
   $('pourEditor').innerHTML = pours.map((p, i) => `
     <div class="pour-row">
       <div class="pr-head">
-        <span class="pr-lbl">Pour ${i+1}${i===0 ? ' · bloom' : ''}</span>
+        <span class="pr-lbl">Pour ${i+1}${i===0 ? ' · bloom' : ''}${i===pours.length-1 ? ' · total' : ''}</span>
         <button class="pr-del" onclick="removePour(${i})" ${pours.length<=2 ? 'disabled' : ''}>×</button>
       </div>
       <div class="pr-controls">
         <div class="mini-step"><button class="step-btn" onclick="adjustPour(${i},'at',-1)">−</button><span class="mini-val">${fmt(p.at)}</span><button class="step-btn" onclick="adjustPour(${i},'at',1)">+</button></div>
-        <div class="mini-step"><button class="step-btn" onclick="adjustPour(${i},'g',-1)">−</button><span class="mini-val">${p.g}g</span><button class="step-btn" onclick="adjustPour(${i},'g',1)">+</button></div>
+        <div class="mini-step"><button class="step-btn" onclick="adjustPour(${i},'g',-1)">−</button><span class="mini-val">${pourGrams(p.f)}g</span><button class="step-btn" onclick="adjustPour(${i},'g',1)">+</button></div>
       </div>
     </div>`).join('');
 }
@@ -295,29 +300,34 @@ function adjustPour(i, field, dir) {
     const max = i<pours.length-1 ? pours[i+1].at - 5 : 36000;
     p.at = Math.max(min, Math.min(max, p.at + dir*5));
   } else {
-    const min = i>0 ? pours[i-1].g + 5 : 5;
-    const max = i<pours.length-1 ? pours[i+1].g - 5 : 2000;
-    p.g = Math.max(min, Math.min(max, p.g + dir*5));
+    const df = 5 / (settings.dose * METHODS.custom.ratio); // ~5g step, in fraction terms
+    const min = i>0 ? pours[i-1].f + 0.001 : 0.01;
+    const max = i<pours.length-1 ? pours[i+1].f - 0.001 : 1;
+    p.f = +Math.max(min, Math.min(max, p.f + dir*df)).toFixed(4);
   }
   saveSettings(); applySettings();
 }
 function addPour() {
-  const pours = settings.customPours, last = pours[pours.length-1];
-  pours.push({ at: last.at + 45, g: last.g + 50 });
+  // Insert before the final pour so the last one stays the full brew.
+  const pours = settings.customPours, n = pours.length, last = pours[n-1];
+  const prevF = n >= 2 ? pours[n-2].f : 0;
+  last.f = +((prevF + 1) / 2).toFixed(4);
+  pours.push({ at: last.at + 45, f: 1 });
   saveSettings(); applySettings();
 }
 function removePour(i) {
   if(settings.customPours.length <= 2) return;
   settings.customPours.splice(i, 1);
+  settings.customPours[settings.customPours.length-1].f = 1; // last pour is the full brew
   saveSettings(); applySettings();
 }
 
-// Each method builds its own list of timed cues from the current dose + ratio.
-// Pour amounts are derived from the total water, so the dose/ratio controls
-// still work for every method.
+// Each method owns its ratio and a suggested dose, and builds its own list of
+// timed cues from the dose. Pour amounts are fractions of the total water, so
+// every recipe scales when you change the dose.
 const METHODS = {
   balanced: {
-    name:'Balanced', ratio:16,
+    name:'Balanced', ratio:16, dose:15,
     note:'A simple, forgiving three-pour recipe. A solid everyday cup.',
     build(dose, ratio) {
       const total = Math.round(dose*ratio), bloom = Math.round(dose*2);
@@ -333,7 +343,7 @@ const METHODS = {
     }
   },
   hoffmann: {
-    name:'Hoffmann', ratio:17,
+    name:'Hoffmann', ratio:16.7, dose:15,
     note:"James Hoffmann's Ultimate V60 (60g/L): bloom + swirl, two pours in 40/60 stages, then stir and swirl. Aim to finish around 3:30.",
     build(dose, ratio) {
       const total = Math.round(dose*ratio), bloom = Math.round(dose*2);
@@ -349,7 +359,7 @@ const METHODS = {
     }
   },
   kasuya: {
-    name:'Kasuya', ratio:15,
+    name:'Kasuya', ratio:15, dose:20,
     note:"Tetsu Kasuya's 4:6: five equal pours, 45s apart. First 40% sets sweetness, last 60% sets strength.",
     build(dose, ratio) {
       const total = Math.round(dose*ratio), s = f => Math.round(total*f);
@@ -364,16 +374,17 @@ const METHODS = {
     }
   },
   custom: {
-    name:'Custom', ratio:16,
-    note:'Your own pour-by-pour recipe below. Each pour target is the total water after that pour — make pour 1 smaller than pour 2 for a sweeter cup.',
-    build() {
+    name:'Custom', ratio:16, dose:15,
+    note:'Your own pour-by-pour recipe below. Each pour shows the total water after that pour — make pour 1 smaller than pour 2 for a sweeter cup. Grams scale with your dose.',
+    build(dose, ratio) {
       const pours = settings.customPours;
-      const total = pours[pours.length-1].g;
+      const g = f => Math.round(dose*ratio*f);
+      const total = g(pours[pours.length-1].f);
       const cues = pours.map((p, i) => ({
         at: p.at,
-        action: `Pour ${i+1} — to ${p.g}g`,
-        detail: i===0 ? `First pour to ${p.g}g — this also blooms the coffee.` : `Pour ${i+1} of ${pours.length}: bring the total up to ${p.g}g.`,
-        water: p.g,
+        action: `Pour ${i+1} — to ${g(p.f)}g`,
+        detail: i===0 ? `First pour to ${g(p.f)}g — this also blooms the coffee.` : `Pour ${i+1} of ${pours.length}: bring the total up to ${g(p.f)}g.`,
+        water: g(p.f),
         phase: `Pour ${i+1}`
       }));
       cues.push({ at: pours[pours.length-1].at + 45, action:'Done — enjoy', detail:'Let it finish drawing down. Adjust grind to taste.', water:total, phase:'Done' });
@@ -382,7 +393,7 @@ const METHODS = {
   }
 };
 
-function buildCues() { return METHODS[settings.method].build(settings.dose, settings.ratio); }
+function buildCues() { const m = METHODS[settings.method]; return m.build(settings.dose, m.ratio); }
 
 function fmt(s) { return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
 function getCueIdx(t) { let i=0; for(let j=0;j<cues.length;j++){ if(t>=cues[j].at) i=j; } return i; }
