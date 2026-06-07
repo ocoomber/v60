@@ -304,17 +304,17 @@ const METHODS = {
   },
   hoffmann: {
     name:'Hoffmann', ratio:17,
-    note:"James Hoffmann's Ultimate V60: bloom, two pours, a stir and swirl. Target ~3:30.",
+    note:"James Hoffmann's Ultimate V60 (60g/L): bloom + swirl, two pours in 40/60 stages, then stir and swirl. Aim to finish around 3:30.",
     build(dose, ratio) {
       const total = Math.round(dose*ratio), bloom = Math.round(dose*2);
       const p1 = Math.round(total*0.6);
       return [
-        { at:0,   action:`Bloom — ${bloom}g`,           detail:'Add water, then swirl the V60 to wet all the grounds. Wait.',           water:bloom, phase:'Bloom' },
-        { at:45,  action:`First pour — to ${p1}g`,      detail:'Pour to 60% by ~1:15, aiming for the centre in a steady spiral.',      water:p1,    phase:'First pour' },
-        { at:75,  action:`Second pour — to ${total}g`,  detail:`Top up to ${total}g by ~1:45 in gentle pulses.`,                       water:total, phase:'Second pour' },
-        { at:105, action:'Stir & swirl',                detail:'Gently stir one way, then the other, then swirl to flatten the bed.',  water:total, phase:'Settle' },
-        { at:195, action:'Almost there',                detail:'Let it draw down. A final swirl helps an even bed.',                    water:total, phase:'Draw down' },
-        { at:210, action:'Done — enjoy',                detail:'Target finish ~3:30. Adjust grind if much faster or slower.',          water:total, phase:'Done' }
+        { at:0,   action:`Bloom — ${bloom}g`,                 detail:'Pour 2× the coffee weight, then swirl the V60 to wet every ground. Let it bloom until 0:45.', water:bloom, phase:'Bloom · swirl' },
+        { at:45,  action:`First pour — up to ${p1}g (60%)`,   detail:`Pour steadily, reaching ${p1}g by about 1:15. Aim for the centre and spiral out.`,            water:p1,    phase:'Pour 1 · 0:45–1:15' },
+        { at:75,  action:`Second pour — up to ${total}g`,     detail:`Slow down and top up to ${total}g by about 1:45, keeping the slurry high.`,                    water:total, phase:'Pour 2 · 1:15–1:45' },
+        { at:105, action:'Stir, then swirl',                  detail:'Stir once clockwise and once anticlockwise to knock grounds off the wall, then gently swirl to flatten the bed.', water:total, phase:'Stir & swirl' },
+        { at:195, action:'Draw down',                         detail:'Let it drain. The bed should be flat and even — a good draw down finishes around 3:30.',       water:total, phase:'Draw down' },
+        { at:210, action:'Done — enjoy',                      detail:'Target ~3:15–3:45. Faster than that? Grind finer next time. Slower? Grind coarser.',          water:total, phase:'Done' }
       ];
     }
   },
