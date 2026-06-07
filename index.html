@@ -102,6 +102,14 @@
   .load-lbl { font-size: 12px; color: var(--text3); margin-right: 2px; }
   .chip { font-size: 12px; padding: 5px 10px; border-radius: 20px; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); cursor: pointer; }
   .chip:hover { background: var(--bg2); }
+  .cknob { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .cknob-lbl { font-size: 13px; color: var(--text2); }
+  .cknob .stepper { flex: 0 0 auto; padding: 6px 12px; gap: 10px; }
+  .cknob .step-val { font-size: 18px; min-width: 56px; }
+  .cknob .step-btn { width: 32px; height: 32px; font-size: 18px; }
+  .budget { font-size: 13px; padding: 8px 12px; border-radius: var(--radius); margin-bottom: 4px; border-left: 3px solid var(--text3); background: var(--bg2); color: var(--text2); }
+  .budget.ok { border-left-color: var(--green); color: var(--green-dark); background: var(--green-light); }
+  .budget.over { border-left-color: #c0392b; color: #c0392b; }
   .pour-row { background: var(--bg2); border-radius: var(--radius); padding: 8px 10px; margin-top: 8px; }
   .pr-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
   .pr-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -166,12 +174,20 @@
       </div>
       <div class="dose-hint" id="doseHint"></div>
     </div>
-    <div class="group" id="customGroup" style="display:none"><span class="group-label">Custom pours</span>
+    <div class="group" id="customGroup" style="display:none"><span class="group-label">Custom recipe</span>
       <div class="load-row"><span class="load-lbl">Start from</span>
         <button class="chip" onclick="loadRecipe('balanced')">Balanced</button>
         <button class="chip" onclick="loadRecipe('hoffmann')">Hoffmann</button>
         <button class="chip" onclick="loadRecipe('kasuya')">Kasuya</button>
       </div>
+      <div class="cknob"><span class="cknob-lbl">Water ratio</span>
+        <div class="stepper">
+          <button class="step-btn" onclick="adjustCustomRatio(-1)">−</button>
+          <span class="step-val" id="cRatioVal">16:1</span>
+          <button class="step-btn" onclick="adjustCustomRatio(1)">+</button>
+        </div>
+      </div>
+      <div class="budget" id="budgetBar"></div>
       <div id="pourEditor"></div>
       <div class="pour-add"><button class="btn-secondary" onclick="addPour()">+ Add pour</button></div>
     </div>
@@ -248,9 +264,11 @@ const RING_CIRC = 552.9; // circumference of the progress ring (2π × r, r=88);
 
 // Custom pours are stored as cumulative fractions of the total water, so the
 // recipe scales with whatever dose you pick. The last pour is the full brew.
-const DEFAULT_POURS = [ {at:0,f:0.2}, {at:45,f:0.4}, {at:90,f:0.6}, {at:135,f:0.8}, {at:180,f:1} ];
+// Custom pours are per-pour amounts in grams (an increment, not a running total)
+// plus a time. Dose × customRatio is the water budget the pours should add up to.
+const DEFAULT_POURS = [ {at:0,g:48}, {at:45,g:48}, {at:90,g:48}, {at:135,g:48}, {at:180,g:48} ];
 
-let settings = { dose:15, method:'balanced', customPours: DEFAULT_POURS.map(p => ({...p})) };
+let settings = { dose:15, method:'balanced', customRatio:16, customPours: DEFAULT_POURS.map(p => ({...p})) };
 let elapsed=0, interval=null, started=false, finished=false, paused=false, currentCue=0, cues=[];
 let noSleep=null, audioCtx=null;
 
@@ -261,10 +279,11 @@ function loadSettings() {
     const s = localStorage.getItem(STORAGE_KEY);
     if(s) { const parsed = JSON.parse(s); if(parsed && typeof parsed === 'object') settings = { ...settings, ...parsed }; }
   } catch(e) {}
-  // Migrate older saves (absolute-gram pours, or missing data) to fractions.
-  if(!Array.isArray(settings.customPours) || !settings.customPours.every(p => typeof p.f === 'number')) {
+  // Migrate older saves (fraction-based or absolute pours) to the gram-increment format.
+  if(!Array.isArray(settings.customPours) || !settings.customPours.every(p => typeof p.g === 'number' && typeof p.at === 'number')) {
     settings.customPours = DEFAULT_POURS.map(p => ({...p}));
   }
+  if(typeof settings.customRatio !== 'number') settings.customRatio = 16;
   applySettings();
 }
 function saveSettings() {
@@ -273,10 +292,12 @@ function saveSettings() {
 function applySettings() {
   const m = METHODS[settings.method];
   $('doseVal').textContent = settings.dose + 'g';
-  $('doseHint').textContent = settings.dose === m.dose ? `${m.name} suggests ${m.dose}g` : `${m.name} suggests ${m.dose}g · you set ${settings.dose}g`;
+  $('doseHint').textContent = settings.method === 'custom'
+    ? `Budget: ${settings.dose}g × ${ratioLabel(settings.customRatio)} = ${customBudget()}g water`
+    : (settings.dose === m.dose ? `${m.name} suggests ${m.dose}g` : `${m.name} suggests ${m.dose}g · you set ${settings.dose}g`);
   document.querySelectorAll('#methodSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.method));
   $('methodNote').textContent = m.note;
-  if(settings.method === 'custom') { $('customGroup').style.display = 'block'; renderPourEditor(); }
+  if(settings.method === 'custom') { $('customGroup').style.display = 'block'; $('cRatioVal').textContent = ratioLabel(settings.customRatio); renderBudget(); renderPourEditor(); }
   else $('customGroup').style.display = 'none';
   updateSummary();
 }
@@ -290,34 +311,50 @@ function updateSummary() {
     <div class="sum-item"><div class="sum-val">~${fmt(finish)}</div><div class="sum-lbl">Time</div></div>`;
 }
 function adjustDose(d) { settings.dose=Math.max(8,Math.min(40,settings.dose+d)); saveSettings(); applySettings(); }
-function setMethod(m) { settings.method=m; settings.dose=METHODS[m].dose; saveSettings(); applySettings(); }
+function setMethod(m) { settings.method=m; if(m !== 'custom') settings.dose=METHODS[m].dose; saveSettings(); applySettings(); }
 
-// Total water = dose × the method's ratio. For custom recipes the last pour's
-// fraction scales that (usually 1 = the full brew). Everything derives from dose.
+function ratioLabel(r) { return (r % 1 ? r.toFixed(1) : r) + ':1'; }
+
+// For custom, the water is whatever the pours add up to. For built-in methods
+// it's dose × the method's ratio.
 function totalWater() {
-  const m = METHODS[settings.method];
-  if(settings.method === 'custom') {
-    const p = settings.customPours;
-    return p.length ? Math.round(settings.dose * m.ratio * p[p.length-1].f) : 0;
-  }
-  return Math.round(settings.dose * m.ratio);
+  if(settings.method === 'custom') return settings.customPours.reduce((s, p) => s + p.g, 0);
+  return Math.round(settings.dose * METHODS[settings.method].ratio);
 }
 
-// --- Custom pour editor (pours stored as cumulative fractions of total) ---
-function pourGrams(f) { return Math.round(settings.dose * METHODS.custom.ratio * f); }
+// --- Custom: water budget + pour editor ---
+// customRatio sets the budget (dose × ratio); pours are gram amounts that should add up to it.
+function customBudget() { return Math.round(settings.dose * settings.customRatio); }
+function adjustCustomRatio(dir) {
+  settings.customRatio = +Math.max(12, Math.min(20, settings.customRatio + dir*0.5)).toFixed(1);
+  saveSettings(); applySettings();
+}
+function renderBudget() {
+  const budget = customBudget();
+  const used = settings.customPours.reduce((s, p) => s + p.g, 0);
+  const diff = budget - used;
+  const el = $('budgetBar');
+  if(Math.abs(diff) <= 1) { el.textContent = `All ${budget}g of water allocated`; el.className = 'budget ok'; }
+  else if(diff > 0) { el.textContent = `${used}g of ${budget}g used · ${diff}g still to pour`; el.className = 'budget under'; }
+  else { el.textContent = `${used}g of ${budget}g · ${-diff}g over budget`; el.className = 'budget over'; }
+}
 function renderPourEditor() {
   const pours = settings.customPours;
-  $('pourEditor').innerHTML = pours.map((p, i) => `
+  let cum = 0;
+  $('pourEditor').innerHTML = pours.map((p, i) => {
+    cum += p.g;
+    return `
     <div class="pour-row">
       <div class="pr-head">
-        <span class="pr-lbl">Pour ${i+1}${i===0 ? ' · bloom' : ''}${i===pours.length-1 ? ' · total' : ''}</span>
+        <span class="pr-lbl">Pour ${i+1}${i===0 ? ' · bloom' : ''} → ${cum}g total</span>
         <button class="pr-del" onclick="removePour(${i})" ${pours.length<=2 ? 'disabled' : ''}>×</button>
       </div>
       <div class="pr-controls">
         <div class="mini-step"><button class="step-btn" onclick="adjustPour(${i},'at',-1)">−</button><span class="mini-val">${fmt(p.at)}</span><button class="step-btn" onclick="adjustPour(${i},'at',1)">+</button></div>
-        <div class="mini-step"><button class="step-btn" onclick="adjustPour(${i},'g',-1)">−</button><span class="mini-val">${pourGrams(p.f)}g</span><button class="step-btn" onclick="adjustPour(${i},'g',1)">+</button></div>
+        <div class="mini-step"><button class="step-btn" onclick="adjustPour(${i},'g',-1)">−</button><span class="mini-val">${p.g}g</span><button class="step-btn" onclick="adjustPour(${i},'g',1)">+</button></div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function adjustPour(i, field, dir) {
   const pours = settings.customPours, p = pours[i];
@@ -326,39 +363,33 @@ function adjustPour(i, field, dir) {
     const max = i<pours.length-1 ? pours[i+1].at - 5 : 36000;
     p.at = Math.max(min, Math.min(max, p.at + dir*5));
   } else {
-    const df = 5 / (settings.dose * METHODS.custom.ratio); // ~5g step, in fraction terms
-    const min = i>0 ? pours[i-1].f + 0.001 : 0.01;
-    const max = i<pours.length-1 ? pours[i+1].f - 0.001 : 1;
-    p.f = +Math.max(min, Math.min(max, p.f + dir*df)).toFixed(4);
+    p.g = Math.max(5, p.g + dir*5);
   }
   saveSettings(); applySettings();
 }
 function addPour() {
-  // Insert before the final pour so the last one stays the full brew.
-  const pours = settings.customPours, n = pours.length, last = pours[n-1];
-  const prevF = n >= 2 ? pours[n-2].f : 0;
-  last.f = +((prevF + 1) / 2).toFixed(4);
-  pours.push({ at: last.at + 45, f: 1 });
+  const pours = settings.customPours, last = pours[pours.length-1];
+  const remaining = customBudget() - pours.reduce((s, p) => s + p.g, 0);
+  pours.push({ at: last.at + 45, g: Math.max(5, remaining) });
   saveSettings(); applySettings();
 }
 function removePour(i) {
   if(settings.customPours.length <= 2) return;
   settings.customPours.splice(i, 1);
-  settings.customPours[settings.customPours.length-1].f = 1; // last pour is the full brew
   saveSettings(); applySettings();
 }
-// Seed the editor from a built-in recipe: keep each actual pour (where the
-// water total increases) as a fraction, so you can tweak instead of starting blank.
+// Seed the editor from a built-in recipe: adopt its ratio and dose, and turn its
+// pours into gram amounts, so the budget matches exactly and you can tweak.
 function loadRecipe(name) {
   const m = METHODS[name];
+  settings.customRatio = m.ratio;
+  settings.dose = m.dose;
   const cues = m.build(m.dose, m.ratio);
-  const total = cues.reduce((mx, c) => Math.max(mx, c.water), 0);
   const pours = [];
-  let prev = -1;
+  let prev = 0;
   for(const c of cues) {
-    if(c.water > prev) { pours.push({ at: c.at, f: +(c.water/total).toFixed(4) }); prev = c.water; }
+    if(c.water > prev) { pours.push({ at: c.at, g: c.water - prev }); prev = c.water; }
   }
-  pours[pours.length-1].f = 1;
   settings.customPours = pours;
   settings.method = 'custom';
   saveSettings(); applySettings();
@@ -417,25 +448,27 @@ const METHODS = {
   },
   custom: {
     name:'Custom', ratio:16, dose:15,
-    note:'Your own pour-by-pour recipe below. Each pour shows the total water after that pour — make pour 1 smaller than pour 2 for a sweeter cup. Grams scale with your dose.',
-    build(dose, ratio) {
+    note:'Set a dose and ratio for your water budget, then spend it pour by pour below — each pour is an amount in grams over a time.',
+    build() {
       const pours = settings.customPours;
-      const g = f => Math.round(dose*ratio*f);
-      const total = g(pours[pours.length-1].f);
-      const cues = pours.map((p, i) => ({
-        at: p.at,
-        action: `Pour ${i+1} — to ${g(p.f)}g`,
-        detail: i===0 ? `First pour to ${g(p.f)}g — this also blooms the coffee.` : `Pour ${i+1} of ${pours.length}: bring the total up to ${g(p.f)}g.`,
-        water: g(p.f),
-        phase: `Pour ${i+1}`
-      }));
-      cues.push({ at: pours[pours.length-1].at + 45, action:'Done — enjoy', detail:'Let it finish drawing down. Adjust grind to taste.', water:total, phase:'Done' });
+      let cum = 0;
+      const cues = pours.map((p, i) => {
+        cum += p.g;
+        return {
+          at: p.at,
+          action: `Pour ${i+1} — ${p.g}g`,
+          detail: i===0 ? `Pour ${p.g}g to bloom and saturate the grounds. Running total: ${cum}g.` : `Add ${p.g}g — running total ${cum}g.`,
+          water: cum,
+          phase: `Pour ${i+1}`
+        };
+      });
+      cues.push({ at: pours[pours.length-1].at + 45, action:'Done — enjoy', detail:'Let it finish drawing down. Adjust grind to taste.', water:cum, phase:'Done' });
       return cues;
     }
   }
 };
 
-function buildCues() { const m = METHODS[settings.method]; return m.build(settings.dose, m.ratio); }
+function buildCues() { return METHODS[settings.method].build(settings.dose, METHODS[settings.method].ratio); }
 
 function fmt(s) { return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
 function getCueIdx(t) { let i=0; for(let j=0;j<cues.length;j++){ if(t>=cues[j].at) i=j; } return i; }
@@ -603,7 +636,7 @@ function buildHelp() {
   $('helpTemps').innerHTML = ['light','medium','dark'].map(r => `
     <div class="help-row"><span class="help-k">${r[0].toUpperCase()+r.slice(1)}</span><span class="help-v">${ROAST_TEMPS[r]}</span></div>
     <p class="help-note">${ROAST_NOTES[r]}</p>`).join('');
-  $('helpMethods').innerHTML = Object.values(METHODS).map(m => `
+  $('helpMethods').innerHTML = Object.entries(METHODS).filter(([k]) => k !== 'custom').map(([,m]) => `
     <div class="help-row"><span class="help-k">${m.name}</span><span class="help-v">${m.ratio % 1 ? m.ratio.toFixed(1) : m.ratio}:1</span></div>
     <p class="help-note">${m.note}</p>`).join('');
 }
