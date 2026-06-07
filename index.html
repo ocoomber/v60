@@ -200,26 +200,31 @@ let settings = { dose:13, ratio:16, roast:'medium' };
 let elapsed=0, interval=null, started=false, finished=false, paused=false, currentCue=0, cues=[];
 let noSleep=null, audioCtx=null;
 
+const $ = id => document.getElementById(id);
+
 function loadSettings() {
-  try { const s = localStorage.getItem(STORAGE_KEY); if(s) settings = JSON.parse(s); } catch(e) {}
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    if(s) { const parsed = JSON.parse(s); if(parsed && typeof parsed === 'object') settings = { ...settings, ...parsed }; }
+  } catch(e) {}
   applySettings();
 }
 function saveSettings() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch(e) {}
 }
 function applySettings() {
-  document.getElementById('doseVal').textContent = settings.dose + 'g';
+  $('doseVal').textContent = settings.dose + 'g';
   document.querySelectorAll('#roastSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.roast));
   document.querySelectorAll('#ratioSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val == settings.ratio));
   updateSummary();
 }
 function updateSummary() {
   const total = Math.round(settings.dose * settings.ratio);
-  document.getElementById('summaryCard').innerHTML = `
+  $('summaryCard').innerHTML = `
     <div class="sum-item"><div class="sum-val">${settings.dose}g</div><div class="sum-lbl">Coffee</div></div>
     <div class="sum-item"><div class="sum-val">${total}g</div><div class="sum-lbl">Water</div></div>
     <div class="sum-item"><div class="sum-val">${ROAST_TEMPS[settings.roast]}</div><div class="sum-lbl">Temp</div></div>`;
-  document.getElementById('tempNote').textContent = ROAST_NOTES[settings.roast];
+  $('tempNote').textContent = ROAST_NOTES[settings.roast];
 }
 function setRoast(v) { settings.roast=v; saveSettings(); applySettings(); }
 function setRatio(v) { settings.ratio=v; saveSettings(); applySettings(); }
@@ -251,17 +256,22 @@ function updateRing(t) {
   const duration = end - start;
   const progress = duration > 0 ? Math.min(1, (t - start) / duration) : 1;
   const offset = circ * (1 - progress);
-  const ring = document.getElementById('ringFill');
+  const ring = $('ringFill');
   if(ring) {
     ring.style.strokeDashoffset = offset;
     ring.classList.toggle('done-ring', idx === cues.length - 1);
   }
 }
 
+function getAudioCtx() {
+  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
 function beep(type) {
   try {
-    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    const ctx = audioCtx;
+    const ctx = getAudioCtx();
     const gap = 0.12;
     for(let i = 0; i < 3; i++) {
       const t = ctx.currentTime + i * gap;
@@ -286,12 +296,20 @@ function releaseWakeLock() {
   try { if(noSleep) noSleep.disable(); } catch(e) {}
 }
 
+function showCue(c, total) {
+  $('promptAction').textContent = c.action;
+  $('promptDetail').textContent = c.detail;
+  $('phaseLbl').textContent = c.phase;
+  $('waterLbl').textContent = `Water: ${c.water}g / ${total}g`;
+  $('waterFill').style.width = Math.round((c.water/total)*100) + '%';
+}
+
 function renderUpcoming(t) {
   const up = cues.filter(c=>c.at>t).slice(0,3);
-  const sec = document.getElementById('upcomingSection');
+  const sec = $('upcomingSection');
   if(!up.length) { sec.style.display='none'; return; }
   sec.style.display='block';
-  document.getElementById('upRow').innerHTML = up.map(c =>
+  $('upRow').innerHTML = up.map(c =>
     `<div class="up-item"><div class="up-time">${fmt(c.at)}</div><div class="up-name">${c.phase}</div></div>`
   ).join('');
 }
@@ -301,47 +319,42 @@ function startBrew() {
   const total = Math.round(settings.dose*settings.ratio);
   elapsed=0; started=false; finished=false; paused=false; currentCue=0;
   clearInterval(interval); releaseWakeLock();
-  document.getElementById('clock').textContent='0:00';
-  document.getElementById('clock').className='clock';
-  const ring = document.getElementById('ringFill');
+  $('clock').textContent='0:00';
+  $('clock').className='clock';
+  const ring = $('ringFill');
   if(ring) { ring.style.strokeDashoffset = '552.9'; ring.classList.remove('done-ring'); }
-  document.getElementById('phaseLbl').textContent='Ready';
-  document.getElementById('promptAction').textContent=`${settings.dose}g coffee · ${total}g water at ${ROAST_TEMPS[settings.roast]}`;
-  document.getElementById('promptDetail').textContent='Filter rinsed, bed levelled. Hit start when ready.';
-  document.getElementById('waterSection').style.display='none';
-  document.getElementById('brewBtn').textContent='Start';
-  document.getElementById('brewBtn').className='btn-go';
-  document.getElementById('pauseBtn').style.display='none';
+  $('phaseLbl').textContent='Ready';
+  $('promptAction').textContent=`${settings.dose}g coffee · ${total}g water at ${ROAST_TEMPS[settings.roast]}`;
+  $('promptDetail').textContent='Filter rinsed, bed levelled. Hit start when ready.';
+  $('waterSection').style.display='none';
+  $('brewBtn').textContent='Start';
+  $('brewBtn').className='btn-go';
+  $('pauseBtn').style.display='none';
   renderUpcoming(-1);
-  document.getElementById('screenSettings').classList.remove('active');
-  document.getElementById('screenBrew').classList.add('active');
+  $('screenSettings').classList.remove('active');
+  $('screenBrew').classList.add('active');
 }
 
 function tick() {
   elapsed++;
-  document.getElementById('clock').textContent = fmt(elapsed);
+  $('clock').textContent = fmt(elapsed);
   updateRing(elapsed);
   const total = Math.round(settings.dose*settings.ratio);
   const idx = getCueIdx(elapsed);
   if(idx !== currentCue) {
     currentCue = idx;
-    const c = cues[idx];
-    document.getElementById('promptAction').textContent = c.action;
-    document.getElementById('promptDetail').textContent = c.detail;
-    document.getElementById('phaseLbl').textContent = c.phase;
-    document.getElementById('waterLbl').textContent = `Water: ${c.water}g / ${total}g`;
-    document.getElementById('waterFill').style.width = Math.round((c.water/total)*100) + '%';
-    const card = document.getElementById('promptCard');
+    showCue(cues[idx], total);
+    const card = $('promptCard');
     card.classList.add('flash');
     setTimeout(() => card.classList.remove('flash'), 700);
     const isDone = idx === cues.length-1;
     beep(isDone ? 'done' : 'cue');
     if(isDone) {
       clearInterval(interval); finished=true;
-      document.getElementById('clock').className = 'clock done-c';
-      document.getElementById('brewBtn').textContent = 'Brew again';
-      document.getElementById('brewBtn').className = 'btn-secondary';
-      document.getElementById('pauseBtn').style.display='none';
+      $('clock').className = 'clock done-c';
+      $('brewBtn').textContent = 'Brew again';
+      $('brewBtn').className = 'btn-secondary';
+      $('pauseBtn').style.display='none';
       releaseWakeLock();
     }
   }
@@ -352,26 +365,22 @@ async function handleBrewBtn() {
   if(finished) { startBrew(); return; }
   if(!started) {
     started = true;
-    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    getAudioCtx();
     await acquireWakeLock();
-    const c=cues[0], total=Math.round(settings.dose*settings.ratio);
-    document.getElementById('clock').className='clock running';
-    document.getElementById('promptAction').textContent=c.action;
-    document.getElementById('promptDetail').textContent=c.detail;
-    document.getElementById('phaseLbl').textContent=c.phase;
-    document.getElementById('waterSection').style.display='block';
-    document.getElementById('waterLbl').textContent=`Water: ${c.water}g / ${total}g`;
-    document.getElementById('waterFill').style.width=Math.round((c.water/total)*100)+'%';
-    document.getElementById('brewBtn').textContent='Reset';
-    document.getElementById('brewBtn').className='btn-secondary';
-    document.getElementById('pauseBtn').style.display='';
-    document.getElementById('pauseBtn').textContent='Pause';
+    const total=Math.round(settings.dose*settings.ratio);
+    $('clock').className='clock running';
+    showCue(cues[0], total);
+    $('waterSection').style.display='block';
+    $('brewBtn').textContent='Reset';
+    $('brewBtn').className='btn-secondary';
+    $('pauseBtn').style.display='';
+    $('pauseBtn').textContent='Pause';
     paused=false;
     renderUpcoming(0); beep('cue');
     interval = setInterval(tick, 1000);
   } else {
     clearInterval(interval); paused=false;
-    document.getElementById('pauseBtn').style.display='none';
+    $('pauseBtn').style.display='none';
     startBrew();
   }
 }
@@ -379,29 +388,29 @@ async function handleBrewBtn() {
 function handlePauseBtn() {
   if(!started || finished) return;
   paused = !paused;
-  const btn = document.getElementById('pauseBtn');
+  const btn = $('pauseBtn');
   if(paused) {
     clearInterval(interval); interval=null;
     btn.textContent='Resume';
-    document.getElementById('clock').className='clock';
+    $('clock').className='clock';
   } else {
     interval = setInterval(tick, 1000);
     btn.textContent='Pause';
-    document.getElementById('clock').className='clock running';
+    $('clock').className='clock running';
   }
 }
 
 function backToSettings() {
   clearInterval(interval);
-  document.getElementById('screenBrew').classList.remove('active');
-  document.getElementById('screenSettings').classList.add('active');
+  $('screenBrew').classList.remove('active');
+  $('screenSettings').classList.add('active');
 }
 
 loadSettings();
 
 // Acquire wake lock on first user interaction so screen stays on across both screens
 document.addEventListener('click', function initWakeLock() {
-  if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  getAudioCtx();
   acquireWakeLock();
 }, { once: true });
 </script>
