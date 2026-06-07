@@ -101,6 +101,10 @@
   .help-k { font-size: 14px; font-weight: 500; color: var(--text); }
   .help-v { font-size: 14px; color: var(--green); font-variant-numeric: tabular-nums; }
   .help-note { font-size: 12px; color: var(--text3); line-height: 1.45; margin-top: 2px; }
+  .load-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .load-lbl { font-size: 12px; color: var(--text3); margin-right: 2px; }
+  .chip { font-size: 12px; padding: 5px 10px; border-radius: 20px; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); cursor: pointer; }
+  .chip:hover { background: var(--bg2); }
   .pour-row { background: var(--bg2); border-radius: var(--radius); padding: 8px 10px; margin-top: 8px; }
   .pr-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
   .pr-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -168,6 +172,11 @@
       <div class="dose-hint" id="doseHint"></div>
     </div>
     <div class="group" id="customGroup" style="display:none"><span class="group-label">Custom pours</span>
+      <div class="load-row"><span class="load-lbl">Start from</span>
+        <button class="chip" onclick="loadRecipe('balanced')">Balanced</button>
+        <button class="chip" onclick="loadRecipe('hoffmann')">Hoffmann</button>
+        <button class="chip" onclick="loadRecipe('kasuya')">Kasuya</button>
+      </div>
       <div id="pourEditor"></div>
       <div class="pour-add"><button class="btn-secondary" onclick="addPour()">+ Add pour</button></div>
     </div>
@@ -340,6 +349,22 @@ function removePour(i) {
   if(settings.customPours.length <= 2) return;
   settings.customPours.splice(i, 1);
   settings.customPours[settings.customPours.length-1].f = 1; // last pour is the full brew
+  saveSettings(); applySettings();
+}
+// Seed the editor from a built-in recipe: keep each actual pour (where the
+// water total increases) as a fraction, so you can tweak instead of starting blank.
+function loadRecipe(name) {
+  const m = METHODS[name];
+  const cues = m.build(m.dose, m.ratio);
+  const total = cues.reduce((mx, c) => Math.max(mx, c.water), 0);
+  const pours = [];
+  let prev = -1;
+  for(const c of cues) {
+    if(c.water > prev) { pours.push({ at: c.at, f: +(c.water/total).toFixed(4) }); prev = c.water; }
+  }
+  pours[pours.length-1].f = 1;
+  settings.customPours = pours;
+  settings.method = 'custom';
   saveSettings(); applySettings();
 }
 
