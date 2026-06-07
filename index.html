@@ -89,11 +89,17 @@
   .btn-secondary:hover { background: var(--bg2); }
   #screenSettings { justify-content: space-between; gap: 12px; overflow-y: auto; }
   .method-note { font-size: 12px; color: var(--text2); line-height: 1.5; margin-top: 8px; }
-  .cknob { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
-  .cknob-lbl { font-size: 13px; color: var(--text2); }
-  .cknob .stepper { flex: 0 0 auto; padding: 6px 10px; gap: 8px; }
-  .cknob .step-val { font-size: 18px; min-width: 40px; }
-  .cknob .step-btn { width: 32px; height: 32px; font-size: 18px; }
+  .pour-row { background: var(--bg2); border-radius: var(--radius); padding: 8px 10px; margin-top: 8px; }
+  .pr-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .pr-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .pr-del { width: 24px; height: 24px; border-radius: 50%; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); cursor: pointer; font-size: 15px; line-height: 1; padding: 0; }
+  .pr-del:disabled { opacity: 0.3; cursor: default; }
+  .pr-controls { display: flex; gap: 8px; }
+  .mini-step { flex: 1; display: flex; align-items: center; justify-content: space-between; background: var(--bg); border-radius: var(--radius); padding: 4px 8px; }
+  .mini-step .step-btn { width: 28px; height: 28px; font-size: 18px; }
+  .mini-val { font-size: 14px; color: var(--text); font-variant-numeric: tabular-nums; }
+  .pour-add { margin-top: 10px; }
+  .pour-add .btn-secondary { width: 100%; }
   #screenBrew { gap: clamp(8px, 3dvh, 24px); }
   .pill { font-size: 11px; padding: 4px 10px; border-radius: 20px; background: var(--bg2); color: var(--text3); border: 0.5px solid var(--border); transition: all 0.3s; }
   .pill.on { background: var(--green-light); color: var(--green-dark); border-color: var(--green-mid); }
@@ -141,28 +147,9 @@
       </div>
       <div class="method-note" id="methodNote"></div>
     </div>
-    <div class="group" id="customGroup" style="display:none"><span class="group-label">Custom recipe</span>
-      <div class="cknob"><span class="cknob-lbl">Bloom (× dose)</span>
-        <div class="stepper">
-          <button class="step-btn" onclick="adjustCustom('bloom',-1)">−</button>
-          <span class="step-val" id="cBloom">2×</span>
-          <button class="step-btn" onclick="adjustCustom('bloom',1)">+</button>
-        </div>
-      </div>
-      <div class="cknob"><span class="cknob-lbl">Pours</span>
-        <div class="stepper">
-          <button class="step-btn" onclick="adjustCustom('pours',-1)">−</button>
-          <span class="step-val" id="cPours">3</span>
-          <button class="step-btn" onclick="adjustCustom('pours',1)">+</button>
-        </div>
-      </div>
-      <div class="cknob"><span class="cknob-lbl">Spacing</span>
-        <div class="stepper">
-          <button class="step-btn" onclick="adjustCustom('interval',-1)">−</button>
-          <span class="step-val" id="cInterval">45s</span>
-          <button class="step-btn" onclick="adjustCustom('interval',1)">+</button>
-        </div>
-      </div>
+    <div class="group" id="customGroup" style="display:none"><span class="group-label">Custom pours</span>
+      <div id="pourEditor"></div>
+      <div class="pour-add"><button class="btn-secondary" onclick="addPour()">+ Add pour</button></div>
     </div>
     <div class="group"><span class="group-label">Roast</span>
       <div class="seg" id="roastSeg">
@@ -178,7 +165,7 @@
         <button class="step-btn" onclick="adjustDose(1)">+</button>
       </div>
     </div>
-    <div class="group"><span class="group-label">Ratio (water : coffee)</span>
+    <div class="group" id="ratioGroup"><span class="group-label">Ratio (water : coffee)</span>
       <div class="seg" id="ratioSeg">
         <button class="seg-btn" data-val="15" onclick="setRatio(15)">15:1</button>
         <button class="seg-btn" data-val="16" onclick="setRatio(16)">16:1</button>
@@ -234,7 +221,8 @@ const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C'
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
 
-let settings = { dose:13, ratio:16, roast:'medium', method:'balanced', custom:{ bloom:2, pours:3, interval:45 } };
+let settings = { dose:13, ratio:16, roast:'medium', method:'balanced',
+  customPours:[ {at:0,g:50}, {at:45,g:100}, {at:90,g:150}, {at:135,g:200}, {at:180,g:250} ] };
 let elapsed=0, interval=null, started=false, finished=false, paused=false, currentCue=0, cues=[];
 let noSleep=null, audioCtx=null;
 
@@ -256,14 +244,14 @@ function applySettings() {
   document.querySelectorAll('#roastSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.roast));
   document.querySelectorAll('#ratioSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val == settings.ratio));
   $('methodNote').textContent = METHODS[settings.method].note;
-  $('customGroup').style.display = settings.method === 'custom' ? 'block' : 'none';
-  $('cBloom').textContent = settings.custom.bloom + '×';
-  $('cPours').textContent = settings.custom.pours;
-  $('cInterval').textContent = settings.custom.interval + 's';
+  const isCustom = settings.method === 'custom';
+  $('customGroup').style.display = isCustom ? 'block' : 'none';
+  $('ratioGroup').style.display = isCustom ? 'none' : 'block';
+  if(isCustom) renderPourEditor();
   updateSummary();
 }
 function updateSummary() {
-  const total = Math.round(settings.dose * settings.ratio);
+  const total = totalWater();
   $('summaryCard').innerHTML = `
     <div class="sum-item"><div class="sum-val">${settings.dose}g</div><div class="sum-lbl">Coffee</div></div>
     <div class="sum-item"><div class="sum-val">${total}g</div><div class="sum-lbl">Water</div></div>
@@ -275,10 +263,52 @@ function setRatio(v) { settings.ratio=v; saveSettings(); applySettings(); }
 function adjustDose(d) { settings.dose=Math.max(8,Math.min(30,settings.dose+d)); saveSettings(); applySettings(); }
 function setMethod(m) { settings.method=m; settings.ratio=METHODS[m].ratio; saveSettings(); applySettings(); }
 
-const CUSTOM_LIMITS = { bloom:{step:0.5,min:1.5,max:3}, pours:{step:1,min:2,max:6}, interval:{step:5,min:30,max:60} };
-function adjustCustom(key, dir) {
-  const l = CUSTOM_LIMITS[key];
-  settings.custom[key] = Math.max(l.min, Math.min(l.max, +(settings.custom[key] + dir*l.step).toFixed(1)));
+// Total water for the current method. For custom recipes the pour list defines
+// it (the last cumulative target); otherwise it's dose × ratio.
+function totalWater() {
+  if(settings.method === 'custom') {
+    const p = settings.customPours;
+    return p.length ? p[p.length-1].g : 0;
+  }
+  return Math.round(settings.dose * settings.ratio);
+}
+
+// --- Custom pour editor ---
+function renderPourEditor() {
+  const pours = settings.customPours;
+  $('pourEditor').innerHTML = pours.map((p, i) => `
+    <div class="pour-row">
+      <div class="pr-head">
+        <span class="pr-lbl">Pour ${i+1}${i===0 ? ' · bloom' : ''}</span>
+        <button class="pr-del" onclick="removePour(${i})" ${pours.length<=2 ? 'disabled' : ''}>×</button>
+      </div>
+      <div class="pr-controls">
+        <div class="mini-step"><button class="step-btn" onclick="adjustPour(${i},'at',-1)">−</button><span class="mini-val">${fmt(p.at)}</span><button class="step-btn" onclick="adjustPour(${i},'at',1)">+</button></div>
+        <div class="mini-step"><button class="step-btn" onclick="adjustPour(${i},'g',-1)">−</button><span class="mini-val">${p.g}g</span><button class="step-btn" onclick="adjustPour(${i},'g',1)">+</button></div>
+      </div>
+    </div>`).join('');
+}
+function adjustPour(i, field, dir) {
+  const pours = settings.customPours, p = pours[i];
+  if(field === 'at') {
+    const min = i>0 ? pours[i-1].at + 5 : 0;
+    const max = i<pours.length-1 ? pours[i+1].at - 5 : 36000;
+    p.at = Math.max(min, Math.min(max, p.at + dir*5));
+  } else {
+    const min = i>0 ? pours[i-1].g + 5 : 5;
+    const max = i<pours.length-1 ? pours[i+1].g - 5 : 2000;
+    p.g = Math.max(min, Math.min(max, p.g + dir*5));
+  }
+  saveSettings(); applySettings();
+}
+function addPour() {
+  const pours = settings.customPours, last = pours[pours.length-1];
+  pours.push({ at: last.at + 45, g: last.g + 50 });
+  saveSettings(); applySettings();
+}
+function removePour(i) {
+  if(settings.customPours.length <= 2) return;
+  settings.customPours.splice(i, 1);
   saveSettings(); applySettings();
 }
 
@@ -335,20 +365,18 @@ const METHODS = {
   },
   custom: {
     name:'Custom', ratio:16,
-    note:'Your own recipe — set the bloom, number of pours and spacing below.',
-    build(dose, ratio) {
-      const total = Math.round(dose*ratio);
-      const c = settings.custom;
-      const bloom = Math.round(dose*c.bloom);
-      const step = (total - bloom) / c.pours;
-      const cues = [
-        { at:0, action:`Bloom — ${bloom}g`, detail:'Saturate the grounds evenly, then wait.', water:bloom, phase:'Bloom' }
-      ];
-      for(let i=1; i<=c.pours; i++) {
-        const w = Math.min(total, Math.round(bloom + step*i));
-        cues.push({ at:i*c.interval, action:`Pour ${i} — to ${w}g`, detail:`Pour ${i} of ${c.pours}. Keep it steady.`, water:w, phase:`Pour ${i}` });
-      }
-      cues.push({ at:c.pours*c.interval + 45, action:'Done — enjoy', detail:'Let it finish drawing down. Tweak grind to taste.', water:total, phase:'Done' });
+    note:'Your own pour-by-pour recipe below. Each pour target is the total water after that pour — make pour 1 smaller than pour 2 for a sweeter cup.',
+    build() {
+      const pours = settings.customPours;
+      const total = pours[pours.length-1].g;
+      const cues = pours.map((p, i) => ({
+        at: p.at,
+        action: `Pour ${i+1} — to ${p.g}g`,
+        detail: i===0 ? `First pour to ${p.g}g — this also blooms the coffee.` : `Pour ${i+1} of ${pours.length}: bring the total up to ${p.g}g.`,
+        water: p.g,
+        phase: `Pour ${i+1}`
+      }));
+      cues.push({ at: pours[pours.length-1].at + 45, action:'Done — enjoy', detail:'Let it finish drawing down. Adjust grind to taste.', water:total, phase:'Done' });
       return cues;
     }
   }
@@ -427,7 +455,7 @@ function renderUpcoming(t) {
 
 function startBrew() {
   cues = buildCues();
-  const total = Math.round(settings.dose*settings.ratio);
+  const total = totalWater();
   elapsed=0; started=false; finished=false; paused=false; currentCue=0;
   clearInterval(interval); releaseWakeLock();
   $('clock').textContent='0:00';
@@ -450,7 +478,7 @@ function tick() {
   elapsed++;
   $('clock').textContent = fmt(elapsed);
   updateRing(elapsed);
-  const total = Math.round(settings.dose*settings.ratio);
+  const total = totalWater();
   const idx = getCueIdx(elapsed);
   if(idx !== currentCue) {
     currentCue = idx;
@@ -478,7 +506,7 @@ async function handleBrewBtn() {
     started = true;
     getAudioCtx();
     await acquireWakeLock();
-    const total=Math.round(settings.dose*settings.ratio);
+    const total = totalWater();
     $('clock').className='clock running';
     showCue(cues[0], total);
     $('waterSection').style.display='block';
