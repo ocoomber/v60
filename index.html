@@ -82,6 +82,7 @@
   .sum-lbl { font-size: 11px; color: var(--text3); margin-top: 3px; }
   .btn-go { background: var(--green); border: none; border-radius: var(--radius-lg); color: #fff; font-size: 16px; font-weight: 600; padding: 14px; cursor: pointer; width: 100%; transition: background 0.15s; }
   .btn-go:hover { background: var(--green-dark); }
+  .btn-go:disabled { opacity: 0.4; cursor: not-allowed; }
   .btn-secondary { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 14px; padding: 10px 20px; cursor: pointer; color: var(--text2); transition: background 0.15s; }
   .btn-secondary:hover { background: var(--bg2); }
   #screenSettings { justify-content: space-between; gap: 12px; overflow-y: auto; }
@@ -109,6 +110,7 @@
   .cknob .step-btn { width: 32px; height: 32px; font-size: 18px; }
   .budget { font-size: 13px; padding: 8px 12px; border-radius: var(--radius); margin-bottom: 4px; border-left: 3px solid var(--text3); background: var(--bg2); color: var(--text2); }
   .budget.ok { border-left-color: var(--green); color: var(--green-dark); background: var(--green-light); }
+  .budget.under { border-left-color: #d68910; color: #b9770e; }
   .budget.over { border-left-color: #c0392b; color: #c0392b; }
   .pour-row { background: var(--bg2); border-radius: var(--radius); padding: 8px 10px; margin-top: 8px; }
   .pr-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
@@ -192,7 +194,7 @@
       <div class="pour-add"><button class="btn-secondary" onclick="addPour()">+ Add pour</button></div>
     </div>
     <div class="summary" id="summaryCard"></div>
-    <button class="btn-go" onclick="startBrew()">Start brew</button>
+    <button class="btn-go" id="startBtn" onclick="startBrew()">Start brew</button>
   </div>
 
   <!-- Brew screen -->
@@ -299,6 +301,9 @@ function applySettings() {
   $('methodNote').textContent = m.note;
   if(settings.method === 'custom') { $('customGroup').style.display = 'block'; $('cRatioVal').textContent = ratioLabel(settings.customRatio); renderBudget(); renderPourEditor(); }
   else $('customGroup').style.display = 'none';
+  // Lock Start brew until a custom recipe spends its whole water budget.
+  const balanced = settings.method !== 'custom' || customBudget() === settings.customPours.reduce((s, p) => s + p.g, 0);
+  $('startBtn').disabled = !balanced;
   updateSummary();
 }
 function updateSummary() {
@@ -334,7 +339,7 @@ function renderBudget() {
   const used = settings.customPours.reduce((s, p) => s + p.g, 0);
   const diff = budget - used;
   const el = $('budgetBar');
-  if(Math.abs(diff) <= 1) { el.textContent = `All ${budget}g of water allocated`; el.className = 'budget ok'; }
+  if(diff === 0) { el.textContent = `All ${budget}g of water allocated`; el.className = 'budget ok'; }
   else if(diff > 0) { el.textContent = `${used}g of ${budget}g used · ${diff}g still to pour`; el.className = 'budget under'; }
   else { el.textContent = `${used}g of ${budget}g · ${-diff}g over budget`; el.className = 'budget over'; }
 }
@@ -363,14 +368,14 @@ function adjustPour(i, field, dir) {
     const max = i<pours.length-1 ? pours[i+1].at - 5 : 36000;
     p.at = Math.max(min, Math.min(max, p.at + dir*5));
   } else {
-    p.g = Math.max(5, p.g + dir*5);
+    p.g = Math.max(1, p.g + dir);
   }
   saveSettings(); applySettings();
 }
 function addPour() {
   const pours = settings.customPours, last = pours[pours.length-1];
   const remaining = customBudget() - pours.reduce((s, p) => s + p.g, 0);
-  pours.push({ at: last.at + 45, g: Math.max(5, remaining) });
+  pours.push({ at: last.at + 45, g: Math.max(1, remaining) });
   saveSettings(); applySettings();
 }
 function removePour(i) {
