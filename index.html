@@ -14,7 +14,6 @@
     --green: #1D9E75;
     --green-dark: #0F6E56;
     --green-light: #E1F5EE;
-    --green-mid: #9FE1CB;
     --green-teal: #5DCAA5;
     --bg: #ffffff;
     --bg2: #f5f5f3;
@@ -38,7 +37,6 @@
       --border: rgba(255,255,255,0.12);
       --border2: rgba(255,255,255,0.22);
       --green-light: #0a3d2a;
-      --green-mid: #0d5238;
     }
   }
   body {
@@ -82,7 +80,6 @@
   .sum-item { text-align: center; }
   .sum-val { font-size: 20px; font-weight: 600; color: var(--text); }
   .sum-lbl { font-size: 11px; color: var(--text3); margin-top: 3px; }
-  .temp-note { font-size: 13px; color: var(--text2); background: var(--bg2); border-radius: var(--radius); padding: 10px 14px; margin: 0; border-left: 3px solid var(--green); line-height: 1.5; }
   .btn-go { background: var(--green); border: none; border-radius: var(--radius-lg); color: #fff; font-size: 16px; font-weight: 600; padding: 14px; cursor: pointer; width: 100%; transition: background 0.15s; }
   .btn-go:hover { background: var(--green-dark); }
   .btn-secondary { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 14px; padding: 10px 20px; cursor: pointer; color: var(--text2); transition: background 0.15s; }
@@ -117,8 +114,6 @@
   .pour-add { margin-top: 10px; }
   .pour-add .btn-secondary { width: 100%; }
   #screenBrew { gap: clamp(8px, 3dvh, 24px); }
-  .pill { font-size: 11px; padding: 4px 10px; border-radius: 20px; background: var(--bg2); color: var(--text3); border: 0.5px solid var(--border); transition: all 0.3s; }
-  .pill.on { background: var(--green-light); color: var(--green-dark); border-color: var(--green-mid); }
   .ring-outer { position: relative; width: min(280px, 68vw); height: min(280px, 68vw); margin: 0 auto; }
   .ring-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
   .ring-track { fill: none; stroke: var(--bg3); stroke-width: 6; }
@@ -249,6 +244,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
+const RING_CIRC = 552.9; // circumference of the progress ring (2π × r, r=88); matches the SVG
 
 // Custom pours are stored as cumulative fractions of the total water, so the
 // recipe scales with whatever dose you pick. The last pour is the full brew.
@@ -445,13 +441,12 @@ function fmt(s) { return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); 
 function getCueIdx(t) { let i=0; for(let j=0;j<cues.length;j++){ if(t>=cues[j].at) i=j; } return i; }
 
 function updateRing(t) {
-  const circ = 552.9;
   const idx = getCueIdx(t);
   const start = cues[idx].at;
   const end = idx < cues.length - 1 ? cues[idx + 1].at : start + 1;
   const duration = end - start;
   const progress = duration > 0 ? Math.min(1, (t - start) / duration) : 1;
-  const offset = circ * (1 - progress);
+  const offset = RING_CIRC * (1 - progress);
   const ring = $('ringFill');
   if(ring) {
     ring.style.strokeDashoffset = offset;
@@ -518,7 +513,7 @@ function startBrew() {
   $('clock').textContent='0:00';
   $('clock').className='clock';
   const ring = $('ringFill');
-  if(ring) { ring.style.strokeDashoffset = '552.9'; ring.classList.remove('done-ring'); }
+  if(ring) { ring.style.strokeDashoffset = RING_CIRC; ring.classList.remove('done-ring'); }
   $('phaseLbl').textContent='Ready';
   $('promptAction').textContent=`${settings.dose}g coffee · ${total}g water`;
   $('promptDetail').textContent='Filter rinsed, bed levelled. Hit start when ready.';
