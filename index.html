@@ -448,7 +448,7 @@ function loadRecipe(name) {
 // every recipe scales when you change the dose.
 const METHODS = {
   balanced: {
-    name:'Balanced', ratio:16, dose:15,
+    name:'Balanced', ratio:16, dose:13,
     note:'A simple, forgiving three-pour recipe. A solid everyday cup.',
     build(dose, ratio) {
       const total = Math.round(dose*ratio), bloom = Math.round(dose*2);
