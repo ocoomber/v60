@@ -99,6 +99,17 @@
   .help-k { font-size: 14px; font-weight: 500; color: var(--text); }
   .help-v { font-size: 14px; color: var(--green); font-variant-numeric: tabular-nums; }
   .help-note { font-size: 12px; color: var(--text3); line-height: 1.45; margin-top: 2px; }
+  .hdr-btns { display: flex; gap: 8px; }
+  #screenBarista { gap: 10px; }
+  .chat { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
+  .msg { max-width: 85%; padding: 9px 12px; border-radius: 14px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
+  .msg.user { align-self: flex-end; background: var(--green); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot { align-self: flex-start; background: var(--bg2); color: var(--text); border-bottom-left-radius: 4px; }
+  .msg.bot.typing { color: var(--text3); }
+  .chat-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chat-input { display: flex; gap: 8px; }
+  .chat-input input { flex: 1; min-width: 0; padding: 11px 14px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-size: 16px; }
+  .chat-input .btn-go { width: auto; padding: 11px 18px; }
   .load-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
   .load-lbl { font-size: 12px; color: var(--text3); margin-right: 2px; }
   .chip { font-size: 12px; padding: 5px 10px; border-radius: 20px; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); cursor: pointer; }
@@ -158,7 +169,7 @@
 
   <!-- Settings screen -->
   <div class="screen active" id="screenSettings">
-    <div class="app-header"><span class="app-title">V60</span><button class="icon-btn" onclick="showScreen('help')">Guide</button></div>
+    <div class="app-header"><span class="app-title">V60</span><span class="hdr-btns"><button class="icon-btn" onclick="openBarista()">Barista</button><button class="icon-btn" onclick="showScreen('help')">Guide</button></span></div>
     <div class="group"><span class="group-label">Method</span>
       <div class="seg" id="methodSeg">
         <button class="seg-btn" data-val="balanced" onclick="setMethod('balanced')">Balanced</button>
@@ -254,6 +265,24 @@
     </div>
   </div>
 
+  <!-- Barista screen -->
+  <div class="screen" id="screenBarista">
+    <div class="app-header"><span class="app-title">Barista</span><button class="icon-btn" onclick="showScreen('settings')">Done</button></div>
+    <div class="chat" id="chatLog"></div>
+    <div class="chat-chips">
+      <button class="chip" onclick="baristaQuick('My brew drained too fast — what should I change?')">Too fast</button>
+      <button class="chip" onclick="baristaQuick('My brew drained too slowly — what should I change?')">Too slow</button>
+      <button class="chip" onclick="baristaQuick('My coffee tastes sour. How do I fix it?')">Sour</button>
+      <button class="chip" onclick="baristaQuick('My coffee tastes bitter. How do I fix it?')">Bitter</button>
+      <button class="chip" onclick="baristaQuick('My coffee tastes weak and watery. How do I fix it?')">Weak</button>
+      <button class="chip" onclick="baristaQuick('My coffee tastes dry and astringent. How do I fix it?')">Astringent</button>
+    </div>
+    <div class="chat-input">
+      <input id="chatText" type="text" placeholder="Ask about your brew…" onkeydown="if(event.key==='Enter')baristaSend()">
+      <button class="btn-go" onclick="baristaSend()">Send</button>
+    </div>
+  </div>
+
 </div>
 
 <script>/*! NoSleep.min.js v0.12.0 - git.io/vfn01 - Rich Tibbett - MIT license */
@@ -263,6 +292,8 @@ const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C'
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
 const RING_CIRC = 552.9; // circumference of the progress ring (2π × r, r=88); matches the SVG
+const BARISTA_URL = ""; // set to your Cloudflare Worker URL to enable the AI Barista (see barista-worker/README.md)
+let baristaHistory = [], baristaBusy = false;
 
 // Custom pours are stored as cumulative fractions of the total water, so the
 // recipe scales with whatever dose you pick. The last pour is the full brew.
@@ -634,6 +665,68 @@ function backToSettings() { clearInterval(interval); showScreen('settings'); }
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   $('screen' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+}
+
+// --- AI Barista (chat) ---
+// Builds a compact snapshot of the current recipe so advice is tailored to it.
+function currentBrewContext() {
+  const m = METHODS[settings.method];
+  const cues = buildCues();
+  const total = totalWater();
+  return {
+    method: m.name,
+    dose: settings.dose,
+    water: total,
+    ratio: settings.method === 'custom' ? +(total / settings.dose).toFixed(1) : m.ratio,
+    finish: fmt(cues[cues.length-1].at),
+    pours: cues.filter(c => c.phase !== 'Done').map(c => ({ at: fmt(c.at), water: c.water })),
+  };
+}
+function addBaristaMsg(role, text) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
+  div.textContent = text;
+  $('chatLog').appendChild(div);
+  $('chatLog').scrollTop = $('chatLog').scrollHeight;
+  return div;
+}
+function openBarista() {
+  if(!$('chatLog').childElementCount) {
+    addBaristaMsg('bot', "Hi! I'm your brewing assistant. Tell me how your cup turned out — too sour, too bitter, draining too fast — and I'll help you dial it in.");
+  }
+  showScreen('barista');
+}
+function baristaQuick(text) { $('chatText').value = text; baristaSend(); }
+async function baristaSend() {
+  if(baristaBusy) return;
+  const input = $('chatText');
+  const text = input.value.trim();
+  if(!text) return;
+  if(!BARISTA_URL) { addBaristaMsg('bot', "The Barista isn't switched on yet — its Worker URL needs to be set (see barista-worker/README.md)."); return; }
+  const priorHistory = baristaHistory.slice(-8);
+  input.value = '';
+  addBaristaMsg('user', text);
+  baristaBusy = true;
+  const typing = addBaristaMsg('bot', '…');
+  typing.classList.add('typing');
+  try {
+    const res = await fetch(BARISTA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history: priorHistory, brew: currentBrewContext() }),
+    });
+    const data = await res.json();
+    const reply = data.reply || "Sorry, I didn't catch that — try rephrasing.";
+    typing.classList.remove('typing');
+    typing.textContent = reply;
+    baristaHistory.push({ role: 'user', text }, { role: 'barista', text: reply });
+  } catch(e) {
+    typing.classList.remove('typing');
+    typing.textContent = navigator.onLine === false
+      ? "The Barista needs an internet connection — you're offline right now."
+      : "Couldn't reach the Barista just now. Please try again.";
+  }
+  baristaBusy = false;
 }
 
 // Populate the Guide page from the same data the brewer uses.
