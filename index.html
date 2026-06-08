@@ -92,8 +92,12 @@
   .dose-stepper .step-btn { width: 44px; height: 44px; font-size: 24px; }
   .dose-hint { font-size: 12px; color: var(--text3); margin-top: 8px; text-align: center; }
   .help-scroll { flex: 1; overflow-y: auto; margin-top: 4px; }
-  .help-sec { margin-bottom: 22px; }
-  .help-h { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 10px; }
+  .help-sec { margin-bottom: 6px; border-bottom: 0.5px solid var(--border); }
+  .help-h { font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; list-style: none; padding: 12px 0; display: flex; align-items: center; justify-content: space-between; }
+  .help-h::-webkit-details-marker { display: none; }
+  .help-h::after { content: "›"; display: inline-block; color: var(--text3); font-size: 18px; transition: transform 0.2s; }
+  details[open] > .help-h::after { transform: rotate(90deg); }
+  .help-sec[open] { padding-bottom: 12px; }
   .help-p { font-size: 14px; color: var(--text2); line-height: 1.55; margin-bottom: 8px; }
   .help-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; }
   .help-k { font-size: 14px; font-weight: 500; color: var(--text); }
@@ -247,17 +251,17 @@
   <div class="screen" id="screenHelp">
     <div class="app-header"><span class="app-title">Guide</span><button class="icon-btn" onclick="showScreen('settings')">Done</button></div>
     <div class="help-scroll">
-      <div class="help-sec">
-        <h3 class="help-h">Roast &amp; water temperature</h3>
+      <details class="help-sec" open>
+        <summary class="help-h">Roast &amp; water temperature</summary>
         <p class="help-p">The app doesn't ask your roast — just set your kettle to match it.</p>
         <div id="helpTemps"></div>
-      </div>
-      <div class="help-sec">
-        <h3 class="help-h">The methods</h3>
+      </details>
+      <details class="help-sec">
+        <summary class="help-h">The methods</summary>
         <div id="helpMethods"></div>
-      </div>
-      <div class="help-sec">
-        <h3 class="help-h">Tasting your cup — what to feel for</h3>
+      </details>
+      <details class="help-sec">
+        <summary class="help-h">Tasting your cup — what to feel for</summary>
         <p class="help-p">Most brewing fixes start with naming the taste. Here's what each one feels like, and which way to nudge your grind.</p>
         <div class="help-row"><span class="help-k">Sour</span></div>
         <p class="help-note">Sharp and tart — like lemon or unripe fruit — and dries the <i>sides</i> of your tongue. Usually under-extracted: grind finer, use hotter water, or brew a little longer.</p>
@@ -267,13 +271,13 @@
         <p class="help-note">Thin and watery, little flavour or body. Too little coffee or under-extracted: add dose or grind finer.</p>
         <div class="help-row"><span class="help-k">Astringent</span></div>
         <p class="help-note">A puckering, drying sensation, like over-steeped tea. Often too fine a grind or over-agitation: grind a touch coarser and pour more gently.</p>
-      </div>
-      <div class="help-sec">
-        <h3 class="help-h">Dialling it in</h3>
+      </details>
+      <details class="help-sec">
+        <summary class="help-h">Dialling it in</summary>
         <p class="help-p"><b>Grind:</b> if the brew finishes too fast and tastes weak/sour, grind finer. Too slow and bitter, grind coarser.</p>
         <p class="help-p"><b>Dose:</b> pick a method, then set how much coffee you want to spend — water and every pour scale to it.</p>
         <p class="help-p"><b>Custom:</b> each pour is a cumulative target. Make pour 1 smaller than pour 2 for a sweeter cup, or the reverse for more brightness.</p>
-      </div>
+      </details>
     </div>
   </div>
 
