@@ -373,7 +373,25 @@ function updateSummary() {
     <div class="sum-item"><div class="sum-val">${total}g</div><div class="sum-lbl">Water</div></div>
     <div class="sum-item"><div class="sum-val">~${fmt(finish)}</div><div class="sum-lbl">Time</div></div>`;
 }
-function adjustDose(d) { settings.dose=Math.max(8,Math.min(40,settings.dose+d)); saveSettings(); applySettings(); }
+function adjustDose(d) {
+  const before = settings.dose, after = Math.max(8,Math.min(40,before+d));
+  // For custom, the pours are absolute grams, so scale them with the dose to keep
+  // the recipe's shape (and budget balance). Built-in methods rescale themselves.
+  if(settings.method === 'custom' && after !== before) scaleCustomPours(customBudget(), Math.round(after * settings.customRatio));
+  settings.dose = after;
+  saveSettings(); applySettings();
+}
+// Rescale custom pours from one water budget to another, preserving proportions.
+// Any rounding remainder lands in the last pour so the budget always balances exactly.
+function scaleCustomPours(oldBudget, newBudget) {
+  if(!oldBudget) return;
+  const pours = settings.customPours;
+  let allocated = 0;
+  pours.forEach((p, i) => {
+    if(i < pours.length - 1) { p.g = Math.max(1, Math.round(p.g * newBudget / oldBudget)); allocated += p.g; }
+  });
+  pours[pours.length-1].g = Math.max(1, newBudget - allocated);
+}
 function setMethod(m) { settings.method=m; if(m !== 'custom') settings.dose=METHODS[m].dose; saveSettings(); applySettings(); }
 
 function ratioLabel(r) { return (r % 1 ? r.toFixed(1) : r) + ':1'; }
