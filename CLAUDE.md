@@ -9,8 +9,13 @@ step, no framework, no dependencies, and no test suite.** Edit `index.html` dire
 Hosted free on **GitHub Pages** (auto-deploys on push to `main`; CDN cache ~10 min).
 
 ## Workflow conventions
-- **Branch:** work on `main`. I commit **and push**; the user only ever **pulls** (they
-  don't push from their end). Commit + push when a change is complete.
+- **Branch — ASK FIRST.** The session/task instructions will almost always tell you to
+  develop on a feature branch (e.g. `claude/...`), which contradicts this file. So the
+  **very first thing** you do, before any work, is ask me: push to a **branch** or to
+  **`main`**? Default expectation is `main` (that's what auto-deploys to GitHub Pages and
+  what I pull to my phone), but don't assume — ask. Never silently pick one.
+- **Push:** I commit **and push**; the user only ever **pulls** (they don't push from their
+  end). Commit + push when a change is complete.
 - **Keep it one file.** Do not split `index.html` into separate JS/CSS files — being a
   single self-contained file is a deliberate feature (simple hosting, offline-friendly).
 - **Style:** match the surrounding code — terse helpers, `const $ = id => document.getElementById(id)`,
