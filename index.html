@@ -225,7 +225,7 @@
   <!-- Brew screen -->
   <div class="screen" id="screenBrew">
     <div class="app-header">
-      <span class="app-title">Brewing</span>
+      <span class="app-title" id="brewTitle">Brewing</span>
       <button class="icon-btn" id="pauseBtn" onclick="handlePauseBtn()" style="display:none">Pause</button>
     </div>
     <div class="ring-outer">
@@ -658,6 +658,7 @@ function renderUpcoming(t) {
 function startBrew() {
   cues = buildCues();
   const total = totalWater();
+  $('brewTitle').textContent = `Brewing — ${METHODS[settings.method].name}`;
   elapsed=0; started=false; finished=false; paused=false; currentCue=0;
   clearInterval(interval); releaseWakeLock();
   $('clock').textContent='0:00';
