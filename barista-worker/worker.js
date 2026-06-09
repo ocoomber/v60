@@ -17,7 +17,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:8080",        // local testing (optional)
 ];
 const MAX_INPUT_CHARS = 600;      // reject anything longer (abuse / runaway guard)
-const MAX_OUTPUT_TOKENS = 400;    // keep replies short and cheap
+const MAX_OUTPUT_TOKENS = 600;    // keep replies short and cheap (also leaves headroom so answers aren't cut off)
 // -------------------------------------
 
 const SYSTEM_PROMPT = `You are "Barista", a friendly, concise expert on pour-over coffee, especially the Hario V60.
@@ -80,7 +80,15 @@ async function callModel(env, message, history, brew) {
         parts: [{ text: `${SYSTEM_PROMPT}\n\nThe user's current recipe:\n${brewToText(brew)}` }],
       },
       contents,
-      generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS, temperature: 0.5 },
+      generationConfig: {
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
+        temperature: 0.5,
+        // gemini-2.5-flash is a "thinking" model: by default it spends hidden
+        // reasoning tokens that count against maxOutputTokens, which left replies
+        // truncated mid-sentence (or empty → "couldn't reach the kitchen"). We don't
+        // need deliberation for short brewing tips, so turn thinking off.
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     }),
   });
 
@@ -91,6 +99,8 @@ async function callModel(env, message, history, brew) {
   }
   const data = await res.json();
   const reply = (data?.candidates?.[0]?.content?.parts?.map(p => p.text).join("") || "").trim();
+  // Return whatever text we got even if the model stopped early (MAX_TOKENS), rather
+  // than discarding a partial answer. Only treat a truly empty response as a failure.
   if (!reply) throw new Error("empty");
   return reply;
 }
