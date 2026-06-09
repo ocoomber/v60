@@ -31,6 +31,11 @@ Hosted free on **GitHub Pages** (auto-deploys on push to `main`; CDN cache ~10 m
   `custom`. Each has a `build(dose, ratio)` returning timed **cues** `{at, action, detail,
   water, phase}`. `water` is cumulative.
 - `totalWater()` = dose × method ratio (for custom = sum of the pours).
+- **Brew-step wording is standardised to cumulative scale targets:** every pour cue's
+  `action` reads **`Pour to ${water}g`** (pour until the scale reads X — the user tares once
+  and watches a running total). `water` is cumulative for all methods. Do NOT phrase steps
+  as increments ("add Xg") in the brew cues. (The Custom *editor* is the exception: there you
+  allocate a per-pour gram **budget**, shown with a cumulative "→ Xg total" hint.)
 - **Custom = a water budget.** `dose × customRatio` is the budget; `customPours` are
   per-pour gram **increments** (`{at, g}`) that should sum to it. The editor shows a budget
   bar (under/ok/over) and **locks Start brew until it balances**.
