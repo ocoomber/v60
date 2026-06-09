@@ -505,10 +505,10 @@ const METHODS = {
       const total = Math.round(dose*ratio), bloom = Math.round(dose*2);
       const p1 = Math.round(total*0.52), p2 = Math.round(total*0.80);
       return [
-        { at:0,   action:`Pour bloom — ${bloom}g`,       detail:'Pour evenly over the grounds to saturate fully. Then wait.',        water:bloom, phase:'Bloom' },
-        { at:45,  action:`First pour — up to ${p1}g`,    detail:'Slow spiral from centre outward. Keep it steady.',                  water:p1,    phase:'First pour' },
-        { at:75,  action:`Second pour — up to ${p2}g`,   detail:`Same spiral pattern, bring total to ${p2}g.`,                       water:p2,    phase:'Second pour' },
-        { at:105, action:`Final pour — ${total}g total`, detail:`Pour remaining water to ${total}g. Don't let the bed run dry.`,     water:total, phase:'Final pour' },
+        { at:0,   action:`Pour to ${bloom}g`,  detail:'Bloom: pour evenly over the grounds to saturate fully, then wait.',          water:bloom, phase:'Bloom' },
+        { at:45,  action:`Pour to ${p1}g`,     detail:`Slow spiral from centre outward, until the scale reads ${p1}g.`,            water:p1,    phase:'First pour' },
+        { at:75,  action:`Pour to ${p2}g`,     detail:`Same spiral pattern, until the scale reads ${p2}g.`,                        water:p2,    phase:'Second pour' },
+        { at:105, action:`Pour to ${total}g`,  detail:`Pour to ${total}g total. Don't let the bed run dry.`,                       water:total, phase:'Final pour' },
         { at:180, action:'Almost there',                 detail:'Target finish: 3:00–3:30. Watch the draw down.',                    water:total, phase:'Draw down' },
         { at:210, action:'Done — enjoy',                 detail:'Total brew time in range. Grind finer if fast, coarser if slow.',   water:total, phase:'Done' }
       ];
@@ -521,9 +521,9 @@ const METHODS = {
       const total = Math.round(dose*ratio), bloom = Math.round(dose*2);
       const p1 = Math.round(total*0.6);
       return [
-        { at:0,   action:`Bloom — ${bloom}g`,                 detail:'Pour 2× the coffee weight, then swirl the V60 to wet every ground. Let it bloom until 0:45.', water:bloom, phase:'Bloom · swirl' },
-        { at:45,  action:`First pour — up to ${p1}g (60%)`,   detail:`Pour steadily, reaching ${p1}g by about 1:15. Aim for the centre and spiral out.`,            water:p1,    phase:'Pour 1 · 0:45–1:15' },
-        { at:75,  action:`Second pour — up to ${total}g`,     detail:`Slow down and top up to ${total}g by about 1:45, keeping the slurry high.`,                    water:total, phase:'Pour 2 · 1:15–1:45' },
+        { at:0,   action:`Pour to ${bloom}g`,  detail:'Bloom: pour 2× the coffee weight, then swirl the V60 to wet every ground. Wait until 0:45.', water:bloom, phase:'Bloom · swirl' },
+        { at:45,  action:`Pour to ${p1}g`,     detail:`Pour steadily to ${p1}g (60%) by about 1:15. Aim for the centre and spiral out.`,           water:p1,    phase:'Pour 1 · 0:45–1:15' },
+        { at:75,  action:`Pour to ${total}g`,  detail:`Slow down and pour to ${total}g by about 1:45, keeping the slurry high.`,                   water:total, phase:'Pour 2 · 1:15–1:45' },
         { at:105, action:'Stir, then swirl',                  detail:'Stir once clockwise and once anticlockwise to knock grounds off the wall, then gently swirl to flatten the bed.', water:total, phase:'Stir & swirl' },
         { at:195, action:'Draw down',                         detail:'Let it drain. The bed should be flat and even — a good draw down finishes around 3:30.',       water:total, phase:'Draw down' },
         { at:210, action:'Done — enjoy',                      detail:'Target ~3:15–3:45. Faster than that? Grind finer next time. Slower? Grind coarser.',          water:total, phase:'Done' }
@@ -536,11 +536,11 @@ const METHODS = {
     build(dose, ratio) {
       const total = Math.round(dose*ratio), s = f => Math.round(total*f);
       return [
-        { at:0,   action:`Pour 1 — to ${s(0.2)}g`, detail:'First two pours (the 40%) set sweetness vs acidity. Equal pours = balanced.', water:s(0.2), phase:'Pour 1 · 40%' },
-        { at:45,  action:`Pour 2 — to ${s(0.4)}g`, detail:'Second pour completes the first 40% of the water.',                            water:s(0.4), phase:'Pour 2 · 40%' },
-        { at:90,  action:`Pour 3 — to ${s(0.6)}g`, detail:'Now the 60% — these three pours build strength.',                              water:s(0.6), phase:'Pour 3 · 60%' },
-        { at:135, action:`Pour 4 — to ${s(0.8)}g`, detail:'Keep the pours even and gentle.',                                              water:s(0.8), phase:'Pour 4 · 60%' },
-        { at:180, action:`Pour 5 — to ${total}g`,  detail:`Final pour to ${total}g total.`,                                              water:total,  phase:'Pour 5 · 60%' },
+        { at:0,   action:`Pour to ${s(0.2)}g`, detail:'First two pours (the 40%) set sweetness vs acidity. Equal pours = balanced.', water:s(0.2), phase:'Pour 1 · 40%' },
+        { at:45,  action:`Pour to ${s(0.4)}g`, detail:'Second pour completes the first 40% of the water.',                            water:s(0.4), phase:'Pour 2 · 40%' },
+        { at:90,  action:`Pour to ${s(0.6)}g`, detail:'Now the 60% — these three pours build strength.',                              water:s(0.6), phase:'Pour 3 · 60%' },
+        { at:135, action:`Pour to ${s(0.8)}g`, detail:'Keep the pours even and gentle.',                                              water:s(0.8), phase:'Pour 4 · 60%' },
+        { at:180, action:`Pour to ${total}g`,  detail:`Final pour to ${total}g total.`,                                              water:total,  phase:'Pour 5 · 60%' },
         { at:210, action:'Done — enjoy',           detail:'Target finish ~3:30. Grind coarser if it stalls.',                            water:total,  phase:'Done' }
       ];
     }
@@ -555,8 +555,8 @@ const METHODS = {
         cum += p.g;
         return {
           at: p.at,
-          action: `Pour ${i+1} — ${p.g}g`,
-          detail: i===0 ? `Pour ${p.g}g to bloom and saturate the grounds. Running total: ${cum}g.` : `Add ${p.g}g — running total ${cum}g.`,
+          action: `Pour to ${cum}g`,
+          detail: i===0 ? `Pour to ${cum}g to bloom and saturate the grounds.` : `Pour until the scale reads ${cum}g.`,
           water: cum,
           phase: `Pour ${i+1}`
         };
