@@ -118,6 +118,14 @@
   .load-lbl { font-size: 12px; color: var(--text3); margin-right: 2px; }
   .chip { font-size: 12px; padding: 5px 10px; border-radius: 20px; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); cursor: pointer; }
   .chip:hover { background: var(--bg2); }
+  #savedChips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .saved-item { display: inline-flex; align-items: center; }
+  .saved-item .chip { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; }
+  .chip-x { border: 0.5px solid var(--border2); border-top-right-radius: 20px; border-bottom-right-radius: 20px; background: var(--bg); color: var(--text3); cursor: pointer; font-size: 14px; line-height: 1; padding: 5px 9px; }
+  .chip-x:hover { background: var(--bg2); color: var(--text); }
+  .save-row { display: flex; gap: 8px; margin-top: 10px; }
+  .save-row input { flex: 1; min-width: 0; padding: 9px 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-size: 16px; }
+  .save-row .btn-secondary { width: auto; }
   .cknob { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
   .cknob-lbl { font-size: 13px; color: var(--text2); }
   .cknob .stepper { flex: 0 0 auto; padding: 6px 12px; gap: 10px; }
@@ -197,6 +205,7 @@
         <button class="chip" onclick="loadRecipe('hoffmann')">Hoffmann</button>
         <button class="chip" onclick="loadRecipe('kasuya')">Kasuya</button>
       </div>
+      <div class="load-row" id="savedRow" style="display:none"><span class="load-lbl">My recipes</span><span id="savedChips"></span></div>
       <div class="cknob"><span class="cknob-lbl">Water ratio</span>
         <div class="stepper">
           <button class="step-btn" onclick="adjustCustomRatio(-1)">−</button>
@@ -207,6 +216,7 @@
       <div class="budget" id="budgetBar"></div>
       <div id="pourEditor"></div>
       <div class="pour-add"><button class="btn-secondary" onclick="addPour()">+ Add pour</button></div>
+      <div class="save-row"><input id="recipeName" type="text" placeholder="Name this recipe" maxlength="24"><button class="btn-secondary" onclick="saveCurrentRecipe()">Save</button></div>
     </div>
     <div class="summary" id="summaryCard"></div>
     <button class="btn-go" id="startBtn" onclick="startBrew()">Start brew</button>
@@ -317,7 +327,7 @@ let baristaHistory = [], baristaBusy = false;
 // plus a time. Dose × customRatio is the water budget the pours should add up to.
 const DEFAULT_POURS = [ {at:0,g:48}, {at:45,g:48}, {at:90,g:48}, {at:135,g:48}, {at:180,g:48} ];
 
-let settings = { dose:15, method:'balanced', customRatio:16, customPours: DEFAULT_POURS.map(p => ({...p})) };
+let settings = { dose:15, method:'balanced', customRatio:16, customPours: DEFAULT_POURS.map(p => ({...p})), savedRecipes: [] };
 let elapsed=0, interval=null, started=false, finished=false, paused=false, currentCue=0, cues=[];
 let noSleep=null, audioCtx=null;
 
@@ -333,6 +343,7 @@ function loadSettings() {
     settings.customPours = DEFAULT_POURS.map(p => ({...p}));
   }
   if(typeof settings.customRatio !== 'number') settings.customRatio = 16;
+  if(!Array.isArray(settings.savedRecipes)) settings.savedRecipes = [];
   applySettings();
 }
 function saveSettings() {
@@ -346,7 +357,7 @@ function applySettings() {
     : (settings.dose === m.dose ? `${m.name} suggests ${m.dose}g` : `${m.name} suggests ${m.dose}g · you set ${settings.dose}g`);
   document.querySelectorAll('#methodSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.method));
   $('methodNote').textContent = m.note;
-  if(settings.method === 'custom') { $('customGroup').style.display = 'block'; $('cRatioVal').textContent = ratioLabel(settings.customRatio); renderBudget(); renderPourEditor(); }
+  if(settings.method === 'custom') { $('customGroup').style.display = 'block'; $('cRatioVal').textContent = ratioLabel(settings.customRatio); renderBudget(); renderPourEditor(); renderSavedRecipes(); }
   else $('customGroup').style.display = 'none';
   // Lock Start brew until a custom recipe spends its whole water budget.
   const balanced = settings.method !== 'custom' || customBudget() === settings.customPours.reduce((s, p) => s + p.g, 0);
@@ -445,6 +456,42 @@ function loadRecipe(name) {
   settings.customPours = pours;
   settings.method = 'custom';
   saveSettings(); applySettings();
+}
+
+// --- Save / load named custom recipes (stored in settings.savedRecipes) ---
+function saveCurrentRecipe() {
+  const name = $('recipeName').value.trim();
+  if(!name) return;
+  const recipe = { name, dose: settings.dose, ratio: settings.customRatio, pours: settings.customPours.map(p => ({...p})) };
+  const i = settings.savedRecipes.findIndex(r => r.name === name);
+  if(i >= 0) settings.savedRecipes[i] = recipe;       // overwrite by name
+  else settings.savedRecipes.push(recipe);
+  $('recipeName').value = '';
+  saveSettings(); applySettings();
+}
+function loadSavedRecipe(name) {
+  const r = settings.savedRecipes.find(r => r.name === name);
+  if(!r) return;
+  settings.dose = r.dose;
+  settings.customRatio = r.ratio;
+  settings.customPours = r.pours.map(p => ({...p}));
+  settings.method = 'custom';
+  saveSettings(); applySettings();
+}
+function deleteSavedRecipe(name) {
+  settings.savedRecipes = settings.savedRecipes.filter(r => r.name !== name);
+  saveSettings(); applySettings();
+}
+function renderSavedRecipes() {
+  const list = settings.savedRecipes;
+  $('savedRow').style.display = list.length ? 'flex' : 'none';
+  const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const arg = s => s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  $('savedChips').innerHTML = list.map(r => `
+    <span class="saved-item">
+      <button class="chip" onclick="loadSavedRecipe('${esc(arg(r.name))}')">${esc(r.name)}</button>
+      <button class="chip-x" onclick="deleteSavedRecipe('${esc(arg(r.name))}')" aria-label="Delete">×</button>
+    </span>`).join('');
 }
 
 // Each method owns its ratio and a suggested dose, and builds its own list of
