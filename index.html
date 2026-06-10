@@ -328,7 +328,7 @@ let baristaHistory = [], baristaBusy = false;
 const DEFAULT_POURS = [ {at:0,g:48}, {at:45,g:48}, {at:90,g:48}, {at:135,g:48}, {at:180,g:48} ];
 
 let settings = { dose:15, method:'balanced', customRatio:16, customPours: DEFAULT_POURS.map(p => ({...p})), savedRecipes: [] };
-let elapsed=0, interval=null, started=false, finished=false, paused=false, currentCue=0, cues=[];
+let elapsed=0, startTs=0, interval=null, started=false, finished=false, paused=false, currentCue=0, cues=[];
 let noSleep=null, audioCtx=null;
 
 const $ = id => document.getElementById(id);
@@ -344,6 +344,11 @@ function loadSettings() {
   }
   if(typeof settings.customRatio !== 'number') settings.customRatio = 16;
   if(!Array.isArray(settings.savedRecipes)) settings.savedRecipes = [];
+  // Drop saved recipes from older storage shapes (e.g. fraction-based pours).
+  settings.savedRecipes = settings.savedRecipes.filter(r => r && typeof r.name === 'string'
+    && typeof r.dose === 'number' && typeof r.ratio === 'number'
+    && Array.isArray(r.pours) && r.pours.length >= 2
+    && r.pours.every(p => p && typeof p.g === 'number' && typeof p.at === 'number'));
   applySettings();
 }
 function saveSettings() {
@@ -382,15 +387,24 @@ function adjustDose(d) {
   saveSettings(); applySettings();
 }
 // Rescale custom pours from one water budget to another, preserving proportions.
-// Any rounding remainder lands in the last pour so the budget always balances exactly.
+// The total scales by the same factor as the budget, so a recipe that was 10g under
+// stays proportionally under (mid-edit allocations aren't silently rebalanced).
+// Rounding remainder lands in the last pour; if rounding pushes the earlier pours
+// past the target, the deficit is clawed back from them so every pour stays ≥ 1g.
 function scaleCustomPours(oldBudget, newBudget) {
   if(!oldBudget) return;
   const pours = settings.customPours;
+  const target = Math.round(pours.reduce((s, p) => s + p.g, 0) * newBudget / oldBudget);
   let allocated = 0;
   pours.forEach((p, i) => {
     if(i < pours.length - 1) { p.g = Math.max(1, Math.round(p.g * newBudget / oldBudget)); allocated += p.g; }
   });
-  pours[pours.length-1].g = Math.max(1, newBudget - allocated);
+  let last = target - allocated;
+  for(let i = pours.length - 2; i >= 0 && last < 1; i--) {
+    const take = Math.min(pours[i].g - 1, 1 - last);
+    pours[i].g -= take; last += take;
+  }
+  pours[pours.length-1].g = Math.max(1, last);
 }
 function setMethod(m) { settings.method=m; if(m !== 'custom') settings.dose=METHODS[m].dose; saveSettings(); applySettings(); }
 
@@ -407,7 +421,10 @@ function totalWater() {
 // customRatio sets the budget (dose × ratio); pours are gram amounts that should add up to it.
 function customBudget() { return Math.round(settings.dose * settings.customRatio); }
 function adjustCustomRatio(dir) {
-  settings.customRatio = +Math.max(12, Math.min(20, settings.customRatio + dir*0.5)).toFixed(1);
+  const next = +Math.max(12, Math.min(20, settings.customRatio + dir*0.5)).toFixed(1);
+  // Scale the pours with the new budget, same as a dose change does.
+  if(next !== settings.customRatio) scaleCustomPours(customBudget(), Math.round(settings.dose * next));
+  settings.customRatio = next;
   saveSettings(); applySettings();
 }
 function renderBudget() {
@@ -595,7 +612,7 @@ function updateRing(t) {
   const start = cues[idx].at;
   const end = idx < cues.length - 1 ? cues[idx + 1].at : start + 1;
   const duration = end - start;
-  const progress = duration > 0 ? Math.min(1, (t - start) / duration) : 1;
+  const progress = duration > 0 ? Math.max(0, Math.min(1, (t - start) / duration)) : 1;
   const offset = RING_CIRC * (1 - progress);
   const ring = $('ringFill');
   if(ring) {
@@ -678,7 +695,9 @@ function startBrew() {
 }
 
 function tick() {
-  elapsed++;
+  // Derive elapsed from the wall clock, not tick counts: setInterval drifts and is
+  // throttled in background tabs, so this catches up after the app loses focus.
+  elapsed = Math.round((Date.now() - startTs) / 1000);
   $('clock').textContent = fmt(elapsed);
   updateRing(elapsed);
   const total = totalWater();
@@ -719,6 +738,7 @@ async function handleBrewBtn() {
     $('pauseBtn').textContent='Pause';
     paused=false;
     renderUpcoming(0); beep('cue');
+    startTs = Date.now();
     interval = setInterval(tick, 1000);
   } else {
     clearInterval(interval); paused=false;
@@ -736,6 +756,7 @@ function handlePauseBtn() {
     btn.textContent='Resume';
     $('clock').className='clock';
   } else {
+    startTs = Date.now() - elapsed*1000; // resume the wall clock where it paused
     interval = setInterval(tick, 1000);
     btn.textContent='Pause';
     $('clock').className='clock running';
@@ -823,6 +844,11 @@ function buildHelp() {
 
 buildHelp();
 loadSettings();
+
+// Catch the timer up immediately when the app regains focus mid-brew.
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && started && !paused && !finished) tick();
+});
 
 // Acquire wake lock on first user interaction so screen stays on across both screens
 document.addEventListener('click', function initWakeLock() {

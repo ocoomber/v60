@@ -25,8 +25,10 @@ Hosted free on **GitHub Pages** (auto-deploys on push to `main`; CDN cache ~10 m
 
 ## How to verify (no live browser here)
 - Extract the app script and syntax-check it:
-  `awk '/^<script>$/{n++} n==2 && !/^<script>$/ && !/^<\/script>$/{print}' index.html > /tmp/app.js && node --check /tmp/app.js`
-  (the file has two `<script>` blocks; block 2 is the app — block 1 is NoSleep.js).
+  `awk 'n==1 && /^<\/script>$/{exit} /^<script>$/{n=1; next} n==1{print}' index.html > /tmp/app.js && node --check /tmp/app.js`
+  (the file has two `<script>` blocks: NoSleep.js opens as `<script>/*!…` on one line, so
+  the app block's `<script>` is the only one on a line by itself. Sanity-check that
+  `/tmp/app.js` is non-empty — an empty extraction passes `node --check`.)
 - I **cannot** run the app or hit the network here, so reason through logic and flag that
   real-device testing is still needed. The user tests on their phone after pulling.
 
