@@ -66,7 +66,9 @@ async function callModel(env, message, history, brew) {
     if (!turn || typeof turn.text !== "string") continue;
     contents.push({
       role: turn.role === "barista" ? "model" : "user",
-      parts: [{ text: turn.text }],
+      // History is client-supplied: cap each turn so a crafted payload can't
+      // smuggle in huge prompts past the MAX_INPUT_CHARS guard on `message`.
+      parts: [{ text: turn.text.slice(0, MAX_INPUT_CHARS) }],
     });
   }
   contents.push({ role: "user", parts: [{ text: message }] });
