@@ -15,6 +15,8 @@
     --green-dark: #0F6E56;
     --green-light: #E1F5EE;
     --green-teal: #5DCAA5;
+    --crema: #B9743E;
+    --font-display: 'SF Pro Rounded', ui-rounded, 'Segoe UI', system-ui, sans-serif;
     --bg: #ffffff;
     --bg2: #f5f5f3;
     --bg3: #eeede9;
@@ -37,6 +39,7 @@
       --border: rgba(255,255,255,0.12);
       --border2: rgba(255,255,255,0.22);
       --green-light: #0a3d2a;
+      --crema: #D69A6B;
     }
   }
   body {
@@ -78,7 +81,7 @@
   .step-btn:hover { background: var(--bg3); }
   .summary { background: var(--bg2); border-radius: var(--radius-lg); padding: 14px 16px; margin: 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .sum-item { text-align: center; }
-  .sum-val { font-size: 20px; font-weight: 600; color: var(--text); }
+  .sum-val { font-family: var(--font-display); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
   .sum-lbl { font-size: 11px; color: var(--text3); margin-top: 3px; }
   .btn-go { background: var(--green); border: none; border-radius: var(--radius-lg); color: #fff; font-size: 16px; font-weight: 600; padding: 14px; cursor: pointer; width: 100%; transition: background 0.15s; }
   .btn-go:hover { background: var(--green-dark); }
@@ -88,7 +91,7 @@
   #screenSettings { justify-content: space-between; gap: 12px; overflow-y: auto; }
   .method-note { font-size: 12px; color: var(--text2); line-height: 1.5; margin-top: 8px; }
   .dose-stepper { padding: 14px 18px; justify-content: center; gap: 20px; }
-  .dose-stepper .step-val { font-size: 32px; min-width: 70px; }
+  .dose-stepper .step-val { font-family: var(--font-display); font-size: 34px; font-weight: 600; min-width: 70px; }
   .dose-stepper .step-btn { width: 44px; height: 44px; font-size: 24px; }
   .dose-hint { font-size: 12px; color: var(--text3); margin-top: 8px; text-align: center; }
   .help-scroll { flex: 1; overflow-y: auto; margin-top: 4px; }
@@ -152,11 +155,13 @@
   .ring-track { fill: none; stroke: var(--bg3); stroke-width: 6; }
   .ring-fill { fill: none; stroke: var(--green-teal); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
   .ring-fill.done-ring { stroke: var(--green); }
-  .ring-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .clock { font-size: 58px; font-weight: 300; font-variant-numeric: tabular-nums; color: var(--text); line-height: 1; letter-spacing: -2px; transition: color 0.3s; }
+  .ring-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+  .target { font-family: var(--font-display); font-size: 56px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); line-height: 0.95; letter-spacing: -1px; }
+  .target .unit { font-size: 26px; font-weight: 600; color: var(--crema); margin-left: 1px; }
+  .clock { font-size: 22px; font-weight: 400; font-variant-numeric: tabular-nums; color: var(--text3); line-height: 1; transition: color 0.3s; }
   .clock.running { color: var(--green); }
   .clock.done-c { color: var(--text3); }
-  .phase { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin: 0; text-align: center; }
+  .phase { font-size: 11px; color: var(--crema); text-transform: uppercase; letter-spacing: 0.12em; margin: 0 0 2px; text-align: center; font-weight: 600; }
   .prompt-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; margin: 0; min-height: 80px; transition: border-color 0.3s; }
   .prompt-action { font-size: 20px; font-weight: 600; color: var(--text); margin: 0 0 6px; }
   .prompt-detail { font-size: 14px; color: var(--text2); line-height: 1.6; }
@@ -174,6 +179,10 @@
   .brew-actions .btn-go { flex: 1; }
   .flash { animation: fl 0.6s ease; }
   @keyframes fl { 0%,100% { border-color: var(--green); } 50% { border-color: var(--green-teal); box-shadow: 0 0 0 3px var(--green-light); } }
+  @media (prefers-reduced-motion: reduce) {
+    .flash { animation: none; }
+    .ring-fill, .water-fill, .clock, .target { transition: none; }
+  }
 </style>
 </head>
 <body>
@@ -235,8 +244,9 @@
           stroke-dasharray="552.9" stroke-dashoffset="552.9"/>
       </svg>
       <div class="ring-inner">
-        <div class="clock" id="clock">0:00</div>
         <div class="phase" id="phaseLbl">Ready</div>
+        <div class="target" id="targetWeight">0<span class="unit">g</span></div>
+        <div class="clock" id="clock">0:00</div>
       </div>
     </div>
     <div class="prompt-card" id="promptCard">
@@ -654,7 +664,12 @@ function releaseWakeLock() {
   try { if(noSleep) noSleep.disable(); } catch(e) {}
 }
 
+// The big number inside the ring is "what the scale should read now" — the
+// cumulative target for the current cue. Keep the unit span out of the numerals.
+function setTarget(g) { $('targetWeight').innerHTML = `${g}<span class="unit">g</span>`; }
+
 function showCue(c, total) {
+  setTarget(c.water);
   $('promptAction').textContent = c.action;
   $('promptDetail').textContent = c.detail;
   $('phaseLbl').textContent = c.phase;
@@ -680,6 +695,7 @@ function startBrew() {
   clearInterval(interval); releaseWakeLock();
   $('clock').textContent='0:00';
   $('clock').className='clock';
+  setTarget(total);
   const ring = $('ringFill');
   if(ring) { ring.style.strokeDashoffset = RING_CIRC; ring.classList.remove('done-ring'); }
   $('phaseLbl').textContent='Ready';
