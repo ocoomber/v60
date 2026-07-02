@@ -18,6 +18,9 @@ awk 'n==1 && /^<\/script>$/{exit} /^<script>$/{n=1; next} n==1{print}' index.htm
 - **Default to `main`.** Push to `main` unless the user says otherwise.
 - Commit + push when a change is complete; the user only pulls.
 
+## PWA & testing
+- **Primarily Android-tested.** The app is used as a PWA via Chrome on Android. After pushing, the phone may serve a cached version — force an update by opening `https://ocoomber.github.io/v60/` in Chrome (not the PWA standalone window) and hard-reloading. Then reopen the PWA.
+
 ## Code constraints
 - **Keep it one file.** Do not split `index.html` into separate JS/CSS files. Single self-contained file is a deliberate feature.
 - **Code style:** terse helpers, `const $ = id => document.getElementById(id)`, `innerHTML` templates, CSS custom properties. Reuse existing helpers (`saveSettings`, `applySettings`, `showScreen`, `buildCues`, `fmt`, `totalWater`) rather than adding parallel ones.
