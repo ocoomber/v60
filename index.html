@@ -235,7 +235,10 @@
   <div class="screen" id="screenBrew">
     <div class="app-header">
       <span class="app-title" id="brewTitle">Brewing</span>
-      <button class="icon-btn" id="pauseBtn" onclick="handlePauseBtn()" style="display:none">Pause</button>
+      <span class="hdr-btns">
+        <button class="icon-btn" id="pauseBtn" onclick="handlePauseBtn()" style="display:none">Pause</button>
+        <button class="icon-btn" onclick="brewToBarista()">Barista</button>
+      </span>
     </div>
     <div class="ring-outer">
       <svg class="ring-svg" viewBox="0 0 200 200">
@@ -303,7 +306,7 @@
 
   <!-- Barista screen -->
   <div class="screen" id="screenBarista">
-    <div class="app-header"><span class="app-title">Barista</span><button class="icon-btn" onclick="showScreen('settings')">Done</button></div>
+    <div class="app-header"><span class="app-title">Barista</span><button class="icon-btn" id="baristaBackBtn" onclick="baristaBack()">Done</button></div>
     <div class="chat" id="chatLog"></div>
     <div class="chat-chips">
       <button class="chip" onclick="baristaQuick('My brew drained too fast — what should I change?')">Too fast</button>
@@ -779,7 +782,29 @@ function handlePauseBtn() {
   }
 }
 
-function backToSettings() { clearInterval(interval); showScreen('settings'); }
+function backToSettings() {
+  if(started && !finished && !paused) {
+    clearInterval(interval); interval=null;
+    paused = true;
+    $('pauseBtn').textContent = 'Resume';
+    $('clock').className = 'clock';
+  }
+  showScreen('settings');
+}
+
+function brewToBarista() {
+  if(started && !finished && !paused) {
+    clearInterval(interval); interval=null;
+    paused = true;
+    $('pauseBtn').textContent = 'Resume';
+    $('clock').className = 'clock';
+  }
+  openBarista();
+}
+
+function baristaBack() {
+  showScreen(started && !finished ? 'brew' : 'settings');
+}
 
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -813,6 +838,7 @@ function openBarista() {
   if(!$('chatLog').childElementCount) {
     addBaristaMsg('bot', "Hi! I'm your brewing assistant. Tell me how your cup turned out — too sour, too bitter, draining too fast — and I'll help you dial it in.");
   }
+  $('baristaBackBtn').textContent = started && !finished ? 'Back to brew' : 'Done';
   showScreen('barista');
 }
 function baristaQuick(text) { $('chatText').value = text; baristaSend(); }
