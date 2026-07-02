@@ -106,6 +106,7 @@
   .help-k { font-size: 14px; font-weight: 500; color: var(--text); }
   .help-v { font-size: 14px; color: var(--green); font-variant-numeric: tabular-nums; }
   .help-note { font-size: 12px; color: var(--text3); line-height: 1.45; margin-top: 2px; }
+  .help-version { margin-top: 28px; padding-top: 12px; border-top: 0.5px solid var(--border); font-size: 11px; color: var(--text3); text-align: center; }
   .hdr-btns { display: flex; gap: 8px; }
   #screenBarista { gap: 10px; }
   .chat { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
@@ -301,6 +302,7 @@
         <p class="help-p"><b>Dose:</b> pick a method, then set how much coffee you want to spend — water and every pour scale to it.</p>
         <p class="help-p"><b>Custom:</b> each pour is a cumulative target. Make pour 1 smaller than pour 2 for a sweeter cup, or the reverse for more brightness.</p>
       </details>
+      <div class="help-version" id="helpVersion"></div>
     </div>
   </div>
 
@@ -330,6 +332,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
+const APP_VERSION = '2026-07-02';
 const RING_CIRC = 552.9; // circumference of the progress ring (2π × r, r=88); matches the SVG
 const BARISTA_URL = "https://v60-barista.ocoomber.workers.dev"; // Cloudflare Worker proxy (see barista-worker/README.md)
 let baristaHistory = [], baristaBusy = false;
@@ -882,6 +885,7 @@ function buildHelp() {
   $('helpMethods').innerHTML = Object.entries(METHODS).filter(([k]) => k !== 'custom').map(([,m]) => `
     <div class="help-row"><span class="help-k">${m.name}</span><span class="help-v">${m.ratio % 1 ? m.ratio.toFixed(1) : m.ratio}:1</span></div>
     <p class="help-note">${m.note}</p>`).join('');
+  $('helpVersion').textContent = `v60 ${APP_VERSION}`;
 }
 
 buildHelp();
