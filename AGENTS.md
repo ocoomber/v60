@@ -22,7 +22,7 @@ awk 'n==1 && /^<\/script>$/{exit} /^<script>$/{n=1; next} n==1{print}' index.htm
 - **Keep it one file.** Do not split `index.html` into separate JS/CSS files. Single self-contained file is a deliberate feature.
 - **Code style:** terse helpers, `const $ = id => document.getElementById(id)`, `innerHTML` templates, CSS custom properties. Reuse existing helpers (`saveSettings`, `applySettings`, `showScreen`, `buildCues`, `fmt`, `totalWater`) rather than adding parallel ones.
 - **Ring circumference:** `RING_CIRC = 552.9` (2pi*88) — used in JS and as a literal in SVG markup. Keep them in sync if either changes.
-- **Version bump:** Update `APP_VERSION` in `index.html` to today's date (add a `.2`, `.3` … suffix if multiple commits in one day, e.g. `2026-07-02.2`) on every change.
+- **Version bump:** Update `APP_VERSION` in `index.html` to today's date (add a `.2`, `.3` … suffix if multiple commits in one day, e.g. `2026-07-02.2`). Start each day at `.1`.
 
 ## Brew-step wording (important)
 - All brew cues use **cumulative scale targets**: `Pour to `${water}g` (not incremental "add Xg"). The user tares once and watches a running total.
