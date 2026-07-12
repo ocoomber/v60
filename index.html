@@ -332,7 +332,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-07-02.1';
+const APP_VERSION = '2026-07-12.1';
 const RING_CIRC = 552.9; // circumference of the progress ring (2π × r, r=88); matches the SVG
 const BARISTA_URL = "https://v60-barista.ocoomber.workers.dev"; // Cloudflare Worker proxy (see barista-worker/README.md)
 let baristaHistory = [], baristaBusy = false;
@@ -344,7 +344,7 @@ let baristaHistory = [], baristaBusy = false;
 const DEFAULT_POURS = [ {at:0,g:48}, {at:45,g:48}, {at:90,g:48}, {at:135,g:48}, {at:180,g:48} ];
 
 let settings = { dose:15, method:'balanced', customRatio:16, customPours: DEFAULT_POURS.map(p => ({...p})), savedRecipes: [] };
-let elapsed=0, startTs=0, interval=null, started=false, finished=false, paused=false, currentCue=0, cues=[];
+let elapsed=0, startTs=0, interval=null, started=false, finished=false, paused=false, fromBrew=false, currentCue=0, cues=[];
 let noSleep=null, audioCtx=null;
 
 const $ = id => document.getElementById(id);
@@ -712,8 +712,7 @@ function startBrew() {
   $('brewBtn').className='btn-go';
   $('pauseBtn').style.display='none';
   renderUpcoming(-1);
-  $('screenSettings').classList.remove('active');
-  $('screenBrew').classList.add('active');
+  showScreen('brew');
 }
 
 function tick() {
@@ -782,6 +781,7 @@ function handlePauseBtn() {
     interval = setInterval(tick, 1000);
     btn.textContent='Pause';
     $('clock').className='clock running';
+    acquireWakeLock();
   }
 }
 
@@ -791,7 +791,9 @@ function backToSettings() {
     paused = true;
     $('pauseBtn').textContent = 'Resume';
     $('clock').className = 'clock';
+    releaseWakeLock();
   }
+  fromBrew = false;
   showScreen('settings');
 }
 
@@ -801,12 +803,15 @@ function brewToBarista() {
     paused = true;
     $('pauseBtn').textContent = 'Resume';
     $('clock').className = 'clock';
+    releaseWakeLock();
   }
+  fromBrew = true;
   openBarista();
 }
 
 function baristaBack() {
-  showScreen(started && !finished ? 'brew' : 'settings');
+  showScreen(fromBrew || (started && !finished) ? 'brew' : 'settings');
+  fromBrew = false;
 }
 
 function showScreen(name) {
