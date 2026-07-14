@@ -530,6 +530,7 @@ function loadSavedRecipe(name) {
   saveSettings(); applySettings();
 }
 function deleteSavedRecipe(name) {
+  if(!confirm(`Delete "${name}"?`)) return;
   settings.savedRecipes = settings.savedRecipes.filter(r => r.name !== name);
   saveSettings(); applySettings();
 }
@@ -624,6 +625,7 @@ function fmt(s) { return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); 
 function getCueIdx(t) { let i=0; for(let j=0;j<cues.length;j++){ if(t>=cues[j].at) i=j; } return i; }
 
 function updateRing(t) {
+  if(!cues.length) return;
   const idx = getCueIdx(t);
   const start = cues[idx].at;
   const end = idx < cues.length - 1 ? cues[idx + 1].at : start + 1;
@@ -697,7 +699,7 @@ function startBrew() {
   cues = buildCues();
   const total = totalWater();
   $('brewTitle').textContent = `Brewing — ${METHODS[settings.method].name}`;
-  elapsed=0; started=false; finished=false; paused=false; currentCue=0;
+  elapsed=0; started=false; finished=false; paused=false; fromBrew=false; currentCue=0;
   clearInterval(interval); releaseWakeLock();
   $('clock').textContent='0:00';
   $('clock').className='clock';
@@ -846,7 +848,7 @@ function openBarista() {
   if(!$('chatLog').childElementCount) {
     addBaristaMsg('bot', "Hi! I'm your brewing assistant. Tell me how your cup turned out — too sour, too bitter, draining too fast — and I'll help you dial it in.");
   }
-  $('baristaBackBtn').textContent = started && !finished ? 'Back to brew' : 'Done';
+  $('baristaBackBtn').textContent = fromBrew || (started && !finished) ? 'Back to brew' : 'Done';
   showScreen('barista');
 }
 function baristaQuick(text) { $('chatText').value = text; baristaSend(); }
