@@ -61,7 +61,7 @@ test('tare & arm waits for the board to detect the first pour', async () => {
   assert.deepEqual(calls,[['http://192.168.1.60/api/pour/arm','POST']]);
   assert.equal(p.run('started'),false);
   assert.equal(p.run('scale.armed'),true);
-  assert.match(p.elements.scaleGuidance.textContent,/Begin pouring/);
+  assert.match(p.elements.scaleGuidance.textContent,/First pour starts/);
   feed(p,{g:3,timer_s:0.4,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.run('started'),true);
   assert.equal(p.elements.brewBtn.textContent,'Finish brew');
@@ -74,7 +74,7 @@ test('uses the board clock and resumes at the right recipe cue after a connectio
   feed(p,{g:30,timer_s:10,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.elements.clock.textContent,'0:10');
   p.run("scaleError(new TypeError('offline'));tick()");
-  assert.equal(p.elements.scaleWeight.textContent,'— g');
+  assert.equal(p.elements.scaleWeight.textContent,'—');
   assert.equal(p.elements.clock.textContent,'0:10');
   feed(p,{g:100,timer_s:55.9,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.elements.clock.textContent,'0:55');
@@ -86,7 +86,7 @@ test('uses the board clock and resumes at the right recipe cue after a connectio
 test('guides early target, overshoot and late pours without skipping missed targets', async () => {
   const p=app(); await scaleBrew(p); p.run('scale.session=7');
   feed(p,{g:30,timer_s:12,running:true,pour_mode:true,pour_id:7});
-  assert.match(p.elements.scaleNextValue.textContent,/In 0:33.*125g/);
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:12'); assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45'); assert.match(p.elements.scaleStage.textContent,/Wait/);
   feed(p,{g:35,timer_s:15,running:true,pour_mode:true,pour_id:7});
   assert.match(p.elements.scaleRemaining.textContent,/5.0g over target/);
   feed(p,{g:20,timer_s:50,running:true,pour_mode:true,pour_id:7});
@@ -108,84 +108,116 @@ test('all built-in and custom methods use measured cumulative water targets', as
   }
 });
 
-test('visible instructions change from setup to pouring, waiting and the next pour', async () => {
+test('phase displays added grams and elapsed time against both targets', async () => {
   const p=app();await scaleBrew(p);
-  assert.equal(p.elements.scaleAction.textContent,'Set up your V60');
-  assert.match(p.elements.scaleCoffeeStep.textContent,/15g/);
-  assert.equal(p.elements.scaleMeasurements.style.display,'none');
+  assert.equal(p.elements.scaleAction.textContent,'Bloom');
+  assert.equal(p.elements.brewBtn.textContent,'Tare & start');
+  assert.equal(p.elements.scaleMeasurements.style.display,'block');
+  assert.equal(p.elements.scaleTarget.textContent,'/ 30 g');
+  assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45');
   p.run('scale.session=7;scale.armed=true');
-  feed(p,{pour_mode:true,pour_armed:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Start pouring');
-  assert.equal(p.elements.scaleTarget.textContent,'30 g');
   feed(p,{g:20,timer_s:10,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Keep pouring');
-  assert.equal(p.elements.scaleRemaining.textContent,'10g to go');
+  assert.equal(p.elements.scaleWeight.textContent,'20.0');
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:10');
+  assert.match(p.elements.scaleStage.textContent,/Pour/);
   feed(p,{g:30,timer_s:12,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Stop pouring');
-  assert.equal(p.elements.scaleTargetLabel.textContent,'Target reached');
-  assert.equal(p.elements.scaleNextValue.textContent,'In 0:33 · pour to 125g');
-  feed(p,{g:30,timer_s:45,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Keep pouring');
-  assert.equal(p.elements.scaleTarget.textContent,'125 g');
-  assert.equal(p.elements.scaleClock.textContent,'0:45');
+  assert.match(p.elements.scaleStage.textContent,/Wait/);
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:12');
+  assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45');
+  feed(p,{g:30,timer_s:44,running:true,pour_mode:true,pour_id:7});
+  assert.match(p.elements.scaleStage.textContent,/Wait/);
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:44');
+  feed(p,{g:100,timer_s:55,running:true,pour_mode:true,pour_id:7});
+  assert.equal(p.elements.scaleAction.textContent,'First pour');
+  assert.equal(p.elements.scaleWeight.textContent,'70.0');
+  assert.equal(p.elements.scaleTarget.textContent,'/ 95 g');
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:10');
+  assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:30');
+  assert.match(p.elements.scaleStage.textContent,/Pour/);
+  assert.equal(p.elements.scaleTotalWeight.textContent,'Scale total: 100.0g');
 });
 
-test('late pours keep their target and never ask the user to wait for a time already passed', async () => {
+test('late pours keep their phase target and show time exceeding its allotted interval', async () => {
   const p=app();await scaleBrew(p);p.run('scale.session=7');
-  feed(p,{g:20,timer_s:100,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleTarget.textContent,'30 g');
-  assert.equal(p.elements.scaleAction.textContent,'Keep pouring');
-  assert.match(p.elements.scaleGuidance.textContent,/Finish this pour/);
-  assert.equal(p.elements.scaleNextValue.textContent,'Then pour to 125g.');
+  feed(p,{g:20,timer_s:50,running:true,pour_mode:true,pour_id:7});
+  assert.equal(p.elements.scaleAction.textContent,'Bloom');
+  assert.equal(p.elements.scaleTarget.textContent,'/ 30 g');
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:50');
+  assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45');
+  assert.match(p.elements.scaleRemaining.textContent,/0:05 over time/);
+  assert.match(p.elements.scaleNextValue.textContent,/finish this pour first/);
+  feed(p,{g:30,timer_s:52,running:true,pour_mode:true,pour_id:7});
+  assert.equal(p.elements.scaleAction.textContent,'First pour');
+  assert.equal(p.elements.scaleWeight.textContent,'0.0');
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:07');
 });
 
-test('final water starts drawdown, and only the user finishing completes the brew', async () => {
+test('final pour waits, then timed drawdown remains active until the user finishes', async () => {
   const p=app();await scaleBrew(p);p.run('scale.session=7');
   feed(p,{g:240,timer_s:120,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Let it drain');
-  assert.match(p.elements.scaleGuidance.textContent,/Finish brew when/);
+  assert.equal(p.elements.scaleAction.textContent,'Final pour');
+  assert.match(p.elements.scaleStage.textContent,/Wait/);
+  assert.equal(p.elements.scaleWeight.textContent,'48.0');
+  assert.equal(p.elements.scaleTarget.textContent,'/ 48 g');
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:15');
+  assert.equal(p.elements.scaleTimeTarget.textContent,'/ 1:15');
+  feed(p,{g:240,timer_s:180,running:true,pour_mode:true,pour_id:7});
+  assert.equal(p.elements.scaleAction.textContent,'Drawdown');
+  assert.equal(p.elements.scaleWeight.textContent,'240.0');
+  assert.equal(p.elements.scaleTarget.textContent,'/ 240 g');
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:00');
+  assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:30');
   feed(p,{g:240,timer_s:250,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Let it drain');
+  assert.equal(p.elements.scaleAction.textContent,'Drawdown');
+  assert.equal(p.elements.scalePhaseTime.textContent,'1:10');
   assert.equal(p.run('finished'),false);
   await p.run('endScaleBrew()');
-  assert.equal(p.elements.scaleAction.textContent,'Enjoy your coffee');
+  assert.equal(p.elements.scaleAction.textContent,'Brew complete');
   assert.equal(p.elements.scaleClock.textContent,'4:10');
 });
 
-test('cancelling before the first pour reports cancellation and can prepare a fresh brew', async () => {
+test('cancelling before the first pour reports cancellation and resets phase time', async () => {
   const p=app();await scaleBrew(p);p.run('scale.session=7;scale.armed=true');
   await p.run('endScaleBrew()');
-  assert.equal(p.elements.scaleStage.textContent,'Brew cancelled');
-  assert.equal(p.elements.scaleAction.textContent,'Ready when you are');
+  assert.equal(p.elements.scaleStage.textContent,'Cancelled');
+  assert.equal(p.elements.scaleAction.textContent,'Brew cancelled');
   assert.equal(p.elements.brewBtn.textContent,'Brew again');
   await p.run('startBrew()');
-  assert.equal(p.elements.scaleAction.textContent,'Set up your V60');
+  assert.equal(p.elements.scaleAction.textContent,'Bloom');
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:00');
   assert.equal(p.run('scale.cancelled'),false);
 });
 
-test('Hoffmann keeps its timed stir and swirl between pouring and drawdown', async () => {
+test('Hoffmann keeps its 30-second pours and timed stir, swirl and drawdown', async () => {
   const p=app();p.run("settings.method='hoffmann'");await scaleBrew(p);p.run('scale.session=7');
   const total=p.run('totalWater()');
+  feed(p,{g:100,timer_s:55,running:true,pour_mode:true,pour_id:7});
+  assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:30');
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:10');
   feed(p,{g:total,timer_s:90,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Let it drain');
-  assert.equal(p.elements.scaleNextValue.textContent,'In 0:15 · Stir, then swirl');
+  assert.equal(p.elements.scaleAction.textContent,'Pour 2');
+  assert.match(p.elements.scaleStage.textContent,/Wait/);
   feed(p,{g:total,timer_s:105,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.elements.scaleAction.textContent,'Stir, then swirl');
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:00');
+  assert.equal(p.elements.scaleTimeTarget.textContent,'/ 1:30');
   feed(p,{g:total,timer_s:195,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Let it drain');
+  assert.equal(p.elements.scaleAction.textContent,'Drawdown');
+  assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:15');
 });
 
-test('disconnection replaces the pour instruction and countdown, then resumes with fresh readings', async () => {
+test('disconnection blanks live weight and phase time, then catches up on reconnect', async () => {
   const p=app();await scaleBrew(p);p.run('scale.session=7');
   feed(p,{g:20,timer_s:10,running:true,pour_mode:true,pour_id:7});
   p.run("scaleError(new TypeError('offline'))");
   assert.equal(p.elements.scaleAction.textContent,'Stop pouring');
-  assert.equal(p.elements.scaleClock.textContent,'—');
-  assert.equal(p.elements.scaleWeight.textContent,'— g');
-  assert.match(p.elements.scaleNextValue.textContent,/reconnects/);
+  assert.equal(p.elements.scaleClock.textContent,'\u2014');
+  assert.equal(p.elements.scaleWeight.textContent,'\u2014');
+  assert.equal(p.elements.scalePhaseTime.textContent,'\u2014');
   feed(p,{g:30,timer_s:20,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleNextValue.textContent,'In 0:25 · pour to 125g');
-  assert.equal(p.elements.scaleClock.textContent,'0:20');
+  assert.match(p.elements.scaleStage.textContent,/Wait/);
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:20');
+  assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45');
 });
 
 test('recipe finish time does not stop a slow scale brew or discard its missing water', async () => {
@@ -203,7 +235,7 @@ test('a scale reset invalidates the session and requires deliberate rearming', a
   assert.equal(p.run('scale.session'),null);
   assert.equal(p.run('started'),false);
   assert.match(p.elements.scaleGuidance.textContent,/reset/);
-  assert.equal(p.elements.brewBtn.textContent,'Zero scale & get ready');
+  assert.equal(p.elements.brewBtn.textContent,'Tare & start');
 });
 
 test('finish/cancel ends the board session and settings also disarms an armed brew', async () => {
@@ -240,7 +272,7 @@ test('an arm request that never reached the scale requires another deliberate ta
   assert.equal(p.run('scale.session'),null);
   assert.equal(p.run('scale.armPending'),null);
   assert.equal(p.run('started'),false);
-  assert.equal(p.elements.brewBtn.textContent,'Zero scale & get ready');
+  assert.equal(p.elements.brewBtn.textContent,'Tare & start');
 });
 
 test('a command waits for a poll instead of overlapping HTTP requests', async () => {
@@ -267,7 +299,7 @@ test('a hung poll aborts, clears its busy guard and allows a later reading', asy
   p.timeout(3000);await poll;
   assert.equal(p.run('scale.pending'),null);assert.equal(p.run('scale.connected'),false);
   await p.run('pollScale()');assert.equal(p.run('scale.connected'),true);
-  assert.equal(p.elements.scaleWeight.textContent,'12.0 g');
+  assert.equal(p.elements.scaleTotalWeight.textContent,'Scale total: 12.0g');
 });
 
 test('switching to manual discards an in-flight scale response', async () => {
@@ -290,7 +322,7 @@ test('manual mode still starts, pauses, resumes and finishes by time', async () 
 test('private-mode localStorage errors leave manual and scale controls usable', async () => {
   const p=app();p.run("localStorage.getItem=()=>{throw new Error('blocked')};localStorage.setItem=localStorage.getItem;loadSettings();saveSettings()");
   await scaleBrew(p);
-  assert.equal(p.elements.brewBtn.textContent,'Zero scale & get ready');
+  assert.equal(p.elements.brewBtn.textContent,'Tare & start');
 });
 
 const pairedId='aabbccddeeff';
@@ -350,7 +382,7 @@ test('a different scale at the old IP cannot supply readings for the paired scal
     {brewMode:'scale',scaleAddress:'10.24.3.87',scaleId:pairedId});
   await flush();assert.equal(p.run('scale.connected'),false);assert.equal(p.run('scale.data'),null);
   assert.match(p.elements.scaleStatus.textContent,/different scale/);
-  assert.equal(p.elements.scaleWeight.textContent,'— g');
+  assert.equal(p.elements.scaleWeight.textContent,'—');
 });
 
 test('cancelled pairing leaves the saved scale unchanged and resumes WiFi polling', async () => {

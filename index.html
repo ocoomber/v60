@@ -108,18 +108,17 @@
   .scale-live.is-wait { --step-color:#99682e; }
   .scale-stage { color:var(--step-color); font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin-bottom:10px; }
   .scale-action { font-family:var(--font-display); font-size:clamp(30px,8vw,40px); font-weight:700; line-height:1.12; letter-spacing:-.8px; }
-  .scale-guidance { font-size:15px; line-height:1.55; color:var(--text2); margin-top:10px; min-height:3.1em; }
-  .scale-setup-steps { padding-left:24px; margin:18px 0; font-size:15px; line-height:1.5; }
-  .scale-setup-steps li { padding:5px 0 5px 4px; }
-  .scale-measurements { margin-top:24px; }
-  .scale-weight-row { display:grid; grid-template-columns:1.2fr 1fr; gap:16px; align-items:end; }
+  .scale-guidance { font-size:14px; line-height:1.45; color:var(--text2); margin-top:8px; min-height:1.45em; }
+  .scale-measurements { margin-top:22px; }
+  .scale-weight-row, .scale-phase-time { padding:16px 0; border-bottom:1px solid var(--border); }
+  .scale-ratio { display:flex; align-items:baseline; gap:8px; }
   .scale-number-label { color:var(--text2); font-size:12px; margin-bottom:8px; }
-  .scale-reading { font-family:var(--font-display); font-size:clamp(40px,12vw,60px); font-weight:650; line-height:1.1; font-variant-numeric:tabular-nums; letter-spacing:-1.5px; white-space:nowrap; }
-  .scale-target { font-family:var(--font-display); font-size:clamp(32px,10vw,48px); font-weight:600; line-height:1.15; font-variant-numeric:tabular-nums; color:var(--step-color); white-space:nowrap; }
-  .scale-pour-track { height:8px; border-radius:4px; background:var(--bg3); overflow:hidden; margin-top:18px; }
+  .scale-reading { font-family:var(--font-display); font-size:clamp(36px,12vw,52px); font-weight:650; line-height:1.1; font-variant-numeric:tabular-nums; letter-spacing:-1px; white-space:nowrap; }
+  .scale-target { font-family:var(--font-display); font-size:clamp(24px,8vw,34px); font-weight:500; line-height:1.15; font-variant-numeric:tabular-nums; color:var(--text2); white-space:nowrap; }
+  .scale-pour-track { height:6px; border-radius:3px; background:var(--bg3); overflow:hidden; margin-top:14px; }
   .scale-pour-fill { height:100%; background:var(--step-color); border-radius:4px; }
   .scale-remaining { font-size:14px; color:var(--text2); margin-top:10px; min-height:1.5em; }
-  .scale-next { border-top:1px solid var(--border); margin-top:22px; padding-top:16px; }
+  .scale-next { margin-top:18px; }
   .scale-next-label { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:.06em; margin-bottom:5px; }
   .scale-next-value { font-size:17px; font-weight:600; font-variant-numeric:tabular-nums; line-height:1.4; }
   .scale-footer { display:flex; justify-content:space-between; align-items:end; gap:16px; margin-top:22px; }
@@ -319,29 +318,29 @@
     <div class="scale-live" id="scaleLive" style="display:none">
       <div class="scale-stage" id="scaleStage">Get ready</div>
       <div role="status" aria-live="polite" aria-atomic="true">
-        <h1 class="scale-action" id="scaleAction">Set up your V60</h1>
-        <p class="scale-guidance" id="scaleGuidance">Keep the whole setup on the scale throughout the brew.</p>
+        <h1 class="scale-action" id="scaleAction">Bloom</h1>
+        <p class="scale-guidance" id="scaleGuidance">First pour starts the timer.</p>
       </div>
-      <ol class="scale-setup-steps" id="scaleSetupSteps">
-        <li>Rinse the filter and discard the rinse water.</li>
-        <li>Put the server, V60 and filter together on the scale.</li>
-        <li id="scaleCoffeeStep">Add your ground coffee and level the bed.</li>
-      </ol>
       <div class="scale-measurements" id="scaleMeasurements" style="display:none">
         <div class="scale-weight-row">
-          <div><div class="scale-number-label">Water on scale</div><div class="scale-reading" id="scaleWeight">— g</div></div>
-          <div><div class="scale-number-label" id="scaleTargetLabel">Pour to</div><div class="scale-target" id="scaleTarget">— g</div></div>
+          <div class="scale-number-label" id="scaleTargetLabel">Phase water</div>
+          <div class="scale-ratio"><span class="scale-reading" id="scaleWeight">—</span><span class="scale-target" id="scaleTarget">/ — g</span></div>
+          <div class="scale-pour-track"><div class="scale-pour-fill" id="scalePourFill" style="width:0%"></div></div>
         </div>
-        <div class="scale-pour-track"><div class="scale-pour-fill" id="scalePourFill" style="width:0%"></div></div>
+        <div class="scale-phase-time">
+          <div class="scale-number-label" id="scaleTimeLabel">Phase time</div>
+          <div class="scale-ratio"><span class="scale-reading" id="scalePhaseTime">0:00</span><span class="scale-target" id="scaleTimeTarget">/ —</span></div>
+          <div class="scale-pour-track"><div class="scale-pour-fill" id="scaleTimeFill" style="width:0%"></div></div>
+        </div>
         <div class="scale-remaining" id="scaleRemaining"></div>
       </div>
       <div class="scale-next" id="scaleNext">
         <div class="scale-next-label" id="scaleNextLabel">Then</div>
-        <div class="scale-next-value" id="scaleNextValue">Zero the scale when everything is in place.</div>
+        <div class="scale-next-value" id="scaleNextValue">—</div>
       </div>
       <div class="scale-footer">
-        <div class="scale-connection" id="scaleConnection">Waiting for scale</div>
-        <div class="scale-time"><div class="scale-number-label">Brew time</div><div class="scale-clock" id="scaleClock">0:00</div></div>
+        <div><div class="scale-connection" id="scaleConnection">Waiting for scale</div><div class="scale-connection" id="scaleTotalWeight"></div></div>
+        <div class="scale-time"><div class="scale-number-label">Total brew time</div><div class="scale-clock" id="scaleClock">0:00</div></div>
       </div>
       <details class="scale-plan" id="scalePlan">
         <summary id="scalePlanSummary">View recipe</summary>
@@ -419,7 +418,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-10-07.4';
+const APP_VERSION = '2026-10-07.5';
 const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
 const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
 const SCALE_HOST = 'coffeescale.local';
@@ -481,7 +480,7 @@ function applySettings() {
   document.querySelectorAll('#brewModeSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.brewMode));
   $('scaleSetup').style.display = settings.brewMode === 'scale' ? 'block' : 'none';
   $('scaleAddress').value = settings.scaleAddress;
-  $('startBtn').textContent = settings.brewMode === 'scale' ? 'Prepare scale brew' : 'Start brew';
+  $('startBtn').textContent = settings.brewMode === 'scale' ? 'Scale brew' : 'Start brew';
   updateSummary();
 }
 
@@ -572,17 +571,19 @@ function scaleError(error) {
     ? 'Waiting for CoffeeScale… Turn it on, keep your phone on the same WiFi, and allow Chrome’s local network permission. Reconnecting automatically.'
     : error.message;
   $('scaleStatus').textContent = message;
-  $('scaleWeight').textContent = '— g';
+  $('scaleWeight').textContent = '—';
   scaleText('scaleGuidance',message + (scale.session !== null || scale.armPending !== null ? ' The scale keeps its timer; guidance resumes when connected.' : ''));
   $('scaleLive').className='scale-live is-wait';
   scaleText('scaleStage','Connection lost');
   scaleText('scaleAction',started && !finished ? 'Stop pouring' : 'Waiting for scale');
   scaleText('scaleConnection','Reconnecting over WiFi');
   scaleText('scaleClock','—');
+  scaleText('scalePhaseTime','—');
   scaleText('scaleRemaining','Live weight unavailable');
   scaleText('scaleNextLabel','Connection');
   scaleText('scaleNextValue','Guidance resumes when the scale reconnects.');
   $('scalePourFill').style.width='0%';
+  $('scaleTimeFill').style.width='0%';
 }
 
 async function connectScale(address=$('scaleAddress').value.trim()) {
@@ -641,25 +642,25 @@ function acceptScaleData(data) {
     try { scale.base=scaleURL(data.ip); settings.scaleAddress=data.ip; $('scaleAddress').value=data.ip; saveSettings(); } catch(e) {}
   }
   $('scaleStatus').textContent=`CoffeeScale connected over WiFi · ${data.g.toFixed(1)}g`;
-  $('scaleWeight').textContent=`${data.g.toFixed(1)} g`;
+  scaleText('scaleTotalWeight',`Scale total: ${data.g.toFixed(1)}g`);
   // If an arm response was lost, recover the new board session from its ID.
   if(scale.armPending !== null) {
     if(data.pour_mode && data.pour_id !== scale.armPending) {
       scale.session=data.pour_id; scale.armed=data.pour_armed;
       $('brewBtn').textContent='Cancel'; acquireWakeLock();
-    } else $('brewBtn').textContent='Zero scale & get ready';
+    } else $('brewBtn').textContent='Tare & start';
     scale.armPending=null;
   }
   if(scale.session !== null) {
     if(!data.pour_mode || data.pour_id !== scale.session) {
       scale.session=null; scale.armed=false; started=false; finished=false;
-      releaseWakeLock(); $('brewBtn').textContent='Zero scale & get ready';
+      releaseWakeLock(); $('brewBtn').textContent='Tare & start';
       elapsed=0; $('clock').textContent='0:00'; $('clock').className='clock';
       $('phaseLbl').textContent='Ready'; setTarget(totalWater());
       $('promptAction').textContent='Set up the V60 again';
       $('promptDetail').textContent='The previous scale session is no longer active.';
       $('waterSection').style.display='none'; renderUpcoming(-1);
-      scale.notice='The scale reset or the previous brew ended. Zero it again before pouring.';
+      scale.notice='Scale reset. Tare & start for a new brew.';
       renderScaleGuidance();
       return;
     }
@@ -676,73 +677,69 @@ function acceptScaleData(data) {
 // Avoid re-announcing unchanged instructions on every 200ms weight update.
 function scaleText(id,text) { if($(id).textContent!==text) $(id).textContent=text; }
 
+// Recipe cue timestamps define phase boundaries. A phase includes its pour and
+// remaining wait; its timer continues after the water target is reached.
+function scalePhase(t,weight) {
+  const scheduled=getCueIdx(t);
+  let index=cues.slice(0,scheduled+1).findIndex(c=>c.water>weight+2);
+  if(index<0) index=scheduled;
+  if(cues[index].phase==='Done' && index>0) index--;
+  const cue=cues[index], previous=index ? cues[index-1].water : 0;
+  const amount=cue.water-previous;
+  const end=index<cues.length-1 ? cues[index+1].at : cue.at;
+  const seconds=Math.max(1,end-cue.at);
+  return {index,cue,previous,amount,seconds,elapsed:Math.max(0,t-cue.at),
+    added:Math.max(0,weight-previous),next:cues[index+1] || null};
+}
+
 function renderScaleGuidance() {
   if(settings.brewMode!=='scale' || !cues.length) return;
-  scaleText('scaleCoffeeStep',`Add ${settings.dose}g of ground coffee and level the bed.`);
+  const preparing=!started && !scale.armed && !finished;
+  $('scaleMeasurements').style.display='block';
   scaleText('scaleClock',fmt(elapsed));
   scaleText('scaleConnection',scale.connected ? 'Scale connected · WiFi' : 'Waiting for scale');
-  const preparing=!started && !scale.armed && !finished;
-  $('brewBtn').className=preparing || finished ? 'btn-go' : 'btn-secondary';
-  $('scaleSetupSteps').style.display=preparing ? 'block' : 'none';
-  $('scaleMeasurements').style.display=preparing ? 'none' : 'block';
   if(!scale.connected || !scale.data) { scaleError(new TypeError('offline')); return; }
   const weight=Math.max(0,scale.data.g), total=totalWater();
-  const idx=getCueIdx(elapsed), scheduled=cues[idx];
-  // Resolve one instruction from both time and weight. Never skip a missing pour.
-  const overdue=cues.slice(0,idx).find(c => c.water>weight+2);
-  const cue=overdue || scheduled;
-  const cueIndex=cues.indexOf(cue), previous=cueIndex ? cues[cueIndex-1].water : 0;
-  const remaining=cue.water-weight, excess=weight-cue.water;
-  const next=cues.slice(cueIndex+1).find(c=>c.water>cue.water);
-  const nextStep=cues.slice(idx+1).find(c=>c.water===cue.water && !['Done','Draw down'].includes(c.phase));
-  let kind='pour', stage=cue.phase, action='Keep pouring', detail=cueIndex===0 ? 'Pour gently over all the grounds to wet them evenly.' : cue.detail;
-  let nextLabel='Next', nextValue=next ? (next.at>elapsed ? `Stop at ${cue.water}g, then wait until ${fmt(next.at)}.` : `Then pour to ${next.water}g.`) : 'Stop at the target, then let the coffee drain.';
-  let remainingText=`${Math.max(0,Math.ceil(remaining))}g to go`;
-  if(preparing) {
-    kind='setup'; stage='Get ready'; action='Set up your V60';
-    detail=scale.notice || 'Keep the whole setup on the scale throughout the brew. Zero it once everything is in place.';
-    nextLabel='Then'; nextValue=`Start pouring to ${cues[0].water}g. The timer starts with your first pour.`;
+  const phase=scalePhase(elapsed,weight), {cue,amount,added,seconds}=phase;
+  const pouring=amount>0 && cue.water>weight+2;
+  const overtime=Math.max(0,phase.elapsed-seconds);
+  const phaseCount=cues.filter(c=>c.phase!=='Done').length;
+  const phaseLabel=`Phase ${phase.index+1}/${phaseCount}`;
+  let kind=pouring ? 'pour' : amount>0 ? 'wait' : 'drain';
+  let stage=`${phaseLabel} · ${pouring ? 'Pour' : amount>0 ? 'Wait' : 'Drain'}`;
+  let action=cue.phase.split(' · ')[0];
+  let detail='';
+  let note=pouring ? `${Math.ceil(cue.water-weight)}g to go` : weight>cue.water+2 ? `${(weight-cue.water).toFixed(1)}g over target` : 'Target reached';
+  let nextLabel='Next phase', nextValue=phase.next ? `${fmt(phase.next.at)} · ${phase.next.phase.split(' · ')[0]}` : 'Finish brew';
+  if(phase.next && phase.next.phase==='Done') { nextLabel='Suggested finish'; nextValue=fmt(phase.next.at); }
+  if(phase.next && phase.next.at<=elapsed && pouring) nextValue='Next phase is due · finish this pour first';
+  if(overtime && pouring) { stage=`${phaseLabel} · Late`; note+=` · ${fmt(overtime)} over time`; }
+  if(preparing || scale.armed) {
+    kind='pour'; stage=`${phaseLabel} · ${preparing ? 'Ready' : 'Pour'}`;
+    detail=scale.notice || (preparing ? 'Tare & start when ready.' : 'First pour starts the timer.');
+    note='';
   } else if(finished) {
-    kind='done'; stage=scale.cancelled ? 'Brew cancelled' : 'Brew finished'; action=scale.cancelled ? 'Ready when you are' : 'Enjoy your coffee';
-    detail=scale.cancelled ? 'No brew was started. Tap Brew again when you are ready to prepare the scale.' : `Your brew took ${fmt(elapsed)}. Tap Brew again to prepare a fresh brew.`;
+    kind='done'; stage=scale.cancelled ? 'Cancelled' : 'Finished';
+    action=scale.cancelled ? 'Brew cancelled' : 'Brew complete'; detail=''; note='';
     nextLabel='Recipe'; nextValue=`${settings.dose}g coffee · ${total}g water`;
-    remainingText=scale.cancelled ? 'Brew cancelled' : 'Brew complete';
-  } else if(scale.armed) {
-    stage=cues[0].phase; action='Start pouring';
-    detail='The scale is zeroed. Begin pouring gently; the timer starts automatically.';
-    nextValue=`Stop pouring when the water reaches ${cues[0].water}g.`;
-    remainingText=`${Math.max(0,Math.ceil(cues[0].water-weight))}g to go`;
   } else if(!scale.data.running) {
-    kind='wait'; stage='Timer stopped'; action='Stop pouring';
-    detail='The scale timer has stopped. Finish this brew, then prepare a new one.';
-    nextLabel='Then'; nextValue='Tap Finish brew to end this session.';
-  } else if(remaining>2) {
-    if(overdue) detail='Finish this pour before moving on. The next pour will wait for you.';
-  } else {
-    remainingText=excess>2 ? `${excess.toFixed(1)}g over target` : 'Target reached';
-    if(next) {
-      kind='wait'; action='Stop pouring';
-      detail=/swirl/i.test(cue.phase) ? 'Give the V60 a gentle swirl, then let the grounds soak.' : 'Let the water soak through. Keep the whole setup on the scale.';
-      nextLabel='Next pour'; nextValue=`In ${fmt(Math.max(0,next.at-elapsed))} · pour to ${next.water}g`;
-    } else {
-      kind='drain'; stage='Drawdown'; action='Let it drain';
-      detail='All the water is in. Tap Finish brew when the water has drained through the coffee.';
-      nextLabel='Suggested finish'; nextValue=`Around ${fmt(cues[cues.length-1].at)} · finish when drained`;
-      // Keep deliberate recipe actions such as Hoffmann's stir and swirl.
-      if(scheduled.phase!=='Done' && !/^Pour to /i.test(scheduled.action) && scheduled.phase!=='Draw down') {
-        stage=scheduled.phase; action=scheduled.action; detail=scheduled.detail;
-      }
-      if(nextStep) { nextLabel='Next step'; nextValue=`In ${fmt(nextStep.at-elapsed)} · ${nextStep.action}`; }
-    }
+    kind='wait'; stage='Timer stopped'; detail='Finish brew to end this session.';
+  } else if(!amount) {
+    action=cue.phase==='Draw down' ? 'Drawdown' : cue.action;
+    detail=cue.phase==='Draw down' ? 'Finish when drained.' : '';
+    note='';
   }
   $('scaleLive').className=`scale-live is-${kind}`;
-  $('brewBtn').className=preparing || finished || action==='Let it drain' ? 'btn-go' : 'btn-secondary';
+  $('brewBtn').className=preparing || finished || !amount ? 'btn-go' : 'btn-secondary';
   scaleText('scaleStage',stage); scaleText('scaleAction',action); scaleText('scaleGuidance',detail);
-  scaleText('scaleTarget',`${finished ? total : cue.water} g`);
-  scaleText('scaleTargetLabel',finished ? 'Recipe water' : remaining>2 || scale.armed ? 'Pour to' : 'Target reached');
-  scaleText('scaleRemaining',remainingText); scaleText('scaleNextLabel',nextLabel); scaleText('scaleNextValue',nextValue);
-  $('scalePourFill').style.width=Math.max(0,Math.min(100,(weight-previous)/Math.max(1,cue.water-previous)*100))+'%';
-  // Legacy timer-only nodes remain hidden in scale mode.
+  scaleText('scaleTargetLabel',amount ? 'Phase water' : 'Total water');
+  scaleText('scaleWeight',preparing ? '—' : (amount ? added : weight).toFixed(1));
+  scaleText('scaleTarget',`/ ${amount || cue.water} g`);
+  scaleText('scalePhaseTime',fmt(phase.elapsed)); scaleText('scaleTimeTarget',`/ ${fmt(seconds)}`);
+  scaleText('scaleTimeLabel','Phase time');
+  scaleText('scaleRemaining',note); scaleText('scaleNextLabel',nextLabel); scaleText('scaleNextValue',nextValue);
+  $('scalePourFill').style.width=Math.min(100,(amount ? added/amount : weight/cue.water)*100)+'%';
+  $('scaleTimeFill').style.width=Math.min(100,phase.elapsed/seconds*100)+'%';
   showCue(cue,total);
   $('waterLbl').textContent=`Water: ${weight.toFixed(1)}g / ${total}g`;
   $('waterFill').style.width=Math.min(100,Math.round(weight/total*100))+'%';
@@ -1093,11 +1090,15 @@ async function startBrew() {
   $('scaleLive').style.display=withScale ? 'block' : 'none';
   if(withScale) {
     $('brewTitle').textContent=METHODS[settings.method].name + ' · scale brew';
-    $('brewBtn').textContent='Zero scale & get ready';
+    $('brewBtn').textContent='Tare & start';
     scale.notice=''; scale.cancelled=false;
     $('scalePlan').open=false;
     $('scalePlanSummary').textContent=`View recipe · ${settings.dose}g coffee / ${total}g water`;
-    $('scalePlanList').innerHTML=cues.map(c=>`<li><time>${fmt(c.at)}</time><span>${c.phase}</span><span>${/^Pour to /i.test(c.action) ? c.water+'g' : ''}</span></li>`).join('');
+    $('scalePlanList').innerHTML=cues.filter(c=>c.phase!=='Done').map((c,i)=>{
+      const end=cues[i+1] ? cues[i+1].at : c.at;
+      const added=c.water-(i ? cues[i-1].water : 0);
+      return `<li><time>${fmt(c.at)}</time><span>${c.phase.split(' · ')[0]}<br>${fmt(end-c.at)} phase</span><span>${added ? added+'g' : '—'}</span></li>`;
+    }).join('');
     renderScaleGuidance();
   }
   renderUpcoming(-1);

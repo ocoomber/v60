@@ -16,16 +16,15 @@ The whole app is a single `index.html` file, hosted free on GitHub Pages.
    **CoffeeScale** from Android Chrome's Bluetooth picker. The app reads the
    scale's WiFi address automatically, disconnects Bluetooth, and connects over
    WiFi. Allow local network access when Chrome asks. No IP copying is needed.
-3. Select your recipe and dose, then tap **Prepare scale brew**. Put the **whole
-   setup** on the scale: server/cup, V60, rinsed filter and ground coffee. All the
-   poured water must stay supported by the scale, including water in the server.
-4. Let it settle and tap **Zero scale & get ready**. When the screen says
-   **Start pouring**, pour gently: the scale starts its timer automatically.
-5. Follow one instruction at a time. **Water on scale** is your live reading;
-   **Pour to** is the cumulative target. **Stop pouring** replaces the pour
-   instruction at the target and shows a countdown to the next pour. After the
-   final pour, **Let it drain** guides drawdown. Expand **View recipe** for the
-   full schedule. Missed targets stay active until reached. Tap
+3. Select your recipe and dose, then tap **Scale brew**.
+4. Tap **Tare & start**. The first pour starts the scale's timer automatically.
+5. Track the current phase's **added / required grams** and **elapsed / allotted
+   time**. For example, the second Balanced pour at a 15g dose might show
+   **70 / 95g** and **0:10 / 0:30**. Once its water target is reached, it shows
+   **Wait** while the same phase clock continues to the next pour's start time.
+   The next phase resets the counters. Cumulative scale weight and total brew
+   time remain visible below. Expand **View recipe** for the full schedule.
+   Missed targets stay active with overtime shown; drawdown has its own timer. Tap
    **Finish brew** after drawdown; **Cancel** or leaving for Settings also ends
    the board session. A slow brew continues past the recipe's suggested finish.
 

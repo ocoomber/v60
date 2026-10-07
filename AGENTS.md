@@ -28,7 +28,7 @@ awk 'n==1 && /^<\/script>$/{exit} /^<script>$/{n=1; next} n==1{print}' index.htm
 - **Version bump:** Update `APP_VERSION` in `index.html` to today's date (add a `.2`, `.3` … suffix if multiple commits in one day, e.g. `2026-07-02.2`). Start each day at `.1`.
 
 ## Brew-step wording (important)
-- All brew cues use **cumulative scale targets**: `Pour to `${water}g` (not incremental "add Xg"). The user tares once and watches a running total.
+- Cue objects and manual prompts use **cumulative scale targets**: `Pour to `${water}g`. The scale phase view displays the increment for that phase as **added / required grams**, plus the cumulative scale reading below. The user still tares only once.
 - The Custom *editor* is the exception: it shows per-pour gram budgets with a cumulative hint.
 - `water` in cue objects is always cumulative for all methods.
 
@@ -39,10 +39,11 @@ awk 'n==1 && /^<\/script>$/{exit} /^<script>$/{n=1; next} n==1{print}' index.htm
 - Match the paired `device_id` before accepting readings. Bluetooth service/characteristic UUIDs must match CoffeeScale firmware. Commands and polls remain serialized.
 
 ## Scale brew screen
-- Show one instruction resolved from both the recipe time and measured weight: setup, pour, stop/wait, deliberate recipe action, drawdown, finished, or disconnected.
-- Live grams are labelled **Water on scale**, cumulative targets **Pour to**. Replace the pour instruction with **Stop pouring** when the target is reached; show a countdown to the next pour. Never skip an unfinished pour to satisfy the clock.
+- This is a phase tracker, not a V60 tutorial. No preparation checklist or pouring-technique prose in the scale brew view.
+- Show **Phase water: added / required grams** and **Phase time: elapsed / allotted time** equally prominently. Keep cumulative weight and total brew time as secondary readings.
+- A phase occupies the whole interval between its recipe cue and the next cue. Reaching the water target changes Pour to Wait; the phase timer keeps running until the next boundary. Reset both phase counters for the next pour. Never skip an unfinished pour to satisfy the clock; show its elapsed time exceeding its budget.
 - Timer-only ring, prompt and upcoming cards are hidden in scale mode. The complete recipe sits inside **View recipe**. Preserve deliberate actions such as Hoffmann's stir/swirl.
-- Setup uses **Zero scale & get ready**; the board still owns tare, pour detection and timing. Avoid repeatedly updating unchanged live-region instructions while polling.
+- Start uses **Tare & start**; the board still owns tare, first-pour detection and timing. Avoid repeatedly updating unchanged live-region instructions while polling. Drawdown remains active beyond the suggested finish until the user ends the brew.
 
 ## Deeper domain model
 See **CLAUDE.md** for the full `METHODS` registry, `customPours` budget model, `savedRecipes` shape, `localStorage` persistence, and migration rules.
