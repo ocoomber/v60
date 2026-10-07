@@ -1,0 +1,577 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1">
+<title>CoffeeScale</title>
+<meta name=theme-color content=#171009>
+<link rel=manifest href=./manifest.json>
+<link rel=icon href=./icon-192.png>
+<link rel=apple-touch-icon href=./apple-touch-icon.png>
+<meta name=mobile-web-app-capable content=yes>
+<meta name=apple-mobile-web-app-capable content=yes>
+<meta name=apple-mobile-web-app-status-bar-style content=black-translucent>
+<style>
+:root{--bg:#171009;--panel:#221810;--panel2:#2A1E13;--ink:#F3EAD9;--muted:#BFA88F;
+--crema:#D9A648;--copper:#B96A2B;--line:#3A2A1A;--ok:#9DB48A}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;background:var(--bg);color:var(--ink);
+background-image:radial-gradient(120% 40% at 50% -10%,#2b1d0f 0%,var(--bg) 60%);min-height:100vh}
+.wrap{max-width:430px;margin:0 auto;padding:16px 16px 32px}
+body[data-mode=man] .only-esp{display:none}
+body[data-mode=v60] .only-esp{display:none}
+body[data-mode=esp] .only-v60{display:none}
+body[data-mode=man] .only-v60{display:none}
+body[data-mode=man] .brew-bar{display:none}
+#v60Step{font-size:17px;font-weight:700;text-align:center;padding:14px 16px;margin:0 0 12px;border-radius:14px;
+background:linear-gradient(180deg,#E8C87E,var(--crema));color:#241505;min-height:48px;display:flex;align-items:center;justify-content:center;line-height:1.3}
+#v60Step.idle{background:var(--panel2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+#v60Step.warn{background:var(--panel2);color:var(--crema);box-shadow:inset 0 0 0 1px var(--line)}
+.seg{display:grid;grid-template-columns:1fr 1fr 1fr;background:#00000055;border:1px solid var(--line);
+border-radius:14px;padding:4px;gap:4px;margin-bottom:12px}
+button.tab{font-size:13px;letter-spacing:.12em;text-transform:uppercase;padding:12px;min-height:44px;border:0;border-radius:10px;
+background:transparent;color:var(--muted);cursor:pointer}
+button.tab.on{background:var(--panel2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.card{background:linear-gradient(180deg,var(--panel),#1B130C);border:1px solid var(--line);
+border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 8px 24px #00000055}
+.card h3{margin:0 0 10px;font-size:11px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;font-weight:600}
+.fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.field label{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.field input{width:100%;font-size:20px;padding:10px 4px;min-height:44px;text-align:center;border-radius:12px;border:1px solid var(--line);
+background:#100B06;color:var(--ink);font-variant-numeric:tabular-nums}
+.field input:focus{outline:2px solid var(--crema);outline-offset:1px}
+.hero{text-align:center;padding:20px 16px 16px}
+#g{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:200;
+font-size:clamp(72px,26vw,124px);line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.unit{color:var(--muted);letter-spacing:.24em;font-size:11px;text-transform:uppercase;margin-top:2px}
+#barW{height:8px;background:#00000066;border:1px solid var(--line);border-radius:99px;margin:14px 0 4px;overflow:hidden}
+#bar{height:100%;width:0%;background:linear-gradient(90deg,var(--copper),var(--crema));border-radius:99px;
+transition:width .2s linear}
+#barW.near #bar{background:var(--crema)}
+.meta{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#t{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:44px;font-variant-numeric:tabular-nums;margin:6px 0 2px}
+#alertBox{visibility:hidden;font-size:15px;font-weight:600;text-align:center;
+padding:10px 14px;margin:0 0 12px;border-radius:14px;border:1px solid transparent}
+#alertBox.warn{visibility:visible;color:var(--crema);border-color:var(--line);background:#00000033}
+#alertBox.show{visibility:visible;color:#241505;border-color:transparent;
+background:linear-gradient(180deg,#E8C87E,var(--crema))}
+.controls{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px;margin-top:12px}
+.controls button{border:0;border-radius:14px;padding:18px 0;font-size:16px;font-weight:700;cursor:pointer}
+.controls button:active{transform:scale(.97)}
+.controls button:disabled,.controls button[data-busy="1"]{cursor:wait;opacity:.55;transform:none}
+.foot small[data-kind="err"]{color:#E8C87E;font-weight:600}
+.foot small[data-kind="ok"]{color:var(--muted);font-weight:400}
+#bTare{background:linear-gradient(180deg,var(--crema),#BE8A34);color:#241505}
+#bStart{background:var(--panel2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+#bStop{background:var(--panel2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+#bReset{grid-column:1/-1;background:transparent;color:var(--muted);font-weight:400;font-size:13px;padding:8px}
+.foot{text-align:center;margin-top:10px}
+.foot small{color:var(--muted);font-size:11px}
+.viewtabs{display:grid;grid-template-columns:1fr 1fr;background:#00000055;border:1px solid var(--line);
+border-radius:14px;padding:4px;gap:4px;margin:12px 0}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.stat{background:#100B06;border:1px solid var(--line);border-radius:12px;padding:10px 4px}
+.stat b{display:block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.stat span{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+#graph{width:100%;height:190px;display:block;background:#100B06;border:1px solid var(--line);border-radius:12px}
+.empty{color:var(--muted);font-size:14px;padding:18px 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+button:focus-visible,input:focus-visible{outline:2px solid var(--crema);outline-offset:2px}
+
+.apphead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 12px}
+.apphead strong{font-size:20px;letter-spacing:-.03em}.apphead button,.connection button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-height:44px;cursor:pointer}
+.connection{margin-bottom:14px}.connection p{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 8px}.connection summary{padding:10px 0;cursor:pointer;color:var(--muted);font-size:13px}.connection a{color:var(--crema)}
+[hidden]{display:none!important}.wrap{padding-top:max(16px,env(safe-area-inset-top));padding-bottom:max(32px,env(safe-area-inset-bottom))}
+body:not([data-mode=v60]) #v60Step{display:none}
+</style>
+<div class=wrap>
+<header class=apphead><strong>CoffeeScale</strong><button id=installApp hidden>Install app</button></header>
+<section class=connection aria-label="Scale connection">
+<p id=connection role=status>Pair your scale once to begin</p>
+<button id=pairScale>Pair scale</button>
+<details id=setupHelp><summary>First-time setup</summary><p>Turn on the scale. If its WiFi is already set up, tap Pair scale and choose CoffeeScale.</p><p>Otherwise, join <b>CoffeeScale-Setup</b> in your phone’s WiFi settings, then tap <a href="http://192.168.4.1/" target="_blank" rel="noopener">Set up scale WiFi</a>. Choose your home WiFi. Connect your phone back to that WiFi, return here and tap Pair scale.</p><p>Allow Bluetooth for pairing and local network access for weighing. After that, just turn on the scale and open this app.</p></details>
+<p id=installHelp>To keep this app: Chrome menu → Add to Home screen → Install.</p>
+</section>
+<div class=seg><button id=mEsp class="tab on">Espresso</button><button id=mV60 class=tab>V60</button><button id=mMan class=tab>Manual</button></div>
+<div id=viewBrew>
+<div class="card hero"><div id=g>0.0</div><div class=unit>grams</div>
+<div id=barW class=brew-bar><div id=bar></div></div>
+<div class="meta brew-bar"><span id=barPct>0%</span><span id=barTgt>target 36 g</span></div></div>
+<div id=alertBox class=only-esp>That's the target — stop the pour</div>
+<div id=v60Step class="only-v60 idle">Tare to begin</div>
+<div class="card hero"><div id=t>0:00</div></div>
+<div class=controls>
+<button id=bTare>Tare</button>
+<button id=bStart>Start</button>
+<button id=bStop>Stop</button>
+<button id=bReset>Reset timer</button>
+</div>
+<div class="card foot only-esp"><h3>Recipe</h3>
+<div class=fields>
+<div class=field><label>Dose g</label><input id=dose value=18 inputmode=decimal></div>
+<div class=field><label>Yield g</label><input id=yieldT value=36 inputmode=decimal></div>
+<div class=field><label>Ratio 1:</label><input id=ratio value=2 inputmode=decimal></div>
+</div></div>
+<div class="card foot only-v60"><h3>Recipe</h3>
+<div class=fields>
+<div class=field><label>Dose g</label><input id=v60Dose value=30 inputmode=decimal></div>
+<div class=field><label>Water g</label><input id=v60Water value=500 inputmode=decimal></div>
+</div></div>
+</div>
+<div id=viewLast style=display:none>
+<div class="card hero"><h3>Last shot</h3>
+<div id=lsEmpty class=empty>No shot yet.</div>
+<div id=lsBody style=display:none>
+<div class=stats>
+<div class=stat><b id=lsYield>—</b><span>Yield g</span></div>
+<div class=stat><b id=lsTime>—</b><span>Time</span></div>
+<div class=stat><b id=lsRatio>—</b><span>Ratio 1:</span></div>
+</div>
+<canvas id=graph width=740 height=380></canvas>
+<div class=meta style=margin-top:6px><span id=lsMode>espresso</span><span id=lsDate></span></div>
+</div></div>
+</div>
+<!-- viewtabs carry only-esp: Last shot is espresso-only by design; manual mode hides history. -->
+<div class="viewtabs only-esp"><button id=vBrew class="tab on">Brew</button><button id=vLast class=tab>Last shot</button></div>
+<div class=foot><small id=cal>Connecting…</small></div>
+</div>
+<script>
+// Storage with private-mode fallback. Failure here used to kill all page script.
+const mem = {};
+const store = {
+  get(k) { try { const v = localStorage.getItem(k); if (v != null) mem[k] = v; return v; } catch (e) { return mem[k] != null ? mem[k] : null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} mem[k] = v; }
+};
+
+// Boot guard: if the page hasn't loaded all elements (e.g. private mode hijacked), say so.
+const $ = (id) => document.getElementById(id);
+const required = ['g', 't', 'cal', 'bTare', 'bStart', 'bStop', 'bReset', 'mEsp', 'mV60', 'mMan', 'alertBox', 'bar', 'barPct', 'barTgt', 'barW', 'yieldT', 'dose', 'ratio', 'v60Step', 'v60Dose', 'v60Water', 'viewBrew', 'viewLast', 'vBrew', 'vLast', 'lsEmpty', 'lsBody', 'lsYield', 'lsTime', 'lsRatio', 'lsMode', 'lsDate', 'graph'];
+for (const id of required) {
+  if (!$(id)) {
+    document.body.innerHTML = '<div style="padding:24px;font-family:system-ui;color:#E8C87E">JS failed to start. Refresh the page.</div>';
+    throw new Error('missing element #' + id);
+  }
+}
+
+// Installed phone app: Bluetooth pairs once; WiFi handles every scale request.
+const SCALE_HOST = 'coffeescale.local';
+const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
+const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
+const link = { pair: null, base: '', connected: false, finding: false, retryAt: 0, hostNext: false, modeApplied: null, queue: Promise.resolve() };
+let installPrompt = null, wakeLock = null;
+
+function scaleURL(address) {
+  const u = new URL('http://' + address);
+  const p = address.split('.').map(Number);
+  const privateIP = /^\d+\.\d+\.\d+\.\d+$/.test(address) && p.every(n => n >= 0 && n <= 255)
+    && (p[0] === 10 || (p[0] === 172 && p[1] >= 16 && p[1] <= 31) || (p[0] === 192 && p[1] === 168));
+  if (address !== SCALE_HOST && !privateIP) throw new Error('The scale sent an invalid WiFi address.');
+  return u.origin;
+}
+try {
+  const p = JSON.parse(store.get('cs_pair') || 'null');
+  if (p && /^[a-f0-9]{12}$/.test(p.id)) { scaleURL(p.ip); link.pair = p; link.base = scaleURL(p.ip); }
+} catch (e) {}
+
+function syncControls() {
+  for (const id of ['bTare', 'bStart', 'bStop', 'bReset']) $(id).disabled = !link.connected || postBusy || !!$(id).dataset.busy;
+  $('pairScale').disabled = link.finding || prevRunning || postBusy;
+  $('pairScale').textContent = link.pair ? 'Pair another scale' : 'Pair scale';
+  $('setupHelp').hidden = !!link.pair;
+}
+function disconnected(message) {
+  link.connected = false;
+  $('connection').textContent = message || (link.pair ? 'Waiting for your scale — turn it on' : 'Pair your scale once to begin');
+  $('g').textContent = '—'; $('t').textContent = '—';
+  $('alertBox').className = 'only-esp';
+  $('bar').style.width = '0%'; $('barPct').textContent = '—';
+  syncControls();
+}
+function validateReading(d) {
+  if (!d || !link.pair || d.device_id !== link.pair.id) throw new Error('Waiting for your paired CoffeeScale');
+  if (!Number.isFinite(d.g) || !Number.isFinite(d.timer_s) || d.timer_s < 0 || typeof d.running !== 'boolean') throw new Error('The scale needs a firmware update.');
+  // Accept identity even when uncalibrated, but never present a faulty sensor as live weight.
+  if (d.sensor_ok !== true) throw new Error('Scale sensor is not responding');
+  if (d.ip && d.ip !== '0.0.0.0') {
+    try { link.base = scaleURL(d.ip); link.pair.ip = d.ip; store.set('cs_pair', JSON.stringify(link.pair)); } catch (e) {}
+  }
+  return d;
+}
+async function scaleRequest(base, path, ms, method = 'GET') {
+  const ctrl = new AbortController(), timeout = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch(base + path, { method, signal: ctrl.signal, mode: 'cors', credentials: 'omit', cache: 'no-store', targetAddressSpace: 'local' });
+    const d = await r.json();
+    if (!r.ok || d.err) throw new Error(d.err || 'Scale request failed (' + r.status + ')');
+    return d;
+  } finally { clearTimeout(timeout); }
+}
+// One queue includes discovery probes, mode changes, commands and polling.
+// Commands are never retried: a timeout can mean the board already performed them.
+function getJSON(path, ms, method = 'GET') {
+  const job = link.queue.then(async () => {
+    if (!link.pair || link.finding) return { ok: false, err: 'Pair your scale to begin' };
+    if (document.visibilityState === 'hidden' && method === 'GET') return { ok: false, err: 'App is in the background' };
+    try {
+      if (method !== 'GET') {
+        if (!link.connected) return { ok: false, err: 'Waiting for your scale' };
+        // Confirm identity before a write, in case DHCP reassigned the remembered address.
+        validateReading(await scaleRequest(link.base, '/api/weight', 2500));
+        const value = await scaleRequest(link.base, path, ms, method);
+        if (path.startsWith('/api/autotimer?on=')) link.modeApplied = path.endsWith('=0') ? 'man' : 'auto';
+        return { ok: true, value };
+      }
+      if (!link.connected) {
+        if (Date.now() < link.retryAt) return { ok: false, err: 'Waiting for your scale' };
+        link.base = scaleURL(link.hostNext ? SCALE_HOST : link.pair.ip);
+        link.hostNext = !link.hostNext;
+      }
+      const value = validateReading(await scaleRequest(link.base, path, ms));
+      const desiredMode = mode === 'man' ? 'man' : 'auto';
+      if (!value.running && !value.pour_mode && link.modeApplied !== desiredMode) {
+        await scaleRequest(link.base, '/api/autotimer?on=' + (desiredMode === 'man' ? '0' : '1'), 2500, 'POST');
+        link.modeApplied = desiredMode;
+      }
+      link.connected = true; link.retryAt = 0; link.hostNext = false;
+      $('connection').textContent = 'Scale connected'; syncControls();
+      return { ok: true, value };
+    } catch (e) {
+      link.retryAt = Date.now() + 1000;
+      const message = e.name === 'AbortError' || e instanceof TypeError
+        ? 'Waiting for your scale — same WiFi, local network access allowed'
+        : e.message;
+      disconnected(message);
+      return { ok: false, err: message };
+    }
+  });
+  link.queue = job.catch(() => {});
+  return job;
+}
+const post = path => getJSON(path, 6000, 'POST');
+
+async function readPairing(device) {
+  let expired = false, timeout;
+  const operation = (async () => {
+    const server = await device.gatt.connect();
+    if (expired) { device.gatt.disconnect(); throw new Error('Pairing timed out.'); }
+    const service = await server.getPrimaryService(DISCOVERY_SERVICE);
+    const characteristic = await service.getCharacteristic(DISCOVERY_ADDRESS);
+    const data = JSON.parse(new TextDecoder().decode(await characteristic.readValue()));
+    if (expired) throw new Error('Pairing timed out.');
+    if (data.host !== SCALE_HOST || !/^[a-f0-9]{12}$/.test(data.id || '')) throw new Error('The scale needs a firmware update.');
+    if (data.ip === '0.0.0.0') throw new Error('Set up the scale WiFi below, then pair again.');
+    scaleURL(data.ip);
+    return { id: data.id, ip: data.ip };
+  })();
+  try {
+    return await Promise.race([operation, new Promise((_, reject) => {
+      timeout = setTimeout(() => { expired = true; device.gatt.disconnect(); reject(new Error('Pairing timed out. Try again with the scale nearby.')); }, 10000);
+    })]);
+  } finally { clearTimeout(timeout); device.gatt.disconnect(); }
+}
+async function pairScale() {
+  if (link.finding || prevRunning || postBusy) return;
+  if (!navigator.bluetooth?.requestDevice) { $('connection').textContent = 'Open in Chrome on Android to pair your scale.'; return; }
+  link.finding = true; syncControls();
+  $('connection').textContent = 'Choose CoffeeScale';
+  try {
+    // Keep the device picker in the button gesture, before awaiting the HTTP queue.
+    const device = await navigator.bluetooth.requestDevice({ filters: [{ services: [DISCOVERY_SERVICE] }] });
+    const pair = await readPairing(device);
+    await link.queue;
+    link.pair = pair; link.base = scaleURL(pair.ip); link.retryAt = 0; link.hostNext = false;
+    store.set('cs_pair', JSON.stringify(pair));
+    disconnected('Connecting to your scale…');
+  } catch (e) {
+    $('connection').textContent = e.name === 'NotFoundError' ? 'Pairing cancelled' : e.message;
+  } finally { link.finding = false; syncControls(); tick(); }
+}
+async function keepAwake() {
+  if (!navigator.wakeLock || document.visibilityState === 'hidden' || wakeLock) return;
+  try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } catch (e) {}
+}
+function startPhoneApp() {
+  $('pairScale').onclick = pairScale;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; $('installApp').hidden = false; });
+  $('installApp').onclick = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt(); await installPrompt.userChoice;
+    installPrompt = null; $('installApp').hidden = true;
+  };
+  window.addEventListener('appinstalled', () => { $('installApp').hidden = true; $('installHelp').hidden = true; });
+  if (window.matchMedia('(display-mode: standalone)').matches) $('installHelp').hidden = true;
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {
+    $('installHelp').textContent = 'Offline install unavailable. Open this app in Chrome over HTTPS.';
+  });
+  document.addEventListener('click', keepAwake);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') { link.retryAt = 0; keepAwake(); tick(); }
+  });
+  window.addEventListener('online', () => { link.retryAt = 0; tick(); });
+  disconnected(); setStatus(link.pair ? 'Connecting…' : 'Pair once. Then just turn on the scale and open this app.');
+  setInterval(tick, 200); tick();
+}
+
+// State.
+let mode = store.get('cs_mode'); if (mode !== 'esp' && mode !== 'v60' && mode !== 'man') mode = 'esp';
+let S = { esp: { dose: 18, yield: 36 }, v60: { dose: 30, water: 500 }, man: { dose: 0, yield: 0 } };
+const V60 = { bloomRatio: 2, bloomTime: 45, midRatio: 0.6, midTime: 75, drawdownTime: 180 };
+let v60Step = 0, v60BloomStart = 0;
+function v60Targets() { return { bloom: S.v60.dose * V60.bloomRatio, mid: S.v60.water * V60.midRatio, full: S.v60.water }; }
+function v60Update(g, t) {
+  const tgt = v60Targets();
+  if (v60Step === 0) {
+    if (g >= tgt.bloom) { v60Step = 1; v60BloomStart = t; return { text: `Pause \u2014 bloom ${V60.bloomTime}s`, cls: 'show', target: null }; }
+    return { text: `Pour to ${tgt.bloom}g`, cls: '', target: tgt.bloom };
+  }
+  if (v60Step === 1) {
+    const remain = V60.bloomTime - (t - v60BloomStart);
+    if (remain <= 0) { v60Step = 2; return { text: `Pour to ${tgt.mid}g`, cls: '', target: tgt.mid }; }
+    return { text: `Bloom \u2014 ${Math.ceil(remain)}s`, cls: 'warn', target: null };
+  }
+  if (v60Step === 2) {
+    if (g >= tgt.mid) { v60Step = 3; return { text: 'Pause', cls: 'warn', target: null }; }
+    return { text: `Pour to ${tgt.mid}g`, cls: '', target: tgt.mid };
+  }
+  if (v60Step === 3) {
+    if (t >= V60.midTime) { v60Step = 4; return { text: `Pour to ${tgt.full}g`, cls: '', target: tgt.full }; }
+    return { text: `Wait \u2014 pour at ${V60.midTime}s`, cls: 'warn', target: null };
+  }
+  if (v60Step === 4) {
+    if (g >= tgt.full) { v60Step = 5; return { text: 'Swirl \u2014 wait for drawdown', cls: 'show', target: null }; }
+    return { text: `Pour to ${tgt.full}g`, cls: '', target: tgt.full };
+  }
+  if (v60Step === 5) {
+    if (t >= V60.drawdownTime) { v60Step = 6; return { text: 'Done!', cls: 'show', target: null }; }
+    return { text: `Drawdown \u2014 ${Math.ceil(V60.drawdownTime - t)}s`, cls: 'warn', target: null };
+  }
+  return { text: 'Done!', cls: 'show', target: null };
+}
+function v60Reset() { v60Step = 0; v60BloomStart = 0; }
+try { const raw = JSON.parse(store.get('cs_set') || '{}'); if (raw && typeof raw === 'object') Object.assign(S, raw); } catch (e) {}
+const save = () => { store.set('cs_mode', mode); store.set('cs_set', JSON.stringify(S)); };
+
+let rec = null, recAcc = 0, prevRunning = false;
+
+function setStatus(text, isError) {
+  const el = $('cal');
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = isError ? '#E8C87E' : '';
+  el.style.fontWeight = isError ? '600' : '400';
+}
+
+function recStart() { rec = { mode, dose: S[mode].dose || 0, target: S[mode].yield || S[mode].water || 0, t0: Date.now(), pts: [] }; recAcc = 0; }
+function recSample(t, g) { if (!rec) return; recAcc += 0.5; if (recAcc >= 0.5) { recAcc = 0; rec.pts.push([+t.toFixed(1), +g.toFixed(1)]); } }
+function recStop(finalT, finalG) {
+  if (!rec || rec.pts.length < 3) { rec = null; return; }
+  const dose = rec.dose || 0;
+  const shot = {
+    mode: rec.mode, dose, target: rec.target, time: +finalT.toFixed(1),
+    yield: +finalG.toFixed(1), ratio: dose > 0 ? +(finalG / dose).toFixed(1) : 0,
+    date: new Date(rec.t0).toLocaleString(), pts: rec.pts
+  };
+  store.set('cs_last', JSON.stringify(shot));
+  rec = null; renderLast();
+}
+
+function renderLast() {
+  let shot = null;
+  try { const raw = store.get('cs_last'); shot = raw ? JSON.parse(raw) : null; } catch (e) {}
+  const empty = !shot || !shot.pts || shot.pts.length < 3;
+  $('lsEmpty').style.display = empty ? 'block' : 'none';
+  $('lsBody').style.display = empty ? 'none' : 'block';
+  if (empty) return;
+  $('lsYield').textContent = Number(shot.yield).toFixed(1);
+  const s = Math.floor(shot.time);
+  $('lsTime').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  $('lsRatio').textContent = shot.dose > 0 ? Number(shot.ratio).toFixed(1) : 'â€”';
+  $('lsMode').textContent = (shot.mode === 'esp' ? 'espresso Â· dose ' + shot.dose + ' g' : 'manual');
+  $('lsDate').textContent = shot.date || '';
+  drawGraph(shot);
+}
+
+function drawGraph(shot) {
+  const cv = $('graph'); if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  const cw = cv.clientWidth || 360, ch = 190, bw = Math.round(cw * dpr), bh = Math.round(ch * dpr);
+  if (cv.width !== bw || cv.height !== bh) { cv.width = bw; cv.height = bh; }
+  ctx.setTransform(bw / 740, 0, 0, bh / 380, 0, 0);
+  const W = 740, H = 380, padL = 64, padB = 44, padT = 20, padR = 16;
+  ctx.clearRect(0, 0, W, H);
+  const tMax = Math.max(10, shot.time * 1.05);
+  const gMax = Math.max(shot.target * 1.15, shot.yield * 1.1, 10);
+  const X = (t) => padL + (t / tMax) * (W - padL - padR);
+  const Y = (g) => H - padB - (g / gMax) * (H - padT - padB);
+  ctx.strokeStyle = '#3A2A1A'; ctx.fillStyle = '#BFA88F'; ctx.font = '22px system-ui'; ctx.lineWidth = 2;
+  for (let i = 0; i <= 4; i++) {
+    const g = gMax * i / 4, y = Y(g);
+    ctx.globalAlpha = .5; ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.fillText(g.toFixed(0) + ' g', 6, y + 8);
+  }
+  for (let i = 0; i <= 4; i++) { const t = tMax * i / 4, x = X(t); ctx.fillText(t.toFixed(0) + 's', x - 12, H - 12); }
+  if (shot.target > 0) {
+    ctx.setLineDash([10, 8]); ctx.strokeStyle = '#D9A648'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(padL, Y(shot.target)); ctx.lineTo(W - padR, Y(shot.target)); ctx.stroke(); ctx.setLineDash([]);
+  }
+  ctx.strokeStyle = '#F3EAD9'; ctx.lineWidth = 5; ctx.lineJoin = 'round'; ctx.beginPath();
+  shot.pts.forEach((p, i) => { const x = X(p[0]), y = Y(p[1]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.stroke();
+  const last = shot.pts[shot.pts.length - 1];
+  ctx.fillStyle = '#D9A648'; ctx.beginPath(); ctx.arc(X(last[0]), Y(last[1]), 10, 0, 7); ctx.fill();
+}
+
+function syncRatio(from) {
+  const dose = parseFloat($('dose').value) || 0;
+  let yt = parseFloat($('yieldT').value) || 0;
+  const r = parseFloat($('ratio').value) || 0;
+  if (from === 'ratio' && dose > 0) { yt = dose * r; $('yieldT').value = +yt.toFixed(1); }
+  else if (from === 'yield' && dose > 0) { $('ratio').value = +(yt / dose).toFixed(1); }
+  else if (dose > 0) { $('ratio').value = +(yt / dose).toFixed(1); }
+  S[mode].dose = dose; S[mode].yield = yt; save();
+}
+
+function applyMode() {
+  document.body.dataset.mode = mode;
+  $('mEsp').className = 'tab' + (mode === 'esp' ? ' on' : '');
+  $('mV60').className = 'tab' + (mode === 'v60' ? ' on' : '');
+  $('mMan').className = 'tab' + (mode === 'man' ? ' on' : '');
+  if (mode === 'esp') {
+    $('dose').value = S.esp.dose;
+    $('yieldT').value = S.esp.yield;
+    syncRatio();
+  }
+  if (mode === 'v60') {
+    $('v60Dose').value = S.v60.dose;
+    $('v60Water').value = S.v60.water;
+    v60Reset();
+    $('v60Step').textContent = 'Tare to begin';
+    $('v60Step').className = 'only-v60 idle';
+  }
+  $('alertBox').className = 'only-esp';
+  if (link.connected) { postBusy = true; syncControls(); post('/api/autotimer?on=' + (mode === 'man' ? '0' : '1')).finally(() => { postBusy = false; syncControls(); }); }
+  save();
+}
+
+// One tick of polling. Always updates the DOM with whatever came back (or sets an error status).
+let tickBusy = false;
+let postBusy = false;
+function tick() {
+  if (tickBusy || postBusy) return;
+  tickBusy = true;
+  getJSON('/api/weight', 2500).then(r => {
+    if (!r.ok) {
+      setStatus(r.err, true);
+      return;
+    }
+    const d = r.value;
+    let g = Number(d.g);
+    if (Object.is(g, -0)) g = 0;
+    if (!isFinite(g)) { setStatus('BAD REPLY: ' + JSON.stringify(d).slice(0, 80), true); return; }
+    const running = !!d.running;
+    const timer_s = Number(d.timer_s) || 0;
+    const cpg = Number(d.cpg);
+    const cal = !!d.cal;
+
+    $('g').textContent = g.toFixed(1);
+    const s = Math.floor(timer_s);
+    $('t').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+
+    if (mode === 'esp') {
+      const target = parseFloat($('yieldT').value) || 0;
+      const pct = target > 0 ? Math.min(100, g / target * 100) : 0;
+      $('bar').style.width = pct + '%';
+      $('barPct').textContent = Math.round(pct) + '%';
+      $('barTgt').textContent = 'target ' + target + ' g';
+      $('barW').className = (pct >= 90 && pct < 100 ? 'near' : '') + ' only-esp';
+      const box = $('alertBox');
+      if (target > 0 && g >= target) {
+        box.textContent = "That's the target - stop the pour"; box.className = 'only-esp show';
+      } else if (target > 0 && pct >= 90) {
+        box.textContent = 'Almost there - ease off'; box.className = 'only-esp warn';
+      } else {
+        box.className = 'only-esp';
+      }
+      if (!prevRunning && running) recStart();
+      if (running && mode === 'esp') recSample(timer_s, g);
+    }
+    if (prevRunning && !running) recStop(timer_s, g);
+    prevRunning = running;
+
+    setStatus(cal ? 'Scale ready' : 'Scale needs calibration');
+  }).finally(() => { tickBusy = false; });
+}
+
+// Lock a button, send a POST, show OK briefly or surface the error.
+function buttonCmd(btn, path, okText) {
+  const old = btn.textContent;
+  btn.disabled = true;
+  btn.dataset.busy = '1';
+  btn.textContent = '...';
+  postBusy = true;
+  const tryPost = (n) => post(path).then(r => (r.ok || n <= 1) ? r : new Promise(res => setTimeout(() => res(tryPost(n - 1)), 350)));
+  tryPost(1).then(r => {
+    if (!r.ok) {
+      setStatus(r.err, true);
+      btn.textContent = old;
+      return;
+    }
+    btn.textContent = 'OK ' + okText;
+    setTimeout(() => { if (btn.textContent === 'OK ' + okText) btn.textContent = old; }, 800);
+  }).finally(() => {
+    syncControls();
+    delete btn.dataset.busy;
+    postBusy = false;
+  });
+}
+
+$('bTare').onclick = () => {
+  // Snap to 0.0 only after the server confirms tare succeeded. If tare fails
+  // (HX711 not ready, timeout), leave the displayed value alone and surface
+  // the error in the footer.
+  const btn = $('bTare');
+  const old = btn.textContent;
+  btn.disabled = true;
+  btn.dataset.busy = '1';
+  btn.textContent = '...';
+  postBusy = true;
+  const tryTare = (n) => post('/api/tare').then(r => (r.ok || n <= 1) ? r : new Promise(res => setTimeout(() => res(tryTare(n - 1)), 350)));
+  tryTare(1).then(r => {
+    if (!r.ok) {
+      setStatus(r.err, true);
+      btn.textContent = old;
+      return;
+    }
+    $('g').textContent = '0.0';
+    btn.textContent = 'OK Tared';
+    setTimeout(() => { if (btn.textContent === 'OK Tared') btn.textContent = old; }, 800);
+  }).finally(() => {
+    syncControls();
+    delete btn.dataset.busy;
+    postBusy = false;
+  });
+};
+$('bStart').onclick = () => buttonCmd($('bStart'), '/api/timer/start', 'Running');
+$('bStop').onclick = () => { buttonCmd($('bStop'), '/api/timer/stop', 'Stopped'); setTimeout(renderLast, 200); };
+$('bReset').onclick = () => buttonCmd($('bReset'), '/api/timer/reset', 'Reset');
+
+$('mEsp').onclick = () => { mode = 'esp'; applyMode(); };
+$('mV60').onclick = () => { mode = 'v60'; applyMode(); };
+$('mMan').onclick = () => { mode = 'man'; applyMode(); };
+$('dose').onchange = () => syncRatio('dose');
+$('yieldT').onchange = () => syncRatio('yield');
+$('ratio').onchange = () => syncRatio('ratio');
+$('dose').oninput = () => syncRatio('dose');
+$('yieldT').oninput = () => syncRatio('yield');
+$('v60Dose').onchange = () => { S.v60.dose = parseFloat($('v60Dose').value) || 30; save(); };
+$('v60Water').onchange = () => { S.v60.water = parseFloat($('v60Water').value) || 500; save(); };
+$('v60Dose').oninput = () => { S.v60.dose = parseFloat($('v60Dose').value) || 30; };
+$('v60Water').oninput = () => { S.v60.water = parseFloat($('v60Water').value) || 500; };
+
+$('vBrew').onclick = () => { $('viewBrew').style.display = 'block'; $('viewLast').style.display = 'none'; $('vBrew').className = 'tab on'; $('vLast').className = 'tab'; };
+$('vLast').onclick = () => { $('viewBrew').style.display = 'none'; $('viewLast').style.display = 'block'; $('vBrew').className = 'tab'; $('vLast').className = 'tab on'; renderLast(); };
+
+setStatus('Connecting…');
+// Polling starts after the app shell is ready.
+applyMode();
+renderLast();
+startPhoneApp();
+</script>
+</html>
