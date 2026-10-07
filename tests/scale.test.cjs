@@ -8,7 +8,7 @@ const script = html.match(/<script>\r?\n([\s\S]*?)<\/script>/)[1];
 const reading = (overrides={}) => ({g:0,timer_s:0,running:false,cal:true,sensor_ok:true,pour_mode:false,pour_armed:false,pour_id:1,...overrides});
 const response = data => ({ok:true,json:async()=>data});
 
-function app(fetch = async () => response(reading())) {
+function app(fetch = async () => response(reading()), saved=null) {
   const elements = {};
   const timeouts=new Map(); let timerId=0;
   for(const [,id] of html.matchAll(/id="([^"]+)"/g)) elements[id] = {
@@ -17,11 +17,11 @@ function app(fetch = async () => response(reading())) {
   };
   const context = vm.createContext({document:{
     getElementById:id=>elements[id],querySelectorAll:()=>[],addEventListener(){},visibilityState:'visible',
-  }, localStorage:{getItem(){return null;},setItem(){}},
-  fetch,AbortController,URL,Date,TypeError,setTimeout(fn,ms){const id=++timerId;timeouts.set(id,{fn,ms});return id;},clearTimeout(id){timeouts.delete(id);},setInterval(){return 1;},clearInterval(){},
+  }, localStorage:{getItem(){return saved ? JSON.stringify(saved) : null;},setItem(){}},
+  fetch,AbortController,URL,Date,TypeError,TextDecoder,setTimeout(fn,ms){const id=++timerId;timeouts.set(id,{fn,ms});return id;},clearTimeout(id){timeouts.delete(id);},setInterval(){return 1;},clearInterval(){},
   NoSleep:class {async enable(){} disable(){}},window:{},navigator:{}});
   vm.runInContext(script,context);
-  return {elements,run:code=>vm.runInContext(code,context),timeout:ms=>{
+  return {elements,run:code=>vm.runInContext(code,context),setBluetooth:api=>context.navigator.bluetooth=api,timeout:ms=>{
     for(const [id,t] of timeouts) if(t.ms===ms){timeouts.delete(id);t.fn();return;}
     throw new Error('No timeout for '+ms);
   }};
@@ -33,10 +33,11 @@ async function scaleBrew(p) {
 
 function feed(p, overrides) { p.run(`acceptScaleData(${JSON.stringify(reading(overrides))})`); }
 
-test('accepts private WiFi IPs and rejects public URLs, credentials and paths', () => {
+test('accepts private WiFi IPs and the scale local name, rejects other destinations', () => {
   const p=app();
   for(const ip of ['192.168.1.60','10.24.3.87','172.16.0.2','172.31.4.8']) assert.equal(p.run(`scaleURL('${ip}')`),'http://'+ip);
-  for(const ip of ['8.8.8.8','172.32.0.1','127.0.0.1','coffeescale.local','https://192.168.1.60','http://x:y@192.168.1.60','http://192.168.1.60/api/weight']) assert.throws(()=>p.run(`scaleURL('${ip}')`));
+  assert.equal(p.run("scaleURL('coffeescale.local')"),'http://coffeescale.local');
+  for(const ip of ['8.8.8.8','172.32.0.1','127.0.0.1','other.local','https://192.168.1.60','http://x:y@192.168.1.60','http://192.168.1.60/api/weight']) assert.throws(()=>p.run(`scaleURL('${ip}')`));
 });
 
 test('connect saves the address, requests local network access, and validates firmware', async () => {
@@ -139,7 +140,7 @@ test('a failed end retains the session so the user can retry without silently re
   const p=app(async ()=>{throw new TypeError('offline');}); await scaleBrew(p);p.run('scale.session=7;scale.armed=true');
   assert.equal(await p.run('endScaleBrew()'),false);
   assert.equal(p.run('scale.session'),7);
-  assert.match(p.elements.scaleGuidance.textContent,/unreachable/);
+  assert.match(p.elements.scaleGuidance.textContent,/Waiting for CoffeeScale/);
 });
 
 test('a lost arm response recovers the new board session on the next reading', async () => {
@@ -210,4 +211,93 @@ test('private-mode localStorage errors leave manual and scale controls usable', 
   const p=app();p.run("localStorage.getItem=()=>{throw new Error('blocked')};localStorage.setItem=localStorage.getItem;loadSettings();saveSettings()");
   await scaleBrew(p);
   assert.equal(p.elements.brewBtn.textContent,'Tare & arm');
+});
+
+const pairedId='aabbccddeeff';
+const pairing = (overrides={}) => ({ip:'10.24.3.87',host:'coffeescale.local',id:pairedId,...overrides});
+const flush=()=>new Promise(resolve=>setImmediate(resolve));
+function bluetoothDevice(data) {
+  let disconnects=0;
+  const bytes=new TextEncoder().encode(JSON.stringify(data));
+  return {name:'CoffeeScale',get disconnects(){return disconnects;},gatt:{
+    async connect(){return {async getPrimaryService(uuid){
+      assert.equal(uuid,'72cf0001-5dc4-4a38-8f16-7b63ad328a20');
+      return {async getCharacteristic(uuid){
+        assert.equal(uuid,'72cf0002-5dc4-4a38-8f16-7b63ad328a20');
+        return {async readValue(){return new DataView(bytes.buffer);}};
+      }};
+    }};},disconnect(){disconnects++;},
+  }};
+}
+
+test('Find scale pairs once, learns the address, disconnects Bluetooth and uses WiFi', async () => {
+  const calls=[];const device=bluetoothDevice(pairing());let pickers=0;
+  const p=app(async(url)=>{calls.push(url);return response(reading({device_id:pairedId,ip:'10.24.3.87'}));});
+  p.setBluetooth({async requestDevice(options){pickers++;assert.equal(options.filters[0].services[0],'72cf0001-5dc4-4a38-8f16-7b63ad328a20');return device;}});
+  await p.run('findScale()');
+  assert.equal(pickers,1);assert.equal(device.disconnects,1);
+  assert.equal(p.run('settings.scaleId'),pairedId);assert.equal(p.run('settings.scaleAddress'),'10.24.3.87');
+  assert.equal(p.run('settings.brewMode'),'scale');assert.equal(p.run('scale.connected'),true);
+  assert.deepEqual(calls,['http://10.24.3.87/api/weight']);
+  await p.run('pollScale()');assert.equal(pickers,1,'weight polling does not reopen Bluetooth');
+});
+
+test('opening a paired app automatically reconnects over WiFi without a Bluetooth picker', async () => {
+  let calls=0,pickers=0;
+  const p=app(async url=>{calls++;assert.equal(url,'http://10.24.3.87/api/weight');return response(reading({device_id:pairedId}));},
+    {brewMode:'scale',scaleAddress:'10.24.3.87',scaleId:pairedId});
+  p.setBluetooth({requestDevice(){pickers++;throw new Error('must not use Bluetooth');}});
+  await flush();assert.equal(calls,1);assert.equal(pickers,0);assert.equal(p.run('scale.connected'),true);
+});
+
+test('an offline scale reconnects by local name after DHCP changes, without Bluetooth', async () => {
+  const calls=[];let pickers=0;
+  const p=app(async url=>{
+    calls.push(url);
+    if(calls.length===1) throw new TypeError('off');
+    return response(reading({device_id:pairedId,ip:'10.24.3.99',g:8}));
+  },{brewMode:'scale',scaleAddress:'10.24.3.87',scaleId:pairedId});
+  p.setBluetooth({requestDevice(){pickers++;throw new Error('must not use Bluetooth');}});
+  await flush();assert.equal(p.run('scale.connected'),false);
+  await p.run('pollScale()');
+  assert.deepEqual(calls,['http://10.24.3.87/api/weight','http://coffeescale.local/api/weight']);
+  assert.equal(p.run('settings.scaleAddress'),'10.24.3.99');assert.equal(p.run('scale.base'),'http://10.24.3.99');
+  assert.equal(p.run('scale.connected'),true);assert.equal(pickers,0);
+});
+
+test('a different scale at the old IP cannot supply readings for the paired scale', async () => {
+  const p=app(async()=>response(reading({device_id:'112233445566',g:500})),
+    {brewMode:'scale',scaleAddress:'10.24.3.87',scaleId:pairedId});
+  await flush();assert.equal(p.run('scale.connected'),false);assert.equal(p.run('scale.data'),null);
+  assert.match(p.elements.scaleStatus.textContent,/different scale/);
+  assert.equal(p.elements.scaleWeight.textContent,'— g');
+});
+
+test('cancelled pairing leaves the saved scale unchanged and resumes WiFi polling', async () => {
+  const p=app();p.run("settings.scaleAddress='192.168.1.60';settings.scaleId='aabbccddeeff'");
+  p.setBluetooth({async requestDevice(){throw Object.assign(new Error('cancel'),{name:'NotFoundError'});}});
+  await p.run('findScale()');
+  assert.equal(p.run('settings.scaleAddress'),'192.168.1.60');assert.equal(p.run('settings.scaleId'),pairedId);
+  assert.equal(p.elements.scaleFindBtn.disabled,false);assert.equal(p.run('scale.finding'),false);
+  assert.match(p.elements.scaleStatus.textContent,/cancelled/);
+});
+
+test('a found scale without router WiFi gives a setup message instead of saving a zero address', async () => {
+  const p=app();const device=bluetoothDevice(pairing({ip:'0.0.0.0'}));
+  p.setBluetooth({async requestDevice(){return device;}});await p.run('findScale()');
+  assert.equal(p.run('settings.scaleAddress'),'');assert.equal(device.disconnects,1);
+  assert.match(p.elements.scaleStatus.textContent,/CoffeeScale-Setup/);
+});
+
+test('a hung Bluetooth connection times out and releases the discovery controls', async () => {
+  const p=app();let disconnects=0;
+  p.setBluetooth({async requestDevice(){return {gatt:{connect:()=>new Promise(()=>{}),disconnect(){disconnects++;}}};}});
+  const finding=p.run('findScale()');await flush();p.timeout(10000);await finding;
+  assert.match(p.elements.scaleStatus.textContent,/timed out/);assert.equal(p.run('scale.finding'),false);
+  assert.equal(p.elements.scaleFindBtn.disabled,false);assert.ok(disconnects>=1);
+});
+
+test('Find scale reports unsupported browsers without changing a working WiFi connection', async () => {
+  const p=app();await scaleBrew(p);await p.run('findScale()');
+  assert.match(p.elements.scaleStatus.textContent,/Chrome on Android/);assert.equal(p.run('scale.connected'),true);
 });

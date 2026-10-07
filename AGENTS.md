@@ -1,12 +1,12 @@
 # AGENTS.md — quick reference for AI coding sessions
 
 ## Repo at a glance
-- **One file, no build.** The entire app is `index.html` (HTML + inline CSS + inline JS + base64 assets). No framework, no package.json, no bundler, no test suite.
+- **One file, no build.** The entire app is `index.html` (HTML + inline CSS + inline JS + base64 assets). No framework, no package.json, no bundler. Scale integration checks live in `tests/scale.test.cjs` and run directly with Node.
 - **`barista-worker/`** is a separate Cloudflare Worker (`worker.js`). Deployed independently, not served by Pages. See `barista-worker/README.md` for setup.
 - Hosted on **GitHub Pages** — auto-deploys on push to `main`.
 
 ## Verify before you push
-No linter, no typecheck, no tests. The only automated check is a JS syntax check:
+No linter or typecheck. Run `node --test tests/scale.test.cjs` for scale changes, plus a JS syntax check:
 ```sh
 awk 'n==1 && /^<\/script>$/{exit} /^<script>$/{n=1; next} n==1{print}' index.html > /tmp/app.js && node --check /tmp/app.js
 ```
@@ -31,6 +31,12 @@ awk 'n==1 && /^<\/script>$/{exit} /^<script>$/{n=1; next} n==1{print}' index.htm
 - All brew cues use **cumulative scale targets**: `Pour to `${water}g` (not incremental "add Xg"). The user tares once and watches a running total.
 - The Custom *editor* is the exception: it shows per-pour gram budgets with a cumulative hint.
 - `water` in cue objects is always cumulative for all methods.
+
+## CoffeeScale pairing
+- Initial **Find scale** uses Web Bluetooth in Android Chrome to read the WiFi address and persistent device ID; it disconnects Bluetooth immediately afterward. Brewing stays on WiFi.
+- Remember the pairing and reconnect automatically over WiFi on app startup and after a dropped connection. Never open a Bluetooth picker on these paths.
+- Retry the cached IP and `coffeescale.local`; successful local-name recovery learns the new DHCP IP. Modern Android supports `.local`, but multicast availability remains network-dependent.
+- Match the paired `device_id` before accepting readings. Bluetooth service/characteristic UUIDs must match CoffeeScale firmware. Commands and polls remain serialized.
 
 ## Deeper domain model
 See **CLAUDE.md** for the full `METHODS` registry, `customPours` budget model, `savedRecipes` shape, `localStorage` persistence, and migration rules.

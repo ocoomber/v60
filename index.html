@@ -242,8 +242,11 @@
         <button class="seg-btn" data-val="scale" onclick="setBrewMode('scale')">WiFi scale</button>
       </div>
       <div id="scaleSetup" style="display:none">
-        <div class="scale-row"><input id="scaleAddress" aria-label="Scale IP address" placeholder="Scale IP, e.g. 192.168.1.60" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn-secondary" id="scaleConnectBtn" onclick="connectScale()">Connect</button></div>
-        <p class="scale-status" id="scaleStatus" role="status">Use the scale’s router IP. Phone and scale must be on the same WiFi. Allow local network access when Chrome asks.</p>
+        <div class="scale-row"><button class="btn-secondary" id="scaleFindBtn" onclick="findScale()">Find scale</button></div>
+        <p class="scale-status" id="scaleStatus" role="status">Pair once with Find scale. After that, turn the scale on and open the app—it reconnects over WiFi. Keep phone and scale on the same network.</p>
+        <details class="help-sec"><summary class="help-h">Connection troubleshooting</summary>
+          <div class="scale-row"><input id="scaleAddress" aria-label="Scale address" placeholder="Scale address" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn-secondary" id="scaleConnectBtn" onclick="connectScale()">Connect</button></div>
+        </details>
       </div>
     </div>
     <div class="summary" id="summaryCard"></div>
@@ -354,7 +357,10 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-10-07.1';
+const APP_VERSION = '2026-10-07.2';
+const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
+const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
+const SCALE_HOST = 'coffeescale.local';
 const RING_CIRC = 552.9; // circumference of the progress ring (2π × r, r=88); matches the SVG
 const BARISTA_URL = "https://v60-barista.ocoomber.workers.dev"; // Cloudflare Worker proxy (see barista-worker/README.md)
 let baristaHistory = [], baristaBusy = false;
@@ -365,13 +371,13 @@ let baristaHistory = [], baristaBusy = false;
 // plus a time. Dose × customRatio is the water budget the pours should add up to.
 const DEFAULT_POURS = [ {at:0,g:48}, {at:45,g:48}, {at:90,g:48}, {at:135,g:48}, {at:180,g:48} ];
 
-let settings = { dose:15, method:'balanced', customRatio:16, customPours: DEFAULT_POURS.map(p => ({...p})), savedRecipes: [], brewMode:'manual', scaleAddress:'' };
+let settings = { dose:15, method:'balanced', customRatio:16, customPours: DEFAULT_POURS.map(p => ({...p})), savedRecipes: [], brewMode:'manual', scaleAddress:'', scaleId:'' };
 let elapsed=0, startTs=0, interval=null, started=false, finished=false, paused=false, fromBrew=false, currentCue=0, cues=[];
 let noSleep=null, audioCtx=null;
 
 const $ = id => document.getElementById(id);
 // One request at a time for the ESP32's single-client server, including commands.
-const scale = { base:'', connected:false, data:null, poll:null, pending:null, command:false, session:null, armPending:null, armed:false, generation:0 };
+const scale = { base:'', connected:false, data:null, poll:null, pending:null, command:false, finding:false, session:null, armPending:null, armed:false, generation:0 };
 
 function loadSettings() {
   try {
@@ -385,6 +391,7 @@ function loadSettings() {
   if(typeof settings.customRatio !== 'number') settings.customRatio = 16;
   if(settings.brewMode !== 'scale') settings.brewMode = 'manual';
   if(typeof settings.scaleAddress !== 'string') settings.scaleAddress = '';
+  if(typeof settings.scaleId !== 'string' || !/^[a-f0-9]{12}$/.test(settings.scaleId)) settings.scaleId='';
   if(!Array.isArray(settings.savedRecipes)) settings.savedRecipes = [];
   // Drop saved recipes from older storage shapes (e.g. fraction-based pours).
   settings.savedRecipes = settings.savedRecipes.filter(r => r && typeof r.name === 'string'
@@ -417,6 +424,7 @@ function applySettings() {
 }
 
 function setBrewMode(mode) {
+  if(scale.finding || scale.command) return;
   settings.brewMode = mode;
   if(mode !== 'scale') { clearTimeout(scale.poll); scale.generation++; scale.connected=false; scale.data=null; }
   saveSettings(); applySettings();
@@ -426,11 +434,53 @@ function scaleURL(value) {
   const url = new URL(value.includes('://') ? value : 'http://' + value);
   const parts = url.hostname.split('.').map(Number);
   if(url.protocol !== 'http:' || url.username || url.password || url.port || url.pathname !== '/' || url.search || url.hash
-    || parts.length !== 4 || !parts.every((n,i) => /^\d+$/.test(url.hostname.split('.')[i]) && Number.isInteger(n) && n>=0 && n<=255)
-    || !(parts[0]===10 || (parts[0]===172 && parts[1]>=16 && parts[1]<=31) || (parts[0]===192 && parts[1]===168))) {
+    || (url.hostname !== SCALE_HOST && (parts.length !== 4 || !parts.every((n,i) => /^\d+$/.test(url.hostname.split('.')[i]) && Number.isInteger(n) && n>=0 && n<=255)
+    || !(parts[0]===10 || (parts[0]===172 && parts[1]>=16 && parts[1]<=31) || (parts[0]===192 && parts[1]===168))))) {
     throw new Error('Enter the scale’s local WiFi IP, e.g. 192.168.1.60.');
   }
   return url.origin;
+}
+
+async function readScalePairing(device) {
+  let expired=false,timeout;
+  const operation=(async () => {
+    const server=await device.gatt.connect();
+    if(expired) { device.gatt.disconnect(); throw new Error('Scale connection timed out.'); }
+    const service=await server.getPrimaryService(DISCOVERY_SERVICE);
+    const characteristic=await service.getCharacteristic(DISCOVERY_ADDRESS);
+    const value=await characteristic.readValue();
+    if(expired) throw new Error('Scale connection timed out.');
+    const data=JSON.parse(new TextDecoder().decode(value));
+    if(data.host!==SCALE_HOST || typeof data.id!=='string' || !/^[a-f0-9]{12}$/.test(data.id)) throw new Error('Scale pairing data is invalid.');
+    if(data.ip==='0.0.0.0') throw new Error('Scale found, but it has not joined WiFi. Connect it to your WiFi using CoffeeScale-Setup first.');
+    scaleURL(data.ip); return data;
+  })();
+  try {
+    return await Promise.race([operation,new Promise((resolve,reject) => {
+      timeout=setTimeout(() => { expired=true; device.gatt.disconnect(); reject(new Error('Scale connection timed out. Try Find scale again.')); },10000);
+    })]);
+  } finally { clearTimeout(timeout); device.gatt.disconnect(); }
+}
+
+async function findScale() {
+  if(scale.finding || scale.command) return;
+  if(scale.session!==null || scale.armPending!==null) { $('scaleStatus').textContent='Finish the current brew before pairing a scale.'; return; }
+  if(!navigator.bluetooth || !navigator.bluetooth.requestDevice) { $('scaleStatus').textContent='Find scale needs Chrome on Android with Bluetooth enabled.'; return; }
+  scale.finding=true; $('scaleFindBtn').disabled=true;
+  clearTimeout(scale.poll); scale.generation++;
+  $('scaleStatus').textContent='Choose CoffeeScale. Bluetooth is only needed for this initial pairing.';
+  try {
+    // Device picker must open directly from this click, before any await.
+    const device=await navigator.bluetooth.requestDevice({filters:[{services:[DISCOVERY_SERVICE]}]});
+    const data=await readScalePairing(device);
+    if(scale.pending) await scale.pending;
+    settings.scaleId=data.id; settings.scaleAddress=data.ip;
+    settings.brewMode='scale'; saveSettings(); applySettings();
+    scale.finding=false;
+    await connectScale(data.ip);
+  } catch(e) {
+    $('scaleStatus').textContent=e.name==='NotFoundError' ? 'Pairing cancelled. Your saved scale is unchanged.' : e.message;
+  } finally { scale.finding=false; $('scaleFindBtn').disabled=false; scheduleScalePoll(); }
 }
 
 async function scaleFetch(path, method='GET') {
@@ -447,6 +497,7 @@ async function scaleFetch(path, method='GET') {
 
 function checkScaleData(data) {
   if(!data || !Number.isFinite(data.g) || !Number.isFinite(data.timer_s) || data.timer_s<0 || typeof data.running!=='boolean') throw new Error('This address is not a CoffeeScale.');
+  if(settings.scaleId && data.device_id!==settings.scaleId) throw new Error('This is a different scale. Waiting for your paired CoffeeScale.');
   if(typeof data.pour_mode!=='boolean' || typeof data.pour_armed!=='boolean' || !Number.isInteger(data.pour_id)) throw new Error('The scale needs the V60 firmware update.');
   if(data.cal !== true) throw new Error('Calibrate the scale with a known weight first.');
   if(data.sensor_ok !== true) throw new Error('Scale sensor is not responding. Check the scale.');
@@ -456,48 +507,56 @@ function checkScaleData(data) {
 function scaleError(error) {
   scale.connected=false; scale.data=null;
   const message = error.name==='AbortError' || error instanceof TypeError
-    ? 'Scale unreachable. Check its IP, shared WiFi and Chrome’s local network permission. Reconnecting…'
+    ? 'Waiting for CoffeeScale… Turn it on, keep your phone on the same WiFi, and allow Chrome’s local network permission. Reconnecting automatically.'
     : error.message;
   $('scaleStatus').textContent = message;
   $('scaleWeight').textContent = '— g';
   $('scaleGuidance').textContent = message + (scale.session !== null || scale.armPending !== null ? ' The scale keeps its timer; guidance resumes when connected.' : '');
 }
 
-async function connectScale() {
-  if(scale.command) return;
+async function connectScale(address=$('scaleAddress').value.trim()) {
+  if(scale.command || scale.finding) return;
   let base;
-  try { base=scaleURL($('scaleAddress').value.trim()); } catch(e) { $('scaleStatus').textContent=e.message; return; }
+  try { base=scaleURL(address); } catch(e) { $('scaleStatus').textContent=e.message; return; }
   clearTimeout(scale.poll); scale.generation++;
   scale.command=true; $('scaleConnectBtn').disabled=true;
   if(scale.pending) await scale.pending;
   scale.base=base; scale.connected=false; scale.data=null;
-  settings.scaleAddress=new URL(base).hostname; saveSettings();
+  if(new URL(base).hostname!==SCALE_HOST) { settings.scaleAddress=new URL(base).hostname; saveSettings(); }
   $('scaleStatus').textContent='Connecting… allow local network access if Chrome asks.';
   try { acceptScaleData(checkScaleData(await scaleFetch('/api/weight'))); }
-  catch(e) { scaleError(e); }
+  catch(e) { scaleError(e); alternateScaleAddress(); }
   finally { scale.command=false; $('scaleConnectBtn').disabled=false; scheduleScalePoll(); }
 }
 
 function scheduleScalePoll() {
   clearTimeout(scale.poll);
-  if(settings.brewMode==='scale' && scale.base) scale.poll=setTimeout(pollScale, scale.connected ? 200 : 2000);
+  if(!scale.finding && settings.brewMode==='scale' && scale.base) scale.poll=setTimeout(pollScale, scale.connected ? 200 : 2000);
+}
+
+function alternateScaleAddress() {
+  if(!settings.scaleId) return;
+  // No Bluetooth on reconnect. The stable local name can recover a changed DHCP IP.
+  if(scale.base===`http://${SCALE_HOST}`) {
+    try { scale.base=scaleURL(settings.scaleAddress); } catch(e) {}
+  } else scale.base=`http://${SCALE_HOST}`;
 }
 
 async function pollScale() {
-  if(scale.command || scale.pending) return;
+  if(scale.command || scale.finding || scale.pending) return;
   const generation=scale.generation;
   scale.pending=(async () => {
     try {
       const data=checkScaleData(await scaleFetch('/api/weight'));
       if(generation===scale.generation) acceptScaleData(data);
-    } catch(e) { if(generation===scale.generation) scaleError(e); }
+    } catch(e) { if(generation===scale.generation) { scaleError(e); alternateScaleAddress(); } }
   })();
   await scale.pending; scale.pending=null;
   if(generation===scale.generation) scheduleScalePoll();
 }
 
 async function scaleCommand(path) {
-  if(scale.command) throw new Error('Wait for the scale’s current request.');
+  if(scale.command || scale.finding) throw new Error('Wait for the scale’s current request.');
   scale.command=true; clearTimeout(scale.poll); $('brewBtn').disabled=true;
   try {
     if(scale.pending) await scale.pending;
@@ -507,7 +566,10 @@ async function scaleCommand(path) {
 
 function acceptScaleData(data) {
   scale.connected=true; scale.data=data;
-  $('scaleStatus').textContent=`Connected · ${settings.scaleAddress} · ${data.g.toFixed(1)}g`;
+  if(settings.scaleId && data.ip && data.ip!==settings.scaleAddress) {
+    try { scale.base=scaleURL(data.ip); settings.scaleAddress=data.ip; $('scaleAddress').value=data.ip; saveSettings(); } catch(e) {}
+  }
+  $('scaleStatus').textContent=`CoffeeScale connected over WiFi · ${data.g.toFixed(1)}g`;
   $('scaleWeight').textContent=`${data.g.toFixed(1)} g`;
   // If an arm response was lost, recover the new board session from its ID.
   if(scale.armPending !== null) {
@@ -892,6 +954,7 @@ function renderUpcoming(t) {
 }
 
 async function startBrew() {
+  if(scale.finding || scale.command) return;
   if(!(await endScaleBrew())) return;
   cues = buildCues();
   const total = totalWater();
@@ -1127,6 +1190,8 @@ function buildHelp() {
 
 buildHelp();
 loadSettings();
+// A saved pairing reconnects over WiFi, without another Bluetooth picker.
+if(settings.brewMode==='scale' && settings.scaleAddress) connectScale(settings.scaleAddress);
 
 // Catch the timer up immediately when the app regains focus mid-brew.
 document.addEventListener('visibilitychange', () => {

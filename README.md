@@ -12,9 +12,10 @@ The whole app is a single `index.html` file, hosted free on GitHub Pages.
 1. Install the V60 integration firmware from the CoffeeScale repo on the scale,
    and calibrate it with a known weight. Put your Android phone and scale on the
    same WiFi network.
-2. Choose **WiFi scale** under Brew control. Enter the scale's router IP (found on
-   its CoffeeScale-Setup page), tap **Connect**, and allow Chrome's local network
-   permission. The app remembers the IP; update it here if DHCP changes it.
+2. For the initial pairing, choose **WiFi scale**, tap **Find scale**, and select
+   **CoffeeScale** from Android Chrome's Bluetooth picker. The app reads the
+   scale's WiFi address automatically, disconnects Bluetooth, and connects over
+   WiFi. Allow local network access when Chrome asks. No IP copying is needed.
 3. Select your recipe and dose, then tap **Prepare scale brew**. Put the **whole
    setup** on the scale: server/cup, V60, rinsed filter and ground coffee. All the
    poured water must stay supported by the scale, including water in the server.
@@ -25,12 +26,23 @@ The whole app is a single `index.html` file, hosted free on GitHub Pages.
    **Finish brew** after drawdown; **Cancel** or leaving for Settings also ends
    the board session. A slow brew continues past the recipe's suggested finish.
 
+After that, **turn on the scale and open the app**. It remembers the pairing and
+automatically reconnects over WiFi. It never opens the Bluetooth picker during
+ordinary startup or reconnection. If the scale is still starting, the app waits
+and retries. It tries both the last address and the stable `coffeescale.local`
+name; after a DHCP address change, a successful local-name connection updates
+the remembered IP. Modern Android supports `.local` resolution, but the router
+must allow local multicast for that recovery path. The scale's persistent device
+ID prevents another scale at an old IP from supplying your brew readings.
+Address entry is available inside **Connection troubleshooting** if needed.
+
 The board owns pour detection and elapsed time. The app polls one request at a
 time, waits 200ms between successful readings, and shows a connection error instead
 of stale weight. After a connection gap it catches up to the scale's timer. Keep
 the PWA open during brewing. Use a current Chrome on Android; older browsers may
 block an HTTPS page from reaching the HTTP scale. If permission was denied, allow
 local network access for `https://ocoomber.github.io` in Chrome's site settings.
+Bluetooth is used only for initial discovery, not live weight or timer control.
 Close the scale's other live weight page while using V60 to avoid competing polls.
 The firmware permits this GitHub Pages origin; hosting elsewhere requires updating
 the origin allowlist in CoffeeScale. **Manual timer** remains available.
@@ -38,8 +50,8 @@ the origin allowlist in CoffeeScale. **Manual timer** remains available.
 The integration uses `GET /api/weight`, `POST /api/pour/arm` (tare and arm) and
 `POST /api/pour/end`. It does not change the scale's saved espresso mode.
 
-App logic checks: `node --test tests/scale.test.cjs`. These simulate the scale API;
-Android permission handling, physical pour detection and live WiFi reliability
+App logic checks: `node --test tests/scale.test.cjs`. These simulate the scale API
+and Bluetooth picker. Android pairing, permission handling, physical pour detection and live WiFi reliability
 still need testing with the flashed scale. After an app update, reload
 `https://ocoomber.github.io/v60/` in Chrome and reopen the PWA.
 
