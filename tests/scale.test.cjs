@@ -152,6 +152,17 @@ test('final water starts drawdown, and only the user finishing completes the bre
   assert.equal(p.elements.scaleClock.textContent,'4:10');
 });
 
+test('cancelling before the first pour reports cancellation and can prepare a fresh brew', async () => {
+  const p=app();await scaleBrew(p);p.run('scale.session=7;scale.armed=true');
+  await p.run('endScaleBrew()');
+  assert.equal(p.elements.scaleStage.textContent,'Brew cancelled');
+  assert.equal(p.elements.scaleAction.textContent,'Ready when you are');
+  assert.equal(p.elements.brewBtn.textContent,'Brew again');
+  await p.run('startBrew()');
+  assert.equal(p.elements.scaleAction.textContent,'Set up your V60');
+  assert.equal(p.run('scale.cancelled'),false);
+});
+
 test('Hoffmann keeps its timed stir and swirl between pouring and drawdown', async () => {
   const p=app();p.run("settings.method='hoffmann'");await scaleBrew(p);p.run('scale.session=7');
   const total=p.run('totalWater()');

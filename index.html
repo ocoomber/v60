@@ -419,7 +419,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-10-07.3';
+const APP_VERSION = '2026-10-07.4';
 const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
 const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
 const SCALE_HOST = 'coffeescale.local';
@@ -703,10 +703,10 @@ function renderScaleGuidance() {
     detail=scale.notice || 'Keep the whole setup on the scale throughout the brew. Zero it once everything is in place.';
     nextLabel='Then'; nextValue=`Start pouring to ${cues[0].water}g. The timer starts with your first pour.`;
   } else if(finished) {
-    kind='done'; stage='Brew finished'; action='Enjoy your coffee';
-    detail=`Your brew took ${fmt(elapsed)}. Tap Brew again to prepare a fresh brew.`;
+    kind='done'; stage=scale.cancelled ? 'Brew cancelled' : 'Brew finished'; action=scale.cancelled ? 'Ready when you are' : 'Enjoy your coffee';
+    detail=scale.cancelled ? 'No brew was started. Tap Brew again when you are ready to prepare the scale.' : `Your brew took ${fmt(elapsed)}. Tap Brew again to prepare a fresh brew.`;
     nextLabel='Recipe'; nextValue=`${settings.dose}g coffee · ${total}g water`;
-    remainingText='Brew complete';
+    remainingText=scale.cancelled ? 'Brew cancelled' : 'Brew complete';
   } else if(scale.armed) {
     stage=cues[0].phase; action='Start pouring';
     detail='The scale is zeroed. Begin pouring gently; the timer starts automatically.';
@@ -752,6 +752,7 @@ async function endScaleBrew() {
   if(scale.session === null && scale.armPending === null) return true;
   try { await scaleCommand('/api/pour/end'); }
   catch(e) { scaleError(e); return false; }
+  scale.cancelled=!started;
   scale.session=null; scale.armPending=null; scale.armed=false; started=false; finished=true;
   $('brewBtn').textContent='Brew again'; $('clock').className='clock done-c'; releaseWakeLock();
   renderScaleGuidance();
@@ -1093,7 +1094,7 @@ async function startBrew() {
   if(withScale) {
     $('brewTitle').textContent=METHODS[settings.method].name + ' · scale brew';
     $('brewBtn').textContent='Zero scale & get ready';
-    scale.notice='';
+    scale.notice=''; scale.cancelled=false;
     $('scalePlan').open=false;
     $('scalePlanSummary').textContent=`View recipe · ${settings.dose}g coffee / ${total}g water`;
     $('scalePlanList').innerHTML=cues.map(c=>`<li><time>${fmt(c.at)}</time><span>${c.phase}</span><span>${/^Pour to /i.test(c.action) ? c.water+'g' : ''}</span></li>`).join('');
