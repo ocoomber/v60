@@ -7,6 +7,42 @@ troubleshooting your cup ("too sour", "draining too fast", etc.).
 
 The whole app is a single `index.html` file, hosted free on GitHub Pages.
 
+## Brew with CoffeeScale
+
+1. Install the V60 integration firmware from the CoffeeScale repo on the scale,
+   and calibrate it with a known weight. Put your Android phone and scale on the
+   same WiFi network.
+2. Choose **WiFi scale** under Brew control. Enter the scale's router IP (found on
+   its CoffeeScale-Setup page), tap **Connect**, and allow Chrome's local network
+   permission. The app remembers the IP; update it here if DHCP changes it.
+3. Select your recipe and dose, then tap **Prepare scale brew**. Put the **whole
+   setup** on the scale: server/cup, V60, rinsed filter and ground coffee. All the
+   poured water must stay supported by the scale, including water in the server.
+4. Let it settle and tap **Tare & arm**. Start pouring: the scale starts its timer
+   automatically after a 2g increase, confirmed by two sensor samples.
+5. Follow the recipe's cumulative targets and times. The app shows measured grams,
+   grams remaining, when to stop/wait, overshoot and missed pour targets. Tap
+   **Finish brew** after drawdown; **Cancel** or leaving for Settings also ends
+   the board session. A slow brew continues past the recipe's suggested finish.
+
+The board owns pour detection and elapsed time. The app polls one request at a
+time, waits 200ms between successful readings, and shows a connection error instead
+of stale weight. After a connection gap it catches up to the scale's timer. Keep
+the PWA open during brewing. Use a current Chrome on Android; older browsers may
+block an HTTPS page from reaching the HTTP scale. If permission was denied, allow
+local network access for `https://ocoomber.github.io` in Chrome's site settings.
+Close the scale's other live weight page while using V60 to avoid competing polls.
+The firmware permits this GitHub Pages origin; hosting elsewhere requires updating
+the origin allowlist in CoffeeScale. **Manual timer** remains available.
+
+The integration uses `GET /api/weight`, `POST /api/pour/arm` (tare and arm) and
+`POST /api/pour/end`. It does not change the scale's saved espresso mode.
+
+App logic checks: `node --test tests/scale.test.cjs`. These simulate the scale API;
+Android permission handling, physical pour detection and live WiFi reliability
+still need testing with the flashed scale. After an app update, reload
+`https://ocoomber.github.io/v60/` in Chrome and reopen the PWA.
+
 ---
 
 ## How it all works (in plain language)
