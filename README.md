@@ -19,10 +19,13 @@ The whole app is a single `index.html` file, hosted free on GitHub Pages.
 3. Select your recipe and dose, then tap **Prepare scale brew**. Put the **whole
    setup** on the scale: server/cup, V60, rinsed filter and ground coffee. All the
    poured water must stay supported by the scale, including water in the server.
-4. Let it settle and tap **Tare & arm**. Start pouring: the scale starts its timer
-   automatically after a 2g increase, confirmed by two sensor samples.
-5. Follow the recipe's cumulative targets and times. The app shows measured grams,
-   grams remaining, when to stop/wait, overshoot and missed pour targets. Tap
+4. Let it settle and tap **Zero scale & get ready**. When the screen says
+   **Start pouring**, pour gently: the scale starts its timer automatically.
+5. Follow one instruction at a time. **Water on scale** is your live reading;
+   **Pour to** is the cumulative target. **Stop pouring** replaces the pour
+   instruction at the target and shows a countdown to the next pour. After the
+   final pour, **Let it drain** guides drawdown. Expand **View recipe** for the
+   full schedule. Missed targets stay active until reached. Tap
    **Finish brew** after drawdown; **Cancel** or leaving for Settings also ends
    the board session. A slow brew continues past the recipe's suggested finish.
 

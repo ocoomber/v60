@@ -38,5 +38,11 @@ awk 'n==1 && /^<\/script>$/{exit} /^<script>$/{n=1; next} n==1{print}' index.htm
 - Retry the cached IP and `coffeescale.local`; successful local-name recovery learns the new DHCP IP. Modern Android supports `.local`, but multicast availability remains network-dependent.
 - Match the paired `device_id` before accepting readings. Bluetooth service/characteristic UUIDs must match CoffeeScale firmware. Commands and polls remain serialized.
 
+## Scale brew screen
+- Show one instruction resolved from both the recipe time and measured weight: setup, pour, stop/wait, deliberate recipe action, drawdown, finished, or disconnected.
+- Live grams are labelled **Water on scale**, cumulative targets **Pour to**. Replace the pour instruction with **Stop pouring** when the target is reached; show a countdown to the next pour. Never skip an unfinished pour to satisfy the clock.
+- Timer-only ring, prompt and upcoming cards are hidden in scale mode. The complete recipe sits inside **View recipe**. Preserve deliberate actions such as Hoffmann's stir/swirl.
+- Setup uses **Zero scale & get ready**; the board still owns tare, pour detection and timing. Avoid repeatedly updating unchanged live-region instructions while polling.
+
 ## Deeper domain model
 See **CLAUDE.md** for the full `METHODS` registry, `customPours` budget model, `savedRecipes` shape, `localStorage` persistence, and migration rules.

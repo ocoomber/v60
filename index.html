@@ -97,11 +97,45 @@
   .scale-row { display:flex; gap:8px; margin-top:10px; }
   .scale-row input { min-width:0; flex:1; padding:10px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg); color:var(--text); font-size:16px; }
   .scale-status { font-size:12px; color:var(--text2); line-height:1.5; margin-top:8px; }
-  .scale-live { background:var(--bg2); border-radius:var(--radius); padding:10px 14px; }
-  .scale-reading { font-family:var(--font-display); font-size:28px; font-weight:600; font-variant-numeric:tabular-nums; }
-  .scale-guidance { font-size:13px; line-height:1.4; min-height:2.8em; color:var(--text2); margin-top:4px; }
-  #screenBrew.scale-brew { gap:10px; overflow-y:auto; }
-  .scale-brew .ring-outer { width:min(230px,55vw); height:min(230px,55vw); flex-shrink:0; }
+  #screenBrew.scale-brew { gap:18px; overflow-y:auto; }
+  .scale-brew > .ring-outer, .scale-brew > .prompt-card,
+  .scale-brew > .water-wrap, .scale-brew > .upcoming { display:none !important; }
+  .scale-brew > .brew-actions { margin-top:auto; padding:12px 0 16px; flex-shrink:0; position:sticky; bottom:0; background:var(--bg); }
+  .scale-brew > .brew-actions > :first-child { flex:1; }
+  .scale-brew .app-title { font-size:16px; }
+  .scale-live { --step-color:var(--green-dark); flex:1; }
+  .scale-live.is-pour { --step-color:#176587; }
+  .scale-live.is-wait { --step-color:#99682e; }
+  .scale-stage { color:var(--step-color); font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin-bottom:10px; }
+  .scale-action { font-family:var(--font-display); font-size:clamp(30px,8vw,40px); font-weight:700; line-height:1.12; letter-spacing:-.8px; }
+  .scale-guidance { font-size:15px; line-height:1.55; color:var(--text2); margin-top:10px; min-height:3.1em; }
+  .scale-setup-steps { padding-left:24px; margin:18px 0; font-size:15px; line-height:1.5; }
+  .scale-setup-steps li { padding:5px 0 5px 4px; }
+  .scale-measurements { margin-top:24px; }
+  .scale-weight-row { display:grid; grid-template-columns:1.2fr 1fr; gap:16px; align-items:end; }
+  .scale-number-label { color:var(--text2); font-size:12px; margin-bottom:8px; }
+  .scale-reading { font-family:var(--font-display); font-size:clamp(40px,12vw,60px); font-weight:650; line-height:1.1; font-variant-numeric:tabular-nums; letter-spacing:-1.5px; white-space:nowrap; }
+  .scale-target { font-family:var(--font-display); font-size:clamp(32px,10vw,48px); font-weight:600; line-height:1.15; font-variant-numeric:tabular-nums; color:var(--step-color); white-space:nowrap; }
+  .scale-pour-track { height:8px; border-radius:4px; background:var(--bg3); overflow:hidden; margin-top:18px; }
+  .scale-pour-fill { height:100%; background:var(--step-color); border-radius:4px; }
+  .scale-remaining { font-size:14px; color:var(--text2); margin-top:10px; min-height:1.5em; }
+  .scale-next { border-top:1px solid var(--border); margin-top:22px; padding-top:16px; }
+  .scale-next-label { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:.06em; margin-bottom:5px; }
+  .scale-next-value { font-size:17px; font-weight:600; font-variant-numeric:tabular-nums; line-height:1.4; }
+  .scale-footer { display:flex; justify-content:space-between; align-items:end; gap:16px; margin-top:22px; }
+  .scale-connection { font-size:12px; color:var(--text2); }
+  .scale-time { text-align:right; }
+  .scale-clock { font-size:26px; font-variant-numeric:tabular-nums; line-height:1.2; }
+  .scale-plan { border-top:1px solid var(--border); margin-top:18px; }
+  .scale-plan summary { cursor:pointer; font-size:13px; color:var(--text2); padding:13px 0; }
+  .scale-plan li { display:grid; grid-template-columns:45px 1fr auto; gap:10px; padding:9px 0; border-top:1px solid var(--border); font-size:13px; }
+  .scale-plan time { font-variant-numeric:tabular-nums; color:var(--text2); }
+  button:focus-visible, summary:focus-visible { outline:2px solid var(--green); outline-offset:3px; }
+  @media (prefers-color-scheme:dark) {
+    .scale-live { --step-color:var(--green-teal); }
+    .scale-live.is-pour { --step-color:#7cc8e4; }
+    .scale-live.is-wait { --step-color:#e3ba76; }
+  }
   .help-scroll { flex: 1; overflow-y: auto; margin-top: 4px; }
   .help-sec { margin-bottom: 6px; border-bottom: 0.5px solid var(--border); }
   .help-h { font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; list-style: none; padding: 12px 0; display: flex; align-items: center; justify-content: space-between; }
@@ -283,8 +317,36 @@
       <div class="water-bar"><div class="water-fill" id="waterFill" style="width:0%"></div></div>
     </div>
     <div class="scale-live" id="scaleLive" style="display:none">
-      <div class="scale-reading" id="scaleWeight">— g</div>
-      <div class="scale-guidance" id="scaleGuidance" role="status">Connect your scale to see live weight.</div>
+      <div class="scale-stage" id="scaleStage">Get ready</div>
+      <div role="status" aria-live="polite" aria-atomic="true">
+        <h1 class="scale-action" id="scaleAction">Set up your V60</h1>
+        <p class="scale-guidance" id="scaleGuidance">Keep the whole setup on the scale throughout the brew.</p>
+      </div>
+      <ol class="scale-setup-steps" id="scaleSetupSteps">
+        <li>Rinse the filter and discard the rinse water.</li>
+        <li>Put the server, V60 and filter together on the scale.</li>
+        <li id="scaleCoffeeStep">Add your ground coffee and level the bed.</li>
+      </ol>
+      <div class="scale-measurements" id="scaleMeasurements" style="display:none">
+        <div class="scale-weight-row">
+          <div><div class="scale-number-label">Water on scale</div><div class="scale-reading" id="scaleWeight">— g</div></div>
+          <div><div class="scale-number-label" id="scaleTargetLabel">Pour to</div><div class="scale-target" id="scaleTarget">— g</div></div>
+        </div>
+        <div class="scale-pour-track"><div class="scale-pour-fill" id="scalePourFill" style="width:0%"></div></div>
+        <div class="scale-remaining" id="scaleRemaining"></div>
+      </div>
+      <div class="scale-next" id="scaleNext">
+        <div class="scale-next-label" id="scaleNextLabel">Then</div>
+        <div class="scale-next-value" id="scaleNextValue">Zero the scale when everything is in place.</div>
+      </div>
+      <div class="scale-footer">
+        <div class="scale-connection" id="scaleConnection">Waiting for scale</div>
+        <div class="scale-time"><div class="scale-number-label">Brew time</div><div class="scale-clock" id="scaleClock">0:00</div></div>
+      </div>
+      <details class="scale-plan" id="scalePlan">
+        <summary id="scalePlanSummary">View recipe</summary>
+        <ol id="scalePlanList"></ol>
+      </details>
     </div>
     <div class="upcoming" id="upcomingSection">
       <div class="up-title">Coming up</div>
@@ -357,7 +419,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-10-07.2';
+const APP_VERSION = '2026-10-07.3';
 const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
 const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
 const SCALE_HOST = 'coffeescale.local';
@@ -511,7 +573,16 @@ function scaleError(error) {
     : error.message;
   $('scaleStatus').textContent = message;
   $('scaleWeight').textContent = '— g';
-  $('scaleGuidance').textContent = message + (scale.session !== null || scale.armPending !== null ? ' The scale keeps its timer; guidance resumes when connected.' : '');
+  scaleText('scaleGuidance',message + (scale.session !== null || scale.armPending !== null ? ' The scale keeps its timer; guidance resumes when connected.' : ''));
+  $('scaleLive').className='scale-live is-wait';
+  scaleText('scaleStage','Connection lost');
+  scaleText('scaleAction',started && !finished ? 'Stop pouring' : 'Waiting for scale');
+  scaleText('scaleConnection','Reconnecting over WiFi');
+  scaleText('scaleClock','—');
+  scaleText('scaleRemaining','Live weight unavailable');
+  scaleText('scaleNextLabel','Connection');
+  scaleText('scaleNextValue','Guidance resumes when the scale reconnects.');
+  $('scalePourFill').style.width='0%';
 }
 
 async function connectScale(address=$('scaleAddress').value.trim()) {
@@ -576,19 +647,20 @@ function acceptScaleData(data) {
     if(data.pour_mode && data.pour_id !== scale.armPending) {
       scale.session=data.pour_id; scale.armed=data.pour_armed;
       $('brewBtn').textContent='Cancel'; acquireWakeLock();
-    } else $('brewBtn').textContent='Tare & arm';
+    } else $('brewBtn').textContent='Zero scale & get ready';
     scale.armPending=null;
   }
   if(scale.session !== null) {
     if(!data.pour_mode || data.pour_id !== scale.session) {
       scale.session=null; scale.armed=false; started=false; finished=false;
-      releaseWakeLock(); $('brewBtn').textContent='Tare & arm';
+      releaseWakeLock(); $('brewBtn').textContent='Zero scale & get ready';
       elapsed=0; $('clock').textContent='0:00'; $('clock').className='clock';
       $('phaseLbl').textContent='Ready'; setTarget(totalWater());
       $('promptAction').textContent='Set up the V60 again';
       $('promptDetail').textContent='The previous scale session is no longer active.';
       $('waterSection').style.display='none'; renderUpcoming(-1);
-      $('scaleGuidance').textContent='Scale session ended or the scale reset. Set up the V60, then tare & arm again.';
+      scale.notice='The scale reset or the previous brew ended. Zero it again before pouring.';
+      renderScaleGuidance();
       return;
     }
     if(data.running && !started) {
@@ -601,37 +673,79 @@ function acceptScaleData(data) {
   renderScaleGuidance();
 }
 
+// Avoid re-announcing unchanged instructions on every 200ms weight update.
+function scaleText(id,text) { if($(id).textContent!==text) $(id).textContent=text; }
+
 function renderScaleGuidance() {
-  if(settings.brewMode!=='scale' || !scale.data) return;
-  if(scale.armed) {
-    $('scaleGuidance').textContent='Armed · begin pouring. The timer starts automatically after a 2g rise.';
-    return;
-  }
-  if(finished) { $('scaleGuidance').textContent=`Brew finished at ${fmt(elapsed)}. Tap Brew again for a fresh tare.`; return; }
-  if(!started) { $('scaleGuidance').textContent='Place the server, V60, rinsed filter and coffee on the scale. Let it settle, then tare & arm.'; return; }
+  if(settings.brewMode!=='scale' || !cues.length) return;
+  scaleText('scaleCoffeeStep',`Add ${settings.dose}g of ground coffee and level the bed.`);
+  scaleText('scaleClock',fmt(elapsed));
+  scaleText('scaleConnection',scale.connected ? 'Scale connected · WiFi' : 'Waiting for scale');
+  const preparing=!started && !scale.armed && !finished;
+  $('brewBtn').className=preparing || finished ? 'btn-go' : 'btn-secondary';
+  $('scaleSetupSteps').style.display=preparing ? 'block' : 'none';
+  $('scaleMeasurements').style.display=preparing ? 'none' : 'block';
+  if(!scale.connected || !scale.data) { scaleError(new TypeError('offline')); return; }
   const weight=Math.max(0,scale.data.g), total=totalWater();
   const idx=getCueIdx(elapsed), scheduled=cues[idx];
-  showCue(scheduled,total);
+  // Resolve one instruction from both time and weight. Never skip a missing pour.
+  const overdue=cues.slice(0,idx).find(c => c.water>weight+2);
+  const cue=overdue || scheduled;
+  const cueIndex=cues.indexOf(cue), previous=cueIndex ? cues[cueIndex-1].water : 0;
+  const remaining=cue.water-weight, excess=weight-cue.water;
+  const next=cues.slice(cueIndex+1).find(c=>c.water>cue.water);
+  const nextStep=cues.slice(idx+1).find(c=>c.water===cue.water && !['Done','Draw down'].includes(c.phase));
+  let kind='pour', stage=cue.phase, action='Keep pouring', detail=cueIndex===0 ? 'Pour gently over all the grounds to wet them evenly.' : cue.detail;
+  let nextLabel='Next', nextValue=next ? (next.at>elapsed ? `Stop at ${cue.water}g, then wait until ${fmt(next.at)}.` : `Then pour to ${next.water}g.`) : 'Stop at the target, then let the coffee drain.';
+  let remainingText=`${Math.max(0,Math.ceil(remaining))}g to go`;
+  if(preparing) {
+    kind='setup'; stage='Get ready'; action='Set up your V60';
+    detail=scale.notice || 'Keep the whole setup on the scale throughout the brew. Zero it once everything is in place.';
+    nextLabel='Then'; nextValue=`Start pouring to ${cues[0].water}g. The timer starts with your first pour.`;
+  } else if(finished) {
+    kind='done'; stage='Brew finished'; action='Enjoy your coffee';
+    detail=`Your brew took ${fmt(elapsed)}. Tap Brew again to prepare a fresh brew.`;
+    nextLabel='Recipe'; nextValue=`${settings.dose}g coffee · ${total}g water`;
+    remainingText='Brew complete';
+  } else if(scale.armed) {
+    stage=cues[0].phase; action='Start pouring';
+    detail='The scale is zeroed. Begin pouring gently; the timer starts automatically.';
+    nextValue=`Stop pouring when the water reaches ${cues[0].water}g.`;
+    remainingText=`${Math.max(0,Math.ceil(cues[0].water-weight))}g to go`;
+  } else if(!scale.data.running) {
+    kind='wait'; stage='Timer stopped'; action='Stop pouring';
+    detail='The scale timer has stopped. Finish this brew, then prepare a new one.';
+    nextLabel='Then'; nextValue='Tap Finish brew to end this session.';
+  } else if(remaining>2) {
+    if(overdue) detail='Finish this pour before moving on. The next pour will wait for you.';
+  } else {
+    remainingText=excess>2 ? `${excess.toFixed(1)}g over target` : 'Target reached';
+    if(next) {
+      kind='wait'; action='Stop pouring';
+      detail=/swirl/i.test(cue.phase) ? 'Give the V60 a gentle swirl, then let the grounds soak.' : 'Let the water soak through. Keep the whole setup on the scale.';
+      nextLabel='Next pour'; nextValue=`In ${fmt(Math.max(0,next.at-elapsed))} · pour to ${next.water}g`;
+    } else {
+      kind='drain'; stage='Drawdown'; action='Let it drain';
+      detail='All the water is in. Tap Finish brew when the water has drained through the coffee.';
+      nextLabel='Suggested finish'; nextValue=`Around ${fmt(cues[cues.length-1].at)} · finish when drained`;
+      // Keep deliberate recipe actions such as Hoffmann's stir and swirl.
+      if(scheduled.phase!=='Done' && !/^Pour to /i.test(scheduled.action) && scheduled.phase!=='Draw down') {
+        stage=scheduled.phase; action=scheduled.action; detail=scheduled.detail;
+      }
+      if(nextStep) { nextLabel='Next step'; nextValue=`In ${fmt(nextStep.at-elapsed)} · ${nextStep.action}`; }
+    }
+  }
+  $('scaleLive').className=`scale-live is-${kind}`;
+  $('brewBtn').className=preparing || finished || action==='Let it drain' ? 'btn-go' : 'btn-secondary';
+  scaleText('scaleStage',stage); scaleText('scaleAction',action); scaleText('scaleGuidance',detail);
+  scaleText('scaleTarget',`${finished ? total : cue.water} g`);
+  scaleText('scaleTargetLabel',finished ? 'Recipe water' : remaining>2 || scale.armed ? 'Pour to' : 'Target reached');
+  scaleText('scaleRemaining',remainingText); scaleText('scaleNextLabel',nextLabel); scaleText('scaleNextValue',nextValue);
+  $('scalePourFill').style.width=Math.max(0,Math.min(100,(weight-previous)/Math.max(1,cue.water-previous)*100))+'%';
+  // Legacy timer-only nodes remain hidden in scale mode.
+  showCue(cue,total);
   $('waterLbl').textContent=`Water: ${weight.toFixed(1)}g / ${total}g`;
   $('waterFill').style.width=Math.min(100,Math.round(weight/total*100))+'%';
-  // A missed pour stays visible even after its scheduled time has passed.
-  const overdue=cues.slice(0,idx).find(c => c.water>weight+2);
-  const cue=overdue || scheduled, remaining=cue.water-weight;
-  setTarget(cue.water);
-  if(overdue) {
-    $('promptAction').textContent=cue.action;
-    $('promptDetail').textContent=cue.detail;
-    $('phaseLbl').textContent=cue.phase;
-    $('scaleGuidance').textContent=`${Math.ceil(remaining)}g to go · behind schedule by ${fmt(elapsed-cue.at)}. Finish this pour before moving on.`;
-  } else if(remaining>2) {
-    $('scaleGuidance').textContent=`${Math.ceil(remaining)}g to go · pour to ${cue.water}g total.`;
-  } else {
-    const next=cues.slice(idx+1).find(c => c.water>cue.water);
-    const excess=weight-cue.water;
-    $('scaleGuidance').textContent=(excess>2 ? `${excess.toFixed(1)}g over target · stop pouring.` : 'Target reached · stop pouring.')
-      + (next ? ` Next pour at ${fmt(next.at)} (${Math.max(0,next.at-elapsed)}s).` : ' Let the coffee draw down, then tap Finish brew.');
-  }
-  if(!scale.data.running) $('scaleGuidance').textContent='The scale timer stopped. Tap Finish brew, then tare & arm for a new brew.';
 }
 
 async function endScaleBrew() {
@@ -977,10 +1091,13 @@ async function startBrew() {
   $('screenBrew').classList.toggle('scale-brew',withScale);
   $('scaleLive').style.display=withScale ? 'block' : 'none';
   if(withScale) {
-    $('brewBtn').textContent='Tare & arm';
-    $('promptDetail').textContent='Put the complete V60 setup on the scale, including the coffee. Tare & arm when it has settled.';
-    $('scaleGuidance').textContent=scale.connected ? 'Ready to tare & arm.' : 'Connect the scale in Settings before arming.';
-    if(scale.connected) renderScaleGuidance();
+    $('brewTitle').textContent=METHODS[settings.method].name + ' · scale brew';
+    $('brewBtn').textContent='Zero scale & get ready';
+    scale.notice='';
+    $('scalePlan').open=false;
+    $('scalePlanSummary').textContent=`View recipe · ${settings.dose}g coffee / ${total}g water`;
+    $('scalePlanList').innerHTML=cues.map(c=>`<li><time>${fmt(c.at)}</time><span>${c.phase}</span><span>${/^Pour to /i.test(c.action) ? c.water+'g' : ''}</span></li>`).join('');
+    renderScaleGuidance();
   }
   renderUpcoming(-1);
   showScreen('brew');
@@ -1024,9 +1141,10 @@ async function handleBrewBtn() {
   if(finished) { startBrew(); return; }
   if(settings.brewMode==='scale') {
     if(scale.session !== null || scale.armPending !== null) { await endScaleBrew(); return; }
-    if(!scale.connected) { $('scaleGuidance').textContent='Connect the scale in Settings first. Check its IP and WiFi.'; return; }
+    if(!scale.connected) { renderScaleGuidance(); return; }
     await acquireWakeLock();
-    $('scaleGuidance').textContent='Taring… keep the V60 still.';
+    scale.notice=''; scaleText('scaleAction','Zeroing the scale');
+    scaleText('scaleGuidance','Keep the V60 still for a moment.');
     scale.armPending=scale.data.pour_id;
     $('brewBtn').textContent='Cancel'; $('brewBtn').className='btn-secondary';
     try {
