@@ -1,7 +1,7 @@
 {
   "name": "V60 Brew Timer",
   "short_name": "V60",
-  "start_url": "/v60/",
+  "start_url": "https://ocoomber.github.io/v60/",
   "display": "standalone",
   "background_color": "#1D9E75",
   "theme_color": "#1D9E75",
@@ -17,6 +17,6 @@
       "type": "image/png"
     }
   ],
-  "id": "/v60/",
-  "scope": "/v60/"
+  "id": "https://ocoomber.github.io/v60/",
+  "scope": "https://ocoomber.github.io/v60/"
 }
