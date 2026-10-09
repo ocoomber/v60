@@ -97,44 +97,52 @@
   .scale-row { display:flex; gap:8px; margin-top:10px; }
   .scale-row input { min-width:0; flex:1; padding:10px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg); color:var(--text); font-size:16px; }
   .scale-status { font-size:12px; color:var(--text2); line-height:1.5; margin-top:8px; }
-  #screenBrew.scale-brew { gap:18px; overflow-y:auto; }
+  #screenBrew.scale-brew { gap:14px; overflow-y:auto; }
   .scale-brew > .ring-outer, .scale-brew > .prompt-card,
   .scale-brew > .water-wrap, .scale-brew > .upcoming { display:none !important; }
   .scale-brew > .brew-actions { margin-top:auto; padding:12px 0 16px; flex-shrink:0; position:sticky; bottom:0; background:var(--bg); }
   .scale-brew > .brew-actions > :first-child { flex:1; }
   .scale-brew .app-title { font-size:16px; }
   .scale-live { --step-color:var(--green-dark); flex:1; }
-  .scale-live.is-pour { --step-color:#176587; }
-  .scale-live.is-wait { --step-color:#99682e; }
-  .scale-stage { color:var(--step-color); font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; margin-bottom:10px; }
-  .scale-action { font-family:var(--font-display); font-size:clamp(30px,8vw,40px); font-weight:700; line-height:1.12; letter-spacing:-.8px; }
-  .scale-guidance { font-size:14px; line-height:1.45; color:var(--text2); margin-top:8px; min-height:1.45em; }
-  .scale-measurements { margin-top:22px; }
-  .scale-weight-row, .scale-phase-time { padding:16px 0; border-bottom:1px solid var(--border); }
-  .scale-ratio { display:flex; align-items:baseline; gap:8px; }
+  .scale-heading { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-top:16px; }
+  .scale-stage { color:var(--step-color); font-size:19px; font-weight:600; }
+  .scale-action { font-family:var(--font-display); font-size:24px; font-weight:600; line-height:1.2; letter-spacing:-.5px; }
+  .scale-guidance { font-size:13px; line-height:1.45; color:var(--text2); margin-top:8px; }
+  .scale-guidance:empty { display:none; }
+  .scale-measurements { margin-top:16px; }
+  .scale-ring { position:relative; width:min(285px,72vw); aspect-ratio:1; margin:0 auto; }
+  .scale-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .scale-ring .ring-fill { stroke:var(--step-color); transition:stroke-dashoffset .2s linear; }
+  .scale-ring-centre { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .scale-ratio { display:flex; justify-content:center; align-items:baseline; gap:5px; }
   .scale-number-label { color:var(--text2); font-size:12px; margin-bottom:8px; }
-  .scale-reading { font-family:var(--font-display); font-size:clamp(36px,12vw,52px); font-weight:650; line-height:1.1; font-variant-numeric:tabular-nums; letter-spacing:-1px; white-space:nowrap; }
-  .scale-target { font-family:var(--font-display); font-size:clamp(24px,8vw,34px); font-weight:500; line-height:1.15; font-variant-numeric:tabular-nums; color:var(--text2); white-space:nowrap; }
-  .scale-pour-track { height:6px; border-radius:3px; background:var(--bg3); overflow:hidden; margin-top:14px; }
-  .scale-pour-fill { height:100%; background:var(--step-color); border-radius:4px; }
-  .scale-remaining { font-size:14px; color:var(--text2); margin-top:10px; min-height:1.5em; }
-  .scale-next { margin-top:18px; }
+  .scale-reading { font-family:var(--font-display); font-size:clamp(34px,11vw,48px); font-weight:600; line-height:1.1; font-variant-numeric:tabular-nums; letter-spacing:-1px; white-space:nowrap; }
+  .scale-target { font-family:var(--font-display); font-size:clamp(21px,6vw,28px); font-weight:400; line-height:1.15; font-variant-numeric:tabular-nums; color:var(--text2); white-space:nowrap; }
+  .scale-phase-time { text-align:center; margin-top:16px; }
+  .scale-phase-time .scale-reading { font-size:32px; }
+  .scale-phase-time .scale-target { font-size:24px; }
+  .scale-remaining { font-size:12px; color:var(--text2); text-align:center; margin-top:8px; min-height:1.5em; }
+  .scale-next { margin-top:16px; border-top:1px solid var(--border); padding-top:14px; display:flex; justify-content:space-between; gap:12px; }
   .scale-next-label { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:.06em; margin-bottom:5px; }
-  .scale-next-value { font-size:17px; font-weight:600; font-variant-numeric:tabular-nums; line-height:1.4; }
-  .scale-footer { display:flex; justify-content:space-between; align-items:end; gap:16px; margin-top:22px; }
+  .scale-next-value { font-size:14px; font-weight:600; line-height:1.4; }
+  .scale-next-meta { text-align:right; font-size:13px; line-height:1.6; color:var(--text2); font-variant-numeric:tabular-nums; }
+  .scale-footer { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:14px; }
   .scale-connection { font-size:12px; color:var(--text2); }
   .scale-time { text-align:right; }
-  .scale-clock { font-size:26px; font-variant-numeric:tabular-nums; line-height:1.2; }
+  .scale-clock { font-size:18px; font-variant-numeric:tabular-nums; line-height:1.2; }
   .scale-plan { border-top:1px solid var(--border); margin-top:18px; }
   .scale-plan summary { cursor:pointer; font-size:13px; color:var(--text2); padding:13px 0; }
   .scale-plan li { display:grid; grid-template-columns:45px 1fr auto; gap:10px; padding:9px 0; border-top:1px solid var(--border); font-size:13px; }
   .scale-plan time { font-variant-numeric:tabular-nums; color:var(--text2); }
   button:focus-visible, summary:focus-visible { outline:2px solid var(--green); outline-offset:3px; }
-  @media (prefers-color-scheme:dark) {
-    .scale-live { --step-color:var(--green-teal); }
-    .scale-live.is-pour { --step-color:#7cc8e4; }
-    .scale-live.is-wait { --step-color:#e3ba76; }
-  }
+  #screenManualScale { gap:18px; overflow-y:auto; }
+  .manual-scale-reading { flex:1; min-height:220px; display:flex; align-items:center; justify-content:center; gap:8px; font-variant-numeric:tabular-nums; }
+  .manual-scale-reading strong { font-size:clamp(52px,18vw,80px); font-weight:600; letter-spacing:-2px; }
+  .manual-scale-reading span { font-size:28px; color:var(--text2); }
+  #manualScaleStatus { min-height:3em; }
+  @media (prefers-color-scheme:dark) { .scale-live { --step-color:var(--green-teal); } }
+  @media (max-height:740px) { .scale-ring { width:min(245px,68vw); } .scale-plan { margin-top:10px; } }
+  @media (prefers-reduced-motion:reduce) { .scale-ring .ring-fill { transition:none; } }
   .help-scroll { flex: 1; overflow-y: auto; margin-top: 4px; }
   .help-sec { margin-bottom: 6px; border-bottom: 0.5px solid var(--border); }
   .help-h { font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; list-style: none; padding: 12px 0; display: flex; align-items: center; justify-content: space-between; }
@@ -282,6 +290,7 @@
         </details>
       </div>
     </div>
+    <button class="btn-secondary" onclick="openManualScale()">Manual scale</button>
     <div class="summary" id="summaryCard"></div>
     <button class="btn-go" id="startBtn" onclick="startBrew()">Start brew</button>
   </div>
@@ -316,31 +325,31 @@
       <div class="water-bar"><div class="water-fill" id="waterFill" style="width:0%"></div></div>
     </div>
     <div class="scale-live" id="scaleLive" style="display:none">
-      <div class="scale-stage" id="scaleStage">Get ready</div>
+      <div class="scale-connection" id="scaleConnection">Waiting for scale</div>
       <div role="status" aria-live="polite" aria-atomic="true">
-        <h1 class="scale-action" id="scaleAction">Bloom</h1>
+        <div class="scale-heading"><h1 class="scale-action" id="scaleAction">Bloom</h1><span class="scale-stage" id="scaleStage">Ready</span></div>
         <p class="scale-guidance" id="scaleGuidance">First pour starts the timer.</p>
       </div>
       <div class="scale-measurements" id="scaleMeasurements" style="display:none">
-        <div class="scale-weight-row">
-          <div class="scale-number-label" id="scaleTargetLabel">Phase water</div>
-          <div class="scale-ratio"><span class="scale-reading" id="scaleWeight">—</span><span class="scale-target" id="scaleTarget">/ — g</span></div>
-          <div class="scale-pour-track"><div class="scale-pour-fill" id="scalePourFill" style="width:0%"></div></div>
+        <div class="scale-ring">
+          <svg viewBox="0 0 200 200" role="img" aria-label="Phase time progress">
+            <circle class="ring-track" cx="100" cy="100" r="88"/>
+            <circle class="ring-fill" id="scaleTimeRing" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9"/>
+          </svg>
+          <div class="scale-ring-centre"><div class="scale-number-label" id="scaleTargetLabel">Scale weight</div><div class="scale-ratio"><span class="scale-reading" id="scaleWeight">—</span><span class="scale-target" id="scaleTarget">/ — g</span></div></div>
         </div>
         <div class="scale-phase-time">
           <div class="scale-number-label" id="scaleTimeLabel">Phase time</div>
           <div class="scale-ratio"><span class="scale-reading" id="scalePhaseTime">0:00</span><span class="scale-target" id="scaleTimeTarget">/ —</span></div>
-          <div class="scale-pour-track"><div class="scale-pour-fill" id="scaleTimeFill" style="width:0%"></div></div>
         </div>
         <div class="scale-remaining" id="scaleRemaining"></div>
       </div>
-      <div class="scale-next" id="scaleNext">
-        <div class="scale-next-label" id="scaleNextLabel">Then</div>
-        <div class="scale-next-value" id="scaleNextValue">—</div>
-      </div>
       <div class="scale-footer">
-        <div><div class="scale-connection" id="scaleConnection">Waiting for scale</div><div class="scale-connection" id="scaleTotalWeight"></div></div>
-        <div class="scale-time"><div class="scale-number-label">Total brew time</div><div class="scale-clock" id="scaleClock">0:00</div></div>
+        <div class="scale-connection">Brew time</div><div class="scale-clock" id="scaleClock">0:00</div>
+      </div>
+      <div class="scale-next" id="scaleNext">
+        <div><div class="scale-next-label" id="scaleNextLabel">Next</div><div class="scale-next-value" id="scaleNextValue">—</div></div>
+        <div class="scale-next-meta"><div id="scaleNextTarget"></div><div id="scaleNextAt"></div></div>
       </div>
       <details class="scale-plan" id="scalePlan">
         <summary id="scalePlanSummary">View recipe</summary>
@@ -355,6 +364,14 @@
       <button class="btn-go" id="brewBtn" onclick="handleBrewBtn()">Start</button>
       <button class="btn-secondary" onclick="backToSettings()">Settings</button>
     </div>
+  </div>
+
+  <div class="screen" id="screenManualScale">
+    <div class="app-header"><span class="app-title">Manual scale</span><button class="icon-btn" onclick="closeManualScale()">Done</button></div>
+    <p class="scale-status" id="manualScaleStatus" role="status">Find your scale to start weighing.</p>
+    <div class="manual-scale-reading"><strong id="manualScaleWeight">—</strong><span>g</span></div>
+    <button class="btn-secondary" id="manualScaleFindBtn" onclick="findScale()">Find scale</button>
+    <button class="btn-go" id="manualScaleTareBtn" onclick="tareManualScale()" disabled>Tare</button>
   </div>
 
   <!-- Guide screen -->
@@ -418,7 +435,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-10-07.7';
+const APP_VERSION = '2026-10-10.1';
 const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
 const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
 const SCALE_HOST = 'coffeescale.local';
@@ -438,7 +455,7 @@ let noSleep=null, audioCtx=null;
 
 const $ = id => document.getElementById(id);
 // One request at a time for the ESP32's single-client server, including commands.
-const scale = { base:'', connected:false, data:null, poll:null, pending:null, command:false, finding:false, session:null, armPending:null, armed:false, generation:0 };
+const scale = { base:'', connected:false, data:null, poll:null, pending:null, command:false, finding:false, session:null, armPending:null, armed:false, generation:0, weighing:false, phaseIndex:0, phaseReached:false };
 
 function loadSettings() {
   try {
@@ -525,23 +542,25 @@ async function readScalePairing(device) {
 
 async function findScale() {
   if(scale.finding || scale.command) return;
-  if(scale.session!==null || scale.armPending!==null) { $('scaleStatus').textContent='Finish the current brew before pairing a scale.'; return; }
-  if(!navigator.bluetooth || !navigator.bluetooth.requestDevice) { $('scaleStatus').textContent='Find scale needs Chrome on Android with Bluetooth enabled.'; return; }
+  if(scale.session!==null || scale.armPending!==null) { setScaleStatus('Finish the current brew before pairing a scale.'); return; }
+  if(!navigator.bluetooth || !navigator.bluetooth.requestDevice) { setScaleStatus('Find scale needs Chrome on Android with Bluetooth enabled.'); return; }
   scale.finding=true; $('scaleFindBtn').disabled=true;
+  renderManualScale();
   clearTimeout(scale.poll); scale.generation++;
-  $('scaleStatus').textContent='Choose CoffeeScale. Bluetooth is only needed for this initial pairing.';
+  setScaleStatus('Choose CoffeeScale. Bluetooth is only needed for this initial pairing.');
   try {
     // Device picker must open directly from this click, before any await.
     const device=await navigator.bluetooth.requestDevice({filters:[{services:[DISCOVERY_SERVICE]}]});
     const data=await readScalePairing(device);
     if(scale.pending) await scale.pending;
     settings.scaleId=data.id; settings.scaleAddress=data.ip;
-    settings.brewMode='scale'; saveSettings(); applySettings();
+    if(!scale.weighing) settings.brewMode='scale';
+    saveSettings(); applySettings();
     scale.finding=false;
     await connectScale(data.ip);
   } catch(e) {
-    $('scaleStatus').textContent=e.name==='NotFoundError' ? 'Pairing cancelled. Your saved scale is unchanged.' : e.message;
-  } finally { scale.finding=false; $('scaleFindBtn').disabled=false; scheduleScalePoll(); }
+    setScaleStatus(e.name==='NotFoundError' ? 'Pairing cancelled. Your saved scale is unchanged.' : e.message);
+  } finally { scale.finding=false; $('scaleFindBtn').disabled=false; renderManualScale(); scheduleScalePoll(); }
 }
 
 async function scaleFetch(path, method='GET') {
@@ -570,7 +589,8 @@ function scaleError(error) {
   const message = error.name==='AbortError' || error instanceof TypeError
     ? 'Waiting for CoffeeScale… Turn it on, keep your phone on the same WiFi, and allow Chrome’s local network permission. Reconnecting automatically.'
     : error.message;
-  $('scaleStatus').textContent = message;
+  setScaleStatus(message);
+  renderManualScale();
   $('scaleWeight').textContent = '—';
   scaleText('scaleGuidance',message + (scale.session !== null || scale.armPending !== null ? ' The scale keeps its timer; guidance resumes when connected.' : ''));
   $('scaleLive').className='scale-live is-wait';
@@ -582,28 +602,29 @@ function scaleError(error) {
   scaleText('scaleRemaining','Live weight unavailable');
   scaleText('scaleNextLabel','Connection');
   scaleText('scaleNextValue','Guidance resumes when the scale reconnects.');
-  $('scalePourFill').style.width='0%';
-  $('scaleTimeFill').style.width='0%';
+  $('scaleTimeRing').style.strokeDashoffset=RING_CIRC;
+  scaleText('scaleNextTarget',''); scaleText('scaleNextAt','');
 }
 
 async function connectScale(address=$('scaleAddress').value.trim()) {
   if(scale.command || scale.finding) return;
   let base;
-  try { base=scaleURL(address); } catch(e) { $('scaleStatus').textContent=e.message; return; }
+  try { base=scaleURL(address); } catch(e) { setScaleStatus(e.message); return; }
   clearTimeout(scale.poll); scale.generation++;
   scale.command=true; $('scaleConnectBtn').disabled=true;
+  renderManualScale();
   if(scale.pending) await scale.pending;
   scale.base=base; scale.connected=false; scale.data=null;
   if(new URL(base).hostname!==SCALE_HOST) { settings.scaleAddress=new URL(base).hostname; saveSettings(); }
-  $('scaleStatus').textContent='Connecting… allow local network access if Chrome asks.';
+  setScaleStatus('Connecting… allow local network access if Chrome asks.');
   try { acceptScaleData(checkScaleData(await scaleFetch('/api/weight'))); }
   catch(e) { scaleError(e); alternateScaleAddress(); }
-  finally { scale.command=false; $('scaleConnectBtn').disabled=false; scheduleScalePoll(); }
+  finally { scale.command=false; $('scaleConnectBtn').disabled=false; renderManualScale(); scheduleScalePoll(); }
 }
 
 function scheduleScalePoll() {
   clearTimeout(scale.poll);
-  if(!scale.finding && settings.brewMode==='scale' && scale.base) scale.poll=setTimeout(pollScale, scale.connected ? 200 : 2000);
+  if(!scale.finding && (settings.brewMode==='scale' || scale.weighing) && scale.base) scale.poll=setTimeout(pollScale, scale.connected ? 200 : 2000);
 }
 
 function alternateScaleAddress() {
@@ -630,10 +651,11 @@ async function pollScale() {
 async function scaleCommand(path) {
   if(scale.command || scale.finding) throw new Error('Wait for the scale’s current request.');
   scale.command=true; clearTimeout(scale.poll); $('brewBtn').disabled=true;
+  renderManualScale();
   try {
     if(scale.pending) await scale.pending;
     return await scaleFetch(path, 'POST');
-  } finally { scale.command=false; $('brewBtn').disabled=false; scheduleScalePoll(); }
+  } finally { scale.command=false; $('brewBtn').disabled=false; renderManualScale(); scheduleScalePoll(); }
 }
 
 function acceptScaleData(data) {
@@ -641,8 +663,8 @@ function acceptScaleData(data) {
   if(settings.scaleId && data.ip && data.ip!==settings.scaleAddress) {
     try { scale.base=scaleURL(data.ip); settings.scaleAddress=data.ip; $('scaleAddress').value=data.ip; saveSettings(); } catch(e) {}
   }
-  $('scaleStatus').textContent=`CoffeeScale connected over WiFi · ${data.g.toFixed(1)}g`;
-  scaleText('scaleTotalWeight',`Scale total: ${data.g.toFixed(1)}g`);
+  setScaleStatus('Scale connected · WiFi');
+  renderManualScale();
   // If an arm response was lost, recover the new board session from its ID.
   if(scale.armPending !== null) {
     if(data.pour_mode && data.pour_id !== scale.armPending) {
@@ -654,6 +676,7 @@ function acceptScaleData(data) {
   if(scale.session !== null) {
     if(!data.pour_mode || data.pour_id !== scale.session) {
       scale.session=null; scale.armed=false; started=false; finished=false;
+      scale.phaseIndex=0; scale.phaseReached=false;
       releaseWakeLock(); $('brewBtn').textContent='Tare & start';
       elapsed=0; $('clock').textContent='0:00'; $('clock').className='clock';
       $('phaseLbl').textContent='Ready'; setTarget(totalWater());
@@ -677,13 +700,57 @@ function acceptScaleData(data) {
 // Avoid re-announcing unchanged instructions on every 200ms weight update.
 function scaleText(id,text) { if($(id).textContent!==text) $(id).textContent=text; }
 
+function setScaleStatus(message) {
+  scaleText('scaleStatus',message); scaleText('manualScaleStatus',message);
+}
+
+function renderManualScale() {
+  const ready=scale.connected && scale.data;
+  scaleText('manualScaleWeight',ready ? (Math.round(scale.data.g*10)/10).toFixed(1) : '—');
+  $('manualScaleTareBtn').disabled=!ready || scale.command || scale.finding;
+  $('manualScaleFindBtn').disabled=scale.command || scale.finding;
+  $('manualScaleFindBtn').style.display=ready ? 'none' : 'block';
+}
+
+async function openManualScale() {
+  if(scale.command || scale.finding || !(await endScaleBrew())) return;
+  scale.weighing=true; showScreen('manualScale');
+  renderManualScale(); await acquireWakeLock();
+  if(!scale.connected && (settings.scaleAddress || scale.base)) await connectScale(settings.scaleAddress || scale.base);
+  else if(!scale.connected) setScaleStatus('Find your scale to start weighing.');
+  scheduleScalePoll();
+}
+
+function closeManualScale() {
+  if(scale.command || scale.finding) return;
+  scale.weighing=false; releaseWakeLock();
+  if(settings.brewMode!=='scale') {
+    clearTimeout(scale.poll); scale.generation++; scale.connected=false; scale.data=null;
+  }
+  showScreen('settings');
+}
+
+async function tareManualScale() {
+  if(!scale.weighing || !scale.connected || scale.command || scale.finding || scale.session!==null) return;
+  setScaleStatus('Zeroing…');
+  try { await scaleCommand('/api/tare'); await pollScale(); }
+  catch(e) { scaleError(e); }
+}
+
 // Recipe cue timestamps define phase boundaries. A phase includes its pour and
 // remaining wait; its timer continues after the water target is reached.
 function scalePhase(t,weight) {
-  const scheduled=getCueIdx(t);
-  let index=cues.slice(0,scheduled+1).findIndex(c=>c.water>weight+2);
-  if(index<0) index=scheduled;
-  if(cues[index].phase==='Done' && index>0) index--;
+  let index=scale.phaseIndex;
+  // Completion is remembered. A lifted brewer or a noisy reading cannot reopen a pour.
+  if(started && !finished) {
+    for(;;) {
+      const previous=index ? cues[index-1].water : 0;
+      if(cues[index].water===previous || weight>=cues[index].water) scale.phaseReached=true;
+      if(index>=cues.length-2 || t<cues[index+1].at || !scale.phaseReached) break;
+      index++; scale.phaseReached=false;
+    }
+    scale.phaseIndex=index;
+  }
   const cue=cues[index], previous=index ? cues[index-1].water : 0;
   const amount=cue.water-previous;
   const end=index<cues.length-1 ? cues[index+1].at : cue.at;
@@ -699,50 +766,57 @@ function renderScaleGuidance() {
   scaleText('scaleClock',fmt(elapsed));
   scaleText('scaleConnection',scale.connected ? 'Scale connected · WiFi' : 'Waiting for scale');
   if(!scale.connected || !scale.data) { scaleError(new TypeError('offline')); return; }
-  const weight=Math.max(0,scale.data.g), total=totalWater();
-  const phase=scalePhase(elapsed,weight), {cue,amount,added,seconds}=phase;
-  const pouring=amount>0 && cue.water>weight+2;
+  const weight=Math.max(0,Math.round(scale.data.g*10)/10), total=totalWater();
+  const phase=scalePhase(elapsed,weight), {cue,amount,seconds}=phase;
+  const pouring=amount>0 && !scale.phaseReached;
   const overtime=Math.max(0,phase.elapsed-seconds);
-  const phaseCount=cues.filter(c=>c.phase!=='Done').length;
-  const phaseLabel=`Phase ${phase.index+1}/${phaseCount}`;
   let kind=pouring ? 'pour' : amount>0 ? 'wait' : 'drain';
-  let stage=`${phaseLabel} · ${pouring ? 'Pour' : amount>0 ? 'Wait' : 'Drain'}`;
-  let action=cue.phase.split(' · ')[0];
+  let stage=pouring ? 'Pour' : amount>0 ? 'Wait' : 'Drain';
+  let action=scalePhaseName(cue);
   let detail='';
   let note=pouring ? `${Math.ceil(cue.water-weight)}g to go` : weight>cue.water+2 ? `${(weight-cue.water).toFixed(1)}g over target` : 'Target reached';
-  let nextLabel='Next phase', nextValue=phase.next ? `${fmt(phase.next.at)} · ${phase.next.phase.split(' · ')[0]}` : 'Finish brew';
-  if(phase.next && phase.next.phase==='Done') { nextLabel='Suggested finish'; nextValue=fmt(phase.next.at); }
+  let nextLabel='Next', nextValue=phase.next ? scalePhaseName(phase.next) : 'Finish brew';
+  let nextTarget=phase.next && phase.next.phase!=='Done' && phase.next.water>cue.water ? `${phase.next.water}g` : '';
+  let nextAt=phase.next ? `at ${fmt(phase.next.at)}` : '';
+  if(phase.next && phase.next.phase==='Done') { nextLabel='Suggested finish'; nextValue=fmt(phase.next.at); nextAt=''; }
   if(phase.next && phase.next.at<=elapsed && pouring) nextValue='Next phase is due · finish this pour first';
-  if(overtime && pouring) { stage=`${phaseLabel} · Late`; note+=` · ${fmt(overtime)} over time`; }
+  if(overtime && pouring) { stage='Pour · Late'; note+=` · ${fmt(overtime)} over time`; }
   if(preparing || scale.armed) {
-    kind='pour'; stage=`${phaseLabel} · ${preparing ? 'Ready' : 'Pour'}`;
+    kind='pour'; stage=preparing ? 'Ready' : 'Pour';
     detail=scale.notice || (preparing ? 'Tare & start when ready.' : 'First pour starts the timer.');
     note='';
   } else if(finished) {
     kind='done'; stage=scale.cancelled ? 'Cancelled' : 'Finished';
     action=scale.cancelled ? 'Brew cancelled' : 'Brew complete'; detail=''; note='';
     nextLabel='Recipe'; nextValue=`${settings.dose}g coffee · ${total}g water`;
+    nextTarget=''; nextAt='';
   } else if(!scale.data.running) {
     kind='wait'; stage='Timer stopped'; detail='Finish brew to end this session.';
   } else if(!amount) {
-    action=cue.phase==='Draw down' ? 'Drawdown' : cue.action;
-    detail=cue.phase==='Draw down' ? 'Finish when drained.' : '';
+    action=scalePhaseName(cue);
+    detail='';
     note='';
   }
   $('scaleLive').className=`scale-live is-${kind}`;
   $('brewBtn').className=preparing || finished || !amount ? 'btn-go' : 'btn-secondary';
   scaleText('scaleStage',stage); scaleText('scaleAction',action); scaleText('scaleGuidance',detail);
-  scaleText('scaleTargetLabel',amount ? 'Phase water' : 'Total water');
-  scaleText('scaleWeight',preparing ? '—' : (amount ? added : weight).toFixed(1));
-  scaleText('scaleTarget',`/ ${amount || cue.water} g`);
+  scaleText('scaleTargetLabel','Scale weight');
+  scaleText('scaleWeight',preparing ? '—' : weight.toFixed(1));
+  scaleText('scaleTarget',`/ ${cue.water} g`);
   scaleText('scalePhaseTime',fmt(phase.elapsed)); scaleText('scaleTimeTarget',`/ ${fmt(seconds)}`);
   scaleText('scaleTimeLabel','Phase time');
   scaleText('scaleRemaining',note); scaleText('scaleNextLabel',nextLabel); scaleText('scaleNextValue',nextValue);
-  $('scalePourFill').style.width=Math.min(100,(amount ? added/amount : weight/cue.water)*100)+'%';
-  $('scaleTimeFill').style.width=Math.min(100,phase.elapsed/seconds*100)+'%';
+  scaleText('scaleNextTarget',nextTarget); scaleText('scaleNextAt',nextAt);
+  $('scaleTimeRing').style.strokeDashoffset=RING_CIRC*(1-Math.min(1,phase.elapsed/seconds));
   showCue(cue,total);
   $('waterLbl').textContent=`Water: ${weight.toFixed(1)}g / ${total}g`;
   $('waterFill').style.width=Math.min(100,Math.round(weight/total*100))+'%';
+}
+
+function scalePhaseName(cue) {
+  if(cue.phase==='Draw down') return 'Drawdown';
+  if(cue.phase==='Stir & swirl') return 'Wait';
+  return cue.phase.split(' · ')[0];
 }
 
 async function endScaleBrew() {
@@ -1072,6 +1146,7 @@ async function startBrew() {
   const total = totalWater();
   $('brewTitle').textContent = `Brewing — ${METHODS[settings.method].name}`;
   elapsed=0; started=false; finished=false; paused=false; fromBrew=false; currentCue=0;
+  scale.phaseIndex=0; scale.phaseReached=false;
   clearInterval(interval); releaseWakeLock();
   $('clock').textContent='0:00';
   $('clock').className='clock';
@@ -1096,8 +1171,7 @@ async function startBrew() {
     $('scalePlanSummary').textContent=`View recipe · ${settings.dose}g coffee / ${total}g water`;
     $('scalePlanList').innerHTML=cues.filter(c=>c.phase!=='Done').map((c,i)=>{
       const end=cues[i+1] ? cues[i+1].at : c.at;
-      const added=c.water-(i ? cues[i-1].water : 0);
-      return `<li><time>${fmt(c.at)}</time><span>${c.phase.split(' · ')[0]}<br>${fmt(end-c.at)} phase</span><span>${added ? added+'g' : '—'}</span></li>`;
+      return `<li><time>${fmt(c.at)}</time><span>${scalePhaseName(c)}<br>${fmt(end-c.at)} phase</span><span>${c.water}g</span></li>`;
     }).join('');
     renderScaleGuidance();
   }
