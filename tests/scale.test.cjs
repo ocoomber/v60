@@ -115,15 +115,21 @@ test('displays cumulative scale weight and phase time against their targets', as
   assert.equal(p.elements.scaleMeasurements.style.display,'block');
   assert.equal(p.elements.scaleTarget.textContent,'/ 30 g');
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45');
+  assert.equal(p.elements.scaleWeightRing.style.strokeDashoffset,552.9);
+  assert.equal(p.elements.scaleTimeProgress.value,0);
   p.run('scale.session=7;scale.armed=true');
   feed(p,{g:20,timer_s:10,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.elements.scaleWeight.textContent,'20.0');
   assert.equal(p.elements.scalePhaseTime.textContent,'0:10');
+  assert.ok(Math.abs(p.elements.scaleWeightRing.style.strokeDashoffset-552.9*(1-20/30))<0.001);
+  assert.equal(p.elements.scaleTimeProgress.value,10/45);
   assert.match(p.elements.scaleStage.textContent,/Pour/);
   feed(p,{g:30,timer_s:12,running:true,pour_mode:true,pour_id:7});
   assert.match(p.elements.scaleStage.textContent,/Wait/);
   assert.equal(p.elements.scalePhaseTime.textContent,'0:12');
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45');
+  assert.equal(p.elements.scaleWeightRing.style.strokeDashoffset,0);
+  assert.equal(p.elements.scaleTimeProgress.value,12/45);
   feed(p,{g:30,timer_s:44,running:true,pour_mode:true,pour_id:7});
   assert.match(p.elements.scaleStage.textContent,/Wait/);
   assert.equal(p.elements.scalePhaseTime.textContent,'0:44');
@@ -136,7 +142,8 @@ test('displays cumulative scale weight and phase time against their targets', as
   assert.match(p.elements.scaleStage.textContent,/Pour/);
   assert.equal(p.elements.scaleNextTarget.textContent,'192g');
   assert.equal(p.elements.scaleNextAt.textContent,'at 1:15');
-  assert.ok(Math.abs(p.elements.scaleTimeRing.style.strokeDashoffset-552.9*(1-10/30))<0.001);
+  assert.ok(Math.abs(p.elements.scaleWeightRing.style.strokeDashoffset-552.9*(1-100/125))<0.001);
+  assert.equal(p.elements.scaleTimeProgress.value,10/30);
 });
 
 test('late pours keep their phase target and show time exceeding its allotted interval', async () => {
@@ -148,6 +155,8 @@ test('late pours keep their phase target and show time exceeding its allotted in
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45');
   assert.match(p.elements.scaleRemaining.textContent,/0:05 over time/);
   assert.match(p.elements.scaleNextValue.textContent,/finish this pour first/);
+  assert.equal(p.elements.scaleTimeProgress.value,1);
+  assert.ok(p.elements.scaleWeightRing.style.strokeDashoffset>0);
   feed(p,{g:30,timer_s:52,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.elements.scaleAction.textContent,'First pour');
   assert.equal(p.elements.scaleWeight.textContent,'30.0');
@@ -162,6 +171,7 @@ test('final pour waits, then timed drawdown remains active until the user finish
   assert.equal(p.elements.scaleWeight.textContent,'240.0');
   assert.equal(p.elements.scaleTarget.textContent,'/ 240 g');
   assert.equal(p.elements.scalePhaseTime.textContent,'0:15');
+  assert.equal(p.elements.scaleWeightRing.style.strokeDashoffset,0);
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 1:15');
   feed(p,{g:240,timer_s:180,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.elements.scaleAction.textContent,'Drawdown');
@@ -218,10 +228,14 @@ test('disconnection blanks live weight and phase time, then catches up on reconn
   assert.equal(p.elements.scaleClock.textContent,'\u2014');
   assert.equal(p.elements.scaleWeight.textContent,'\u2014');
   assert.equal(p.elements.scalePhaseTime.textContent,'\u2014');
+  assert.equal(p.elements.scaleWeightRing.style.strokeDashoffset,552.9);
+  assert.equal(p.elements.scaleTimeProgress.value,0);
   feed(p,{g:30,timer_s:20,running:true,pour_mode:true,pour_id:7});
   assert.match(p.elements.scaleStage.textContent,/Wait/);
   assert.equal(p.elements.scalePhaseTime.textContent,'0:20');
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45');
+  assert.equal(p.elements.scaleWeightRing.style.strokeDashoffset,0);
+  assert.equal(p.elements.scaleTimeProgress.value,20/45);
 });
 
 test('recipe finish time does not stop a slow scale brew or discard its missing water', async () => {

@@ -118,10 +118,16 @@
   .scale-number-label { color:var(--text2); font-size:12px; margin-bottom:8px; }
   .scale-reading { font-family:var(--font-display); font-size:clamp(34px,11vw,48px); font-weight:600; line-height:1.1; font-variant-numeric:tabular-nums; letter-spacing:-1px; white-space:nowrap; }
   .scale-target { font-family:var(--font-display); font-size:clamp(21px,6vw,28px); font-weight:400; line-height:1.15; font-variant-numeric:tabular-nums; color:var(--text2); white-space:nowrap; }
-  .scale-phase-time { text-align:center; margin-top:16px; }
-  .scale-phase-time .scale-reading { font-size:32px; }
-  .scale-phase-time .scale-target { font-size:24px; }
-  .scale-remaining { font-size:12px; color:var(--text2); text-align:center; margin-top:8px; min-height:1.5em; }
+  .scale-phase-time { margin-top:24px; }
+  .scale-time-heading { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .scale-time-heading .scale-number-label { margin-bottom:0; }
+  .scale-phase-time .scale-reading { font-size:22px; letter-spacing:0; }
+  .scale-phase-time .scale-target { font-size:18px; }
+  .scale-time-progress { display:block; width:100%; height:8px; margin-top:10px; appearance:none; border:0; border-radius:8px; overflow:hidden; background:var(--bg3); color:var(--step-color); }
+  .scale-time-progress::-webkit-progress-bar { background:var(--bg3); border-radius:8px; }
+  .scale-time-progress::-webkit-progress-value { background:var(--step-color); border-radius:8px; }
+  .scale-time-progress::-moz-progress-bar { background:var(--step-color); border-radius:8px; }
+  .scale-remaining { font-size:12px; color:var(--text2); text-align:center; margin-top:12px; min-height:1.5em; }
   .scale-next { margin-top:16px; border-top:1px solid var(--border); padding-top:14px; display:flex; justify-content:space-between; gap:12px; }
   .scale-next-label { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:.06em; margin-bottom:5px; }
   .scale-next-value { font-size:14px; font-weight:600; line-height:1.4; }
@@ -332,17 +338,16 @@
       </div>
       <div class="scale-measurements" id="scaleMeasurements" style="display:none">
         <div class="scale-ring">
-          <svg viewBox="0 0 200 200" role="img" aria-label="Phase time progress">
+          <svg viewBox="0 0 200 200" role="img" aria-label="Weight progress" aria-describedby="scaleWeight scaleTarget">
             <circle class="ring-track" cx="100" cy="100" r="88"/>
-            <circle class="ring-fill" id="scaleTimeRing" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9"/>
+            <circle class="ring-fill" id="scaleWeightRing" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9"/>
           </svg>
-          <div class="scale-ring-centre"><div class="scale-number-label" id="scaleTargetLabel">Scale weight</div><div class="scale-ratio"><span class="scale-reading" id="scaleWeight">—</span><span class="scale-target" id="scaleTarget">/ — g</span></div></div>
+          <div class="scale-ring-centre"><div class="scale-number-label" id="scaleTargetLabel">Scale weight</div><div class="scale-ratio"><span class="scale-reading" id="scaleWeight">—</span><span class="scale-target" id="scaleTarget">/ — g</span></div><div class="scale-remaining" id="scaleRemaining"></div></div>
         </div>
         <div class="scale-phase-time">
-          <div class="scale-number-label" id="scaleTimeLabel">Phase time</div>
-          <div class="scale-ratio"><span class="scale-reading" id="scalePhaseTime">0:00</span><span class="scale-target" id="scaleTimeTarget">/ —</span></div>
+          <div class="scale-time-heading"><div class="scale-number-label" id="scaleTimeLabel">Phase time</div><div class="scale-ratio"><span class="scale-reading" id="scalePhaseTime">0:00</span><span class="scale-target" id="scaleTimeTarget">/ —</span></div></div>
+          <progress class="scale-time-progress" id="scaleTimeProgress" max="1" value="0" aria-labelledby="scaleTimeLabel" aria-describedby="scalePhaseTime scaleTimeTarget"></progress>
         </div>
-        <div class="scale-remaining" id="scaleRemaining"></div>
       </div>
       <div class="scale-footer">
         <div class="scale-connection">Brew time</div><div class="scale-clock" id="scaleClock">0:00</div>
@@ -435,7 +440,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-10-10.1';
+const APP_VERSION = '2026-10-12.1';
 const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
 const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
 const SCALE_HOST = 'coffeescale.local';
@@ -602,7 +607,8 @@ function scaleError(error) {
   scaleText('scaleRemaining','Live weight unavailable');
   scaleText('scaleNextLabel','Connection');
   scaleText('scaleNextValue','Guidance resumes when the scale reconnects.');
-  $('scaleTimeRing').style.strokeDashoffset=RING_CIRC;
+  $('scaleWeightRing').style.strokeDashoffset=RING_CIRC;
+  $('scaleTimeProgress').value=0;
   scaleText('scaleNextTarget',''); scaleText('scaleNextAt','');
 }
 
@@ -807,7 +813,8 @@ function renderScaleGuidance() {
   scaleText('scaleTimeLabel','Phase time');
   scaleText('scaleRemaining',note); scaleText('scaleNextLabel',nextLabel); scaleText('scaleNextValue',nextValue);
   scaleText('scaleNextTarget',nextTarget); scaleText('scaleNextAt',nextAt);
-  $('scaleTimeRing').style.strokeDashoffset=RING_CIRC*(1-Math.min(1,phase.elapsed/seconds));
+  $('scaleWeightRing').style.strokeDashoffset=RING_CIRC*(1-(preparing ? 0 : Math.min(1,weight/Math.max(1,cue.water))));
+  $('scaleTimeProgress').value=Math.min(1,phase.elapsed/seconds);
   showCue(cue,total);
   $('waterLbl').textContent=`Water: ${weight.toFixed(1)}g / ${total}g`;
   $('waterFill').style.width=Math.min(100,Math.round(weight/total*100))+'%';

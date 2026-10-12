@@ -40,7 +40,7 @@ awk 'n==1 && /^<\/script>$/{exit} /^<script>$/{n=1; next} n==1{print}' index.htm
 
 ## Scale brew screen
 - This is a phase tracker, not a V60 tutorial. No preparation checklist or pouring-technique prose in the scale brew view.
-- Use the approved time ring: cumulative reading / target inside, phase elapsed / allotted time outside and below. Total brew time and the next phase are secondary.
+- Use the approved weight ring: fill tracks cumulative reading / target, with the reading, target and remaining grams inside. Phase elapsed / allotted time sits above a horizontal time progress bar below the ring. Total brew time and the next phase are secondary.
 - A phase occupies the whole interval between its recipe cue and the next cue. Reaching the water target changes Pour to Wait; the phase timer keeps running until the next boundary. Only phase time resets for the next pour; weight stays cumulative. Remember completed targets so weight dips cannot reopen old pours. Never skip an unfinished pour to satisfy the clock; show its elapsed time exceeding its budget.
 - Timer-only ring, prompt and upcoming cards are hidden in scale mode. The complete recipe sits inside **View recipe**, using cumulative targets and concise phase labels. No stir/swirl or other technique instructions in the scale view.
 - Start uses **Tare & start**; the board still owns tare, first-pour detection and timing. Avoid repeatedly updating unchanged live-region instructions while polling. Drawdown remains active beyond the suggested finish until the user ends the brew.
