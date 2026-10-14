@@ -440,7 +440,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-10-12.1';
+const APP_VERSION = '2026-10-15.1';
 const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
 const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
 const SCALE_HOST = 'coffeescale.local';
@@ -461,6 +461,7 @@ let noSleep=null, audioCtx=null;
 const $ = id => document.getElementById(id);
 // One request at a time for the ESP32's single-client server, including commands.
 const scale = { base:'', connected:false, data:null, poll:null, pending:null, command:false, finding:false, session:null, armPending:null, armed:false, generation:0, weighing:false, phaseIndex:0, phaseReached:false };
+let scaleSampleAt=0, scaleTimeFrame=null;
 
 function loadSettings() {
   try {
@@ -590,6 +591,7 @@ function checkScaleData(data) {
 }
 
 function scaleError(error) {
+  cancelAnimationFrame(scaleTimeFrame); scaleTimeFrame=null;
   scale.connected=false; scale.data=null;
   const message = error.name==='AbortError' || error instanceof TypeError
     ? 'Waiting for CoffeeScale… Turn it on, keep your phone on the same WiFi, and allow Chrome’s local network permission. Reconnecting automatically.'
@@ -665,6 +667,7 @@ async function scaleCommand(path) {
 }
 
 function acceptScaleData(data) {
+  scaleSampleAt=performance.now();
   scale.connected=true; scale.data=data;
   if(settings.scaleId && data.ip && data.ip!==settings.scaleAddress) {
     try { scale.base=scaleURL(data.ip); settings.scaleAddress=data.ip; $('scaleAddress').value=data.ip; saveSettings(); } catch(e) {}
@@ -765,6 +768,24 @@ function scalePhase(t,weight) {
     added:Math.max(0,weight-previous),next:cues[index+1] || null};
 }
 
+function renderScaleTimeProgress(phase) {
+  cancelAnimationFrame(scaleTimeFrame); scaleTimeFrame=null;
+  const active=started && !finished && scale.session!==null;
+  const seconds=active ? Math.max(0,scale.data.timer_s-phase.cue.at) : phase.elapsed;
+  const animate=active && scale.data.running && seconds<phase.seconds;
+  const draw=now=>{
+    scaleTimeFrame=null;
+    if(settings.brewMode!=='scale' || !scale.connected || !scale.data) return;
+    // Only the fill interpolates. Phase changes still use the board's clock.
+    // Freeze after a short gap instead of inventing time through a lost connection.
+    const sinceSample=animate ? Math.min(1,Math.max(0,(now-scaleSampleAt)/1000)) : 0;
+    const value=Math.min(1,(seconds+sinceSample)/phase.seconds);
+    $('scaleTimeProgress').value=value;
+    if(animate && value<1 && sinceSample<1) scaleTimeFrame=requestAnimationFrame(draw);
+  };
+  draw(performance.now());
+}
+
 function renderScaleGuidance() {
   if(settings.brewMode!=='scale' || !cues.length) return;
   const preparing=!started && !scale.armed && !finished;
@@ -814,7 +835,7 @@ function renderScaleGuidance() {
   scaleText('scaleRemaining',note); scaleText('scaleNextLabel',nextLabel); scaleText('scaleNextValue',nextValue);
   scaleText('scaleNextTarget',nextTarget); scaleText('scaleNextAt',nextAt);
   $('scaleWeightRing').style.strokeDashoffset=RING_CIRC*(1-(preparing ? 0 : Math.min(1,weight/Math.max(1,cue.water))));
-  $('scaleTimeProgress').value=Math.min(1,phase.elapsed/seconds);
+  renderScaleTimeProgress(phase);
   showCue(cue,total);
   $('waterLbl').textContent=`Water: ${weight.toFixed(1)}g / ${total}g`;
   $('waterFill').style.width=Math.min(100,Math.round(weight/total*100))+'%';

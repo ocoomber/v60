@@ -11,6 +11,7 @@ const response = data => ({ok:true,json:async()=>data});
 function app(fetch = async () => response(reading()), saved=null) {
   const elements = {};
   const timeouts=new Map(); let timerId=0;
+  const frames=new Map(); let frameId=0, now=0;
   for(const [,id] of html.matchAll(/id="([^"]+)"/g)) elements[id] = {
     textContent:'',innerHTML:'',value:'',style:{},className:'',disabled:false,
     classList:{add(){},remove(){},toggle(){}},
@@ -18,10 +19,14 @@ function app(fetch = async () => response(reading()), saved=null) {
   const context = vm.createContext({document:{
     getElementById:id=>elements[id],querySelectorAll:()=>[],addEventListener(){},visibilityState:'visible',
   }, localStorage:{getItem(){return saved ? JSON.stringify(saved) : null;},setItem(){}},
-  fetch,AbortController,URL,Date,TypeError,TextDecoder,setTimeout(fn,ms){const id=++timerId;timeouts.set(id,{fn,ms});return id;},clearTimeout(id){timeouts.delete(id);},setInterval(){return 1;},clearInterval(){},
+  fetch,AbortController,URL,Date,TypeError,TextDecoder,performance:{now:()=>now},
+  requestAnimationFrame(fn){const id=++frameId;frames.set(id,fn);return id;},cancelAnimationFrame(id){frames.delete(id);},
+  setTimeout(fn,ms){const id=++timerId;timeouts.set(id,{fn,ms});return id;},clearTimeout(id){timeouts.delete(id);},setInterval(){return 1;},clearInterval(){},
   NoSleep:class {async enable(){} disable(){}},window:{},navigator:{}});
   vm.runInContext(script,context);
-  return {elements,run:code=>vm.runInContext(code,context),setBluetooth:api=>context.navigator.bluetooth=api,timeout:ms=>{
+  return {elements,run:code=>vm.runInContext(code,context),setBluetooth:api=>context.navigator.bluetooth=api,frame:ms=>{
+    now+=ms; const pending=[...frames.values()]; frames.clear(); pending.forEach(fn=>fn(now));
+  },timeout:ms=>{
     for(const [id,t] of timeouts) if(t.ms===ms){timeouts.delete(id);t.fn();return;}
     throw new Error('No timeout for '+ms);
   }};
@@ -144,6 +149,39 @@ test('displays cumulative scale weight and phase time against their targets', as
   assert.equal(p.elements.scaleNextAt.textContent,'at 1:15');
   assert.ok(Math.abs(p.elements.scaleWeightRing.style.strokeDashoffset-552.9*(1-100/125))<0.001);
   assert.equal(p.elements.scaleTimeProgress.value,10/30);
+});
+
+test('time fill moves between readings without advancing the board clock or phase', async () => {
+  const p=app();await scaleBrew(p);p.run('scale.session=7');
+  feed(p,{g:30,timer_s:44.5,running:true,pour_mode:true,pour_id:7});
+  assert.equal(p.elements.scaleTimeProgress.value,44.5/45);
+  p.frame(100);
+  assert.equal(p.elements.scaleTimeProgress.value,44.6/45);
+  p.frame(100);
+  assert.equal(p.elements.scaleTimeProgress.value,44.7/45);
+  assert.equal(p.run('elapsed'),44);
+  assert.equal(p.elements.scalePhaseTime.textContent,'0:44');
+  p.frame(400);
+  assert.equal(p.elements.scaleTimeProgress.value,1);
+  assert.equal(p.elements.scaleAction.textContent,'Bloom');
+  feed(p,{g:30,timer_s:45.1,running:true,pour_mode:true,pour_id:7});
+  assert.ok(Math.abs(p.elements.scaleTimeProgress.value-0.1/30)<1e-10);
+  assert.equal(p.elements.scaleAction.textContent,'First pour');
+});
+
+test('time fill freezes for stale or stopped readings and clears on disconnect', async () => {
+  const p=app();await scaleBrew(p);p.run('scale.session=7');
+  feed(p,{g:20,timer_s:10.25,running:true,pour_mode:true,pour_id:7});
+  p.frame(1500);
+  assert.equal(p.elements.scaleTimeProgress.value,11.25/45);
+  p.frame(500);
+  assert.equal(p.elements.scaleTimeProgress.value,11.25/45);
+  feed(p,{g:20,timer_s:12.5,running:false,pour_mode:true,pour_id:7});
+  p.frame(200);
+  assert.equal(p.elements.scaleTimeProgress.value,12.5/45);
+  feed(p,{g:20,timer_s:13,running:true,pour_mode:true,pour_id:7});
+  p.run("scaleError(new TypeError('offline'))");p.frame(200);
+  assert.equal(p.elements.scaleTimeProgress.value,0);
 });
 
 test('late pours keep their phase target and show time exceeding its allotted interval', async () => {
