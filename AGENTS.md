@@ -51,5 +51,11 @@ awk 'n==1 && /^<\/script>$/{exit} /^<script>$/{n=1; next} n==1{print}' index.htm
 - Opening the page does not tare or arm a brew. Tare is an explicit POST `/api/tare`; do not retry that command automatically. Finish an active V60 scale session before entering this page.
 - Keep the existing V60 manifest/install identity; this page is part of V60, not a second PWA.
 
+## Appearance
+- **Settings → Appearance** is an Auto / Light / Dark switch, saved as `settings.theme` in `localStorage['v60-settings']` (`'auto' | 'light' | 'dark'`, default `'auto'`). Migrate any other value to `'auto'` in `loadSettings()`.
+- `applyTheme()` resolves the choice against the phone's `prefers-color-scheme` and sets `data-theme="light|dark"` on `<html>`. **All colour lives in CSS custom properties** — the dark palette is the single `:root[data-theme="dark"]` block. Never hardcode a hex value in a rule; add a token instead.
+- Colours that carry meaning: `--fill` / `--fill-text` (solid green surfaces, must stay readable against the text colour), `--ok-text` (success), `--warn` / `--warn-bg` (warning), `--danger` / `--danger-bg` (error), `--ring` / `--track` (progress).
+- `color-scheme` is set per theme so scrollbars and form controls follow it. Keep it that way — without it the browser draws light scrollbars in dark mode.
+
 ## Deeper domain model
 See **CLAUDE.md** for the full `METHODS` registry, `customPours` budget model, `savedRecipes` shape, `localStorage` persistence, and migration rules.

@@ -5,6 +5,9 @@ An interactive pour-over brew timer that runs as a web app / phone PWA. Pick a m
 through the pours with a timer, ring, and prompts. It also has an **AI Barista** chat for
 troubleshooting your cup ("too sour", "draining too fast", etc.).
 
+The app follows your phone's light/dark setting by default. **Settings → Appearance** has an
+**Auto / Light / Dark** switch if you want to override it; the choice is saved on the phone.
+
 The whole app is a single `index.html` file, hosted free on GitHub Pages.
 
 ## Brew with CoffeeScale
