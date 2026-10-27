@@ -95,7 +95,9 @@
     display: flex;
     flex-direction: column;
     height: 100dvh;
-    padding: 20px 20px env(safe-area-inset-bottom, 24px);
+    /* env() is supported everywhere, so its fallback never fires: it resolves to
+       0px on any device without a safe-area inset. max() keeps the 24px floor. */
+    padding: 20px 20px max(24px, env(safe-area-inset-bottom, 24px));
     padding-top: max(20px, env(safe-area-inset-top));
   }
   /* On a big screen the app sits as a card instead of a thin strip. */
@@ -106,12 +108,12 @@
   .screen.active { display: flex; }
   .app-header { display: flex; align-items: center; justify-content: space-between; margin: 0; }
   .app-title { font-size: 18px; font-weight: 600; color: var(--text); }
-  .icon-btn { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 7px 12px; cursor: pointer; color: var(--text2); font-size: 13px; }
+  .icon-btn { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 10px 14px; cursor: pointer; color: var(--text2); font-size: 13px; }
   .icon-btn:hover { background: var(--bg2); }
   .group { margin: 0; }
   .group-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 10px; display: block; }
   .seg { display: flex; border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .seg-btn { flex: 1; padding: 10px 0; background: none; border: none; border-right: 0.5px solid var(--border); font-size: 14px; cursor: pointer; color: var(--text2); transition: all 0.15s; }
+  .seg-btn { flex: 1; padding: 12px 0; background: none; border: none; border-right: 0.5px solid var(--border); font-size: 14px; cursor: pointer; color: var(--text2); transition: all 0.15s; }
   .seg-btn:last-child { border-right: none; }
   .seg-btn.sel { background: var(--fill); color: var(--fill-text); font-weight: 600; }
   .seg-btn:not(.sel):hover { background: var(--bg2); }
@@ -119,18 +121,22 @@
   .step-val { font-size: 22px; font-weight: 600; color: var(--text); min-width: 52px; text-align: center; }
   .step-btn { width: 36px; height: 36px; border-radius: 50%; border: 0.5px solid var(--border2); background: var(--bg); font-size: 20px; cursor: pointer; color: var(--text); display: flex; align-items: center; justify-content: center; }
   .step-btn:hover { background: var(--bg3); }
-  .summary { background: var(--bg2); border-radius: var(--radius-lg); padding: 14px 16px; margin: 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .summary { background: var(--bg2); border-radius: var(--radius-lg); padding: 14px 16px; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .sum-item { text-align: center; }
   .sum-val { font-family: var(--font-display); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
   .sum-lbl { font-size: 11px; color: var(--text3); margin-top: 3px; }
   .btn-go { background: var(--fill); border: none; border-radius: var(--radius-lg); color: var(--fill-text); font-size: 16px; font-weight: 600; padding: 14px; cursor: pointer; width: 100%; }
   .btn-go:hover { background: var(--fill-hover); }
   .btn-go:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-secondary { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 14px; padding: 10px 20px; cursor: pointer; color: var(--text2); transition: background 0.15s; }
+  .btn-secondary { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 14px; padding: 12px 20px; cursor: pointer; color: var(--text2); transition: background 0.15s; }
   .btn-secondary:hover { background: var(--bg2); }
-  /* A secondary action that belongs to the group above it, not a stray button. */
-  .btn-quiet { align-self: flex-start; background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 13px; padding: 9px 14px; cursor: pointer; color: var(--text2); }
-  .btn-quiet:hover { background: var(--bg2); }
+  /* A row that opens another screen: full width, label left, chevron right. */
+  .btn-row { display: flex; align-items: center; justify-content: space-between; width: 100%; background: none; border: 0; border-top: 0.5px solid var(--border); padding: 13px 2px; cursor: pointer; color: var(--text2); font-size: 14px; }
+  .btn-row::after { content: '›'; color: var(--text3); font-size: 18px; }
+  .btn-row:hover { color: var(--text); }
+  /* Stops the current brew: obviously not the "go" action. */
+  .btn-stop { background: none; border: 0.5px solid var(--danger); border-radius: var(--radius); font-size: 14px; padding: 12px 20px; cursor: pointer; color: var(--danger); transition: background 0.15s; }
+  .btn-stop:hover { background: var(--danger-bg); }
   /* Busy state for the slow actions (Bluetooth pairing, sending, zeroing). */
   .is-busy { position: relative; color: transparent !important; }
   .is-busy::after { content: ''; position: absolute; left: 50%; top: 50%; width: 15px; height: 15px; margin: -7.5px 0 0 -7.5px; border: 2px solid var(--text2); border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
@@ -152,11 +158,10 @@
   .scale-row input { min-width:0; flex:1; padding:10px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg); color:var(--text); font-size:16px; }
   .scale-status { font-size:12px; color:var(--text2); line-height:1.5; margin-top:8px; }
   #screenBrew.scale-brew { gap:14px; overflow-y:auto; overflow-x:hidden; }
-  .scale-brew > .ring-outer, .scale-brew > .ring-foot, .scale-brew > .prompt-card,
+  .scale-brew > .ring-outer, .scale-brew > .prompt-card,
   .scale-brew > .water-wrap, .scale-brew > .upcoming { display:none !important; }
-  .scale-brew > .brew-actions { margin-top:auto; padding:12px 0 16px; flex-shrink:0; position:sticky; bottom:0; background:var(--bg); }
-  .scale-brew > .brew-actions::before { content:''; position:absolute; left:0; right:0; top:0; height:14px; transform:translateY(-100%); background:linear-gradient(to top, var(--bg), transparent); pointer-events:none; }
   .scale-brew > .brew-actions > :first-child { flex:1; }
+  .scale-brew > .brew-actions > :first-child.btn-stop { flex:0 0 auto; }
   .scale-brew .app-title { font-size:16px; }
   .scale-live { --step-color:var(--ring); flex:1; }
   .scale-live.is-pour { --step-color:var(--ring); }
@@ -173,19 +178,9 @@
   .scale-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
   .scale-ring .ring-fill { stroke:var(--step-color); transition:stroke-dashoffset .2s linear; }
   .scale-ring-centre { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .scale-ratio { display:flex; justify-content:center; align-items:baseline; gap:5px; }
   .scale-number-label { color:var(--text2); font-size:12px; margin-bottom:8px; }
   .scale-reading { font-family:var(--font-display); font-size:clamp(34px,11vw,48px); font-weight:600; line-height:1.1; font-variant-numeric:tabular-nums; letter-spacing:-1px; white-space:nowrap; }
-  .scale-target { font-family:var(--font-display); font-size:clamp(21px,6vw,28px); font-weight:400; line-height:1.15; font-variant-numeric:tabular-nums; color:var(--text2); white-space:nowrap; }
-  .scale-phase-time { margin-top:24px; }
-  .scale-time-heading { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
-  .scale-time-heading .scale-number-label { margin-bottom:0; }
-  .scale-phase-time .scale-reading { font-size:22px; letter-spacing:0; }
-  .scale-phase-time .scale-target { font-size:18px; }
-  .scale-time-progress { display:block; width:100%; height:8px; margin-top:10px; appearance:none; border:0; border-radius:8px; overflow:hidden; background:var(--bg3); color:var(--step-color); }
-  .scale-time-progress::-webkit-progress-bar { background:var(--track); border-radius:8px; }
-  .scale-time-progress::-webkit-progress-value { background:var(--step-color); border-radius:8px; }
-  .scale-time-progress::-moz-progress-bar { background:var(--step-color); border-radius:8px; }
+  .scale-target { font-family:var(--font-display); font-size:15px; font-weight:500; font-variant-numeric:tabular-nums; color:var(--text2); margin-top:2px; white-space:nowrap; }
   .scale-remaining { font-size:12px; color:var(--text2); text-align:center; margin-top:12px; min-height:1.5em; }
   .scale-next { margin-top:16px; border-top:1px solid var(--border); padding-top:14px; display:flex; justify-content:space-between; gap:12px; }
   .scale-next-label { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px; }
@@ -233,39 +228,59 @@
   .chat-input .btn-go { width: auto; padding: 11px 18px; }
   .load-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
   .load-lbl { font-size: 12px; color: var(--text3); margin-right: 2px; }
-  .chip { font-size: 12px; padding: 5px 10px; border-radius: 20px; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); cursor: pointer; }
+  .chip { font-size: 12px; padding: 8px 12px; border-radius: 20px; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); cursor: pointer; }
   .chip:hover { background: var(--bg2); }
   #savedChips { display: flex; flex-wrap: wrap; gap: 6px; }
   .saved-item { display: inline-flex; align-items: center; }
   .saved-item .chip { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; }
-  .chip-x { border: 0.5px solid var(--border2); border-top-right-radius: 20px; border-bottom-right-radius: 20px; background: var(--bg); color: var(--text3); cursor: pointer; font-size: 14px; line-height: 1; padding: 5px 9px; }
+  .chip-x { border: 0.5px solid var(--border2); border-top-right-radius: 20px; border-bottom-right-radius: 20px; background: var(--bg); color: var(--text3); cursor: pointer; font-size: 14px; line-height: 1; padding: 8px 10px; }
   .chip-x:hover { background: var(--bg2); color: var(--text); }
   .save-row { display: flex; gap: 8px; margin-top: 10px; }
-  .save-row input { flex: 1; min-width: 0; padding: 9px 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-size: 16px; }
+  .save-row input { flex: 1; min-width: 0; padding: 11px 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-size: 16px; }
   .save-row .btn-secondary { width: auto; }
+  .save-hint { font-size: 12px; color: var(--warn); margin-top: 6px; }
+  .save-hint:empty { display: none; }
+  /* A rarely-used preference sits low on the screen, on one quiet line. */
+  .appearance-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .appearance-row .group-label { margin: 0; }
+  .appearance-row .seg { flex: 0 0 auto; }
+  .appearance-row .seg-btn { flex: 0 0 auto; padding: 8px 12px; font-size: 13px; }
+  .modal-wrap { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(0,0,0,0.45); }
+  .modal-wrap[hidden] { display: none; }
+  .modal { width: 100%; max-width: 320px; background: var(--bg); border-radius: var(--radius-lg); padding: 18px; box-shadow: 0 18px 50px rgba(0,0,0,0.28); }
+  .modal-msg { font-size: 14px; line-height: 1.5; color: var(--text); }
+  .modal-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
   .cknob { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
   .cknob-lbl { font-size: 13px; color: var(--text2); }
   .cknob .stepper { flex: 0 0 auto; padding: 6px 12px; gap: 10px; }
   .cknob .step-val { font-size: 18px; min-width: 56px; }
-  .cknob .step-btn { width: 32px; height: 32px; font-size: 18px; }
-  .budget { font-size: 13px; padding: 8px 12px; border-radius: var(--radius); margin-bottom: 4px; border-left: 3px solid var(--text3); background: var(--bg2); color: var(--text2); }
+  .cknob .step-btn { width: 38px; height: 38px; font-size: 20px; }
+  .budget-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .budget { flex: 1; font-size: 13px; padding: 9px 12px; border-radius: var(--radius); border-left: 3px solid var(--text3); background: var(--bg2); color: var(--text2); }
   .budget.ok { border-left-color: var(--ok-text); color: var(--ok-text); background: var(--green-light); }
   .budget.under { border-left-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
   .budget.over { border-left-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
+  .budget-fix { flex: 0 0 auto; background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); font-size: 13px; padding: 9px 12px; cursor: pointer; color: var(--text2); }
+  .budget-fix:hover { background: var(--bg2); }
+  .budget-fix[hidden] { display: none; }
   .pour-row { background: var(--bg2); border-radius: var(--radius); padding: 8px 10px; margin-top: 8px; }
   .pr-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
   .pr-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
-  .pr-del { width: 24px; height: 24px; border-radius: 50%; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); cursor: pointer; font-size: 15px; line-height: 1; padding: 0; }
+  .pr-del { width: 34px; height: 34px; border-radius: 50%; border: 0.5px solid var(--border2); background: var(--bg); color: var(--text2); cursor: pointer; font-size: 17px; line-height: 1; padding: 0; }
   .pr-del:disabled { opacity: 0.3; cursor: default; }
   .pr-controls { display: flex; gap: 8px; }
   .pr-field { flex: 1; }
   .pr-flbl { display: block; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
-  .mini-step { flex: 1; display: flex; align-items: center; justify-content: space-between; background: var(--bg); border-radius: var(--radius); padding: 4px 8px; }
-  .mini-step .step-btn { width: 28px; height: 28px; font-size: 18px; }
+  .mini-step { flex: 1; display: flex; align-items: center; justify-content: space-between; background: var(--bg); border-radius: var(--radius); padding: 2px 6px; }
+  .mini-step .step-btn { width: 40px; height: 40px; font-size: 20px; }
   .mini-val { font-size: 14px; color: var(--text); font-variant-numeric: tabular-nums; }
+  .pr-total { font-size: 11px; color: var(--text3); text-align: center; margin-top: 5px; }
   .pour-add { margin-top: 10px; }
   .pour-add .btn-secondary { width: 100%; }
-  #screenBrew { gap: clamp(8px, 3dvh, 24px); }
+  #screenBrew { gap: clamp(8px, 3dvh, 24px); overflow-y: auto; overflow-x: hidden; }
+  /* The action row stays reachable when the brew fills the screen. */
+  #screenBrew > .brew-actions { margin-top: auto; padding: 12px 0 4px; flex-shrink: 0; position: sticky; bottom: 0; background: var(--bg); }
+  #screenBrew > .brew-actions::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 14px; transform: translateY(-100%); background: linear-gradient(to top, var(--bg), transparent); pointer-events: none; }
   .ring-outer { position: relative; width: min(280px, 68vw); height: min(280px, 68vw); margin: 0 auto; }
   .ring-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
   .ring-track { fill: none; stroke: var(--track); stroke-width: 6; }
@@ -278,11 +293,8 @@
   .clock.running { color: var(--ok-text); }
   .clock.done-c { color: var(--text3); }
   .phase { font-size: 11px; color: var(--crema); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 2px; text-align: center; font-weight: 600; }
-  /* The ring fills across the current step, so say so. */
-  .ring-foot { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 12px; color: var(--text2); font-variant-numeric: tabular-nums; }
-  .ring-foot .step-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
-  .prompt-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; margin: 0; min-height: 80px; transition: border-color 0.3s; }
-  .prompt-action { font-size: 20px; font-weight: 600; color: var(--text); margin: 0 0 6px; }
+  .prompt-card { background: var(--bg); border: 0.5px solid var(--border); border-left: 3px solid var(--phase-color, var(--border)); border-radius: var(--radius-lg); padding: 16px 18px; margin: 0; min-height: 80px; transition: border-color 0.3s; }
+  .prompt-action { font-size: 20px; font-weight: 600; color: var(--phase-color, var(--text)); margin: 0 0 6px; }
   .prompt-detail { font-size: 14px; color: var(--text2); line-height: 1.6; }
   .water-wrap { margin: 0; }
   .water-lbl { font-size: 12px; color: var(--text3); margin: 0 0 6px; }
@@ -292,12 +304,15 @@
   .up-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 8px; }
   .up-row { display: flex; gap: 8px; }
   .up-item { flex: 1; background: var(--bg2); border-radius: var(--radius); padding: 8px 10px; }
+  /* The next step is the one you act on, so it is the one that stands out. */
+  .up-item.next { background: var(--green-light); }
+  .up-item.next .up-time { color: var(--ok-text); font-weight: 600; }
   .up-time { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text2); }
   .up-name { font-size: 12px; color: var(--text); font-weight: 500; margin-top: 2px; }
   .brew-actions { display: flex; gap: 10px; }
   .brew-actions .btn-go { flex: 1; }
   .flash { animation: fl 0.6s ease; }
-  @keyframes fl { 0%,100% { border-color: var(--ring); } 50% { border-color: var(--ok-text); box-shadow: 0 0 0 3px var(--green-light); } }
+  @keyframes fl { 0%,100% { box-shadow: none; } 50% { box-shadow: 0 0 0 3px var(--green-light); } }
   @media (prefers-reduced-motion: reduce) {
     .flash { animation: none; }
     .ring-fill, .water-fill, .clock, .target { transition: none; }
@@ -341,10 +356,11 @@
           <button class="step-btn" onclick="adjustCustomRatio(1)">+</button>
         </div>
       </div>
-      <div class="budget" id="budgetBar"></div>
+      <div class="budget-row"><div class="budget" id="budgetBar"></div><button class="budget-fix" id="budgetFixBtn" onclick="balanceCustomPours()" hidden>Balance it</button></div>
       <div id="pourEditor"></div>
       <div class="pour-add"><button class="btn-secondary" onclick="addPour()">+ Add pour</button></div>
-      <div class="save-row"><input id="recipeName" type="text" placeholder="Name this recipe" maxlength="24"><button class="btn-secondary" onclick="saveCurrentRecipe()">Save</button></div>
+      <div class="save-row"><input id="recipeName" type="text" placeholder="Name this recipe" maxlength="24" oninput="$('saveHint').textContent=''"><button class="btn-secondary" onclick="saveCurrentRecipe()">Save</button></div>
+      <div class="save-hint" id="saveHint"></div>
     </div>
     <div class="group"><span class="group-label">Brew control</span>
       <div class="seg" id="brewModeSeg">
@@ -358,16 +374,16 @@
           <div class="scale-row"><input id="scaleAddress" aria-label="Scale address" placeholder="Scale address" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn-secondary" id="scaleConnectBtn" onclick="connectScale()">Connect</button></div>
         </details>
       </div>
-      <button class="btn-quiet" onclick="openManualScale()">Manual scale</button>
+      <button class="btn-row" onclick="openManualScale()">Manual scale</button>
     </div>
-    <div class="group"><span class="group-label">Appearance</span>
+    <div class="summary" id="summaryCard"></div>
+    <div class="appearance-row"><span class="group-label">Appearance</span>
       <div class="seg" id="themeSeg">
         <button class="seg-btn" data-val="auto" onclick="setTheme('auto')">Auto</button>
         <button class="seg-btn" data-val="light" onclick="setTheme('light')">Light</button>
         <button class="seg-btn" data-val="dark" onclick="setTheme('dark')">Dark</button>
       </div>
     </div>
-    <div class="summary" id="summaryCard"></div>
     <div class="start-dock">
       <p class="start-hint" id="startHint"></p>
       <button class="btn-go" id="startBtn" onclick="startBrew()">Start brew</button>
@@ -395,10 +411,6 @@
         <div class="clock" id="clock">0:00</div>
       </div>
     </div>
-    <div class="ring-foot">
-      <span class="step-lbl" id="stepLabel">Step 1 of 5</span>
-      <span id="stepClock">0:00 / 0:45</span>
-    </div>
     <div class="prompt-card" id="promptCard">
       <div class="prompt-action" id="promptAction">Ready to brew</div>
       <div class="prompt-detail" id="promptDetail"></div>
@@ -419,11 +431,7 @@
             <circle class="ring-track" cx="100" cy="100" r="88"/>
             <circle class="ring-fill" id="scaleWeightRing" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9"/>
           </svg>
-          <div class="scale-ring-centre"><div class="scale-number-label" id="scaleTargetLabel">Scale weight</div><div class="scale-ratio"><span class="scale-reading" id="scaleWeight">—</span><span class="scale-target" id="scaleTarget">/ — g</span></div><div class="scale-remaining" id="scaleRemaining"></div></div>
-        </div>
-        <div class="scale-phase-time">
-          <div class="scale-time-heading"><div class="scale-number-label" id="scaleTimeLabel">Phase time</div><div class="scale-ratio"><span class="scale-reading" id="scalePhaseTime">0:00</span><span class="scale-target" id="scaleTimeTarget">/ —</span></div></div>
-          <progress class="scale-time-progress" id="scaleTimeProgress" max="1" value="0" aria-labelledby="scaleTimeLabel" aria-describedby="scalePhaseTime scaleTimeTarget"></progress>
+          <div class="scale-ring-centre"><div class="scale-number-label" id="scaleTargetLabel">Scale weight</div><div class="scale-reading" id="scaleWeight">—</div><div class="scale-target" id="scaleTarget">target —</div><div class="scale-remaining" id="scaleRemaining"></div></div>
         </div>
       </div>
       <div class="scale-footer">
@@ -458,7 +466,7 @@
 
   <!-- Guide screen -->
   <div class="screen" id="screenHelp">
-    <div class="app-header"><span class="app-title">Guide</span><button class="icon-btn" onclick="showScreen('settings')">Done</button></div>
+    <div class="app-header"><span class="app-title">Guide</span><button class="icon-btn" onclick="showScreen('settings')">Close</button></div>
     <div class="help-scroll">
       <details class="help-sec" open>
         <summary class="help-h">Roast &amp; water temperature</summary>
@@ -509,6 +517,17 @@
     </div>
   </div>
 
+  <!-- Confirm dialog -->
+  <div class="modal-wrap" id="confirmWrap" hidden onclick="if(event.target===this)confirmAnswer(false)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmMsg">
+      <div class="modal-msg" id="confirmMsg"></div>
+      <div class="modal-btns">
+        <button class="btn-secondary" onclick="confirmAnswer(false)">Cancel</button>
+        <button class="btn-go" id="confirmOk" onclick="confirmAnswer(true)">OK</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>/*! NoSleep.min.js v0.12.0 - git.io/vfn01 - Rich Tibbett - MIT license */
@@ -531,19 +550,21 @@ let baristaHistory = [], baristaBusy = false;
 // plus a time. Dose × customRatio is the water budget the pours should add up to.
 const DEFAULT_POURS = [ {at:0,g:48}, {at:45,g:48}, {at:90,g:48}, {at:135,g:48}, {at:180,g:48} ];
 
-let settings = { dose:15, method:'balanced', customRatio:16, customPours: DEFAULT_POURS.map(p => ({...p})), savedRecipes: [], brewMode:'manual', scaleAddress:'', scaleId:'' };
+// customBase remembers which built-in recipe the pours came from. null means the
+// user has edited them, so a recipe load should ask before overwriting.
+let settings = { dose:13, method:'balanced', customRatio:16, customPours: DEFAULT_POURS.map(p => ({...p})), savedRecipes: [], brewMode:'manual', scaleAddress:'', scaleId:'', customBase:'default' };
 let elapsed=0, startTs=0, interval=null, started=false, finished=false, paused=false, fromBrew=false, currentCue=0, cues=[];
 let noSleep=null, audioCtx=null;
 
 const $ = id => document.getElementById(id);
 // One request at a time for the ESP32's single-client server, including commands.
 const scale = { base:'', connected:false, data:null, poll:null, pending:null, command:false, finding:false, session:null, armPending:null, armed:false, generation:0, weighing:false, phaseIndex:0, phaseReached:false };
-let scaleSampleAt=0, scaleTimeFrame=null;
+let scaleSampleAt=0;
 
 function loadSettings() {
   try {
     const s = localStorage.getItem(STORAGE_KEY);
-    if(s) { const parsed = JSON.parse(s); if(parsed && typeof parsed === 'object') settings = { ...settings, ...parsed }; }
+    if(s) { const parsed = JSON.parse(s); if(parsed && typeof parsed === 'object') { settings = { ...settings, ...parsed }; if(!('customBase' in parsed)) settings.customBase = null; } }
   } catch(e) {}
   // Migrate older saves (fraction-based or absolute pours) to the gram-increment format.
   if(!Array.isArray(settings.customPours) || !settings.customPours.every(p => typeof p.g === 'number' && typeof p.at === 'number')) {
@@ -554,6 +575,7 @@ function loadSettings() {
   if(typeof settings.scaleAddress !== 'string') settings.scaleAddress = '';
   if(typeof settings.scaleId !== 'string' || !/^[a-f0-9]{12}$/.test(settings.scaleId)) settings.scaleId='';
   if(!Array.isArray(settings.savedRecipes)) settings.savedRecipes = [];
+  if(typeof settings.customBase !== 'string') settings.customBase = null;
   if(!['auto','light','dark'].includes(settings.theme)) settings.theme = 'auto';
   // Drop saved recipes from older storage shapes (e.g. fraction-based pours).
   settings.savedRecipes = settings.savedRecipes.filter(r => r && typeof r.name === 'string'
@@ -579,11 +601,28 @@ function applySettings() {
   const balanced = settings.method !== 'custom' || customBudget() === settings.customPours.reduce((s, p) => s + p.g, 0);
   $('startBtn').disabled = !balanced;
   $('startHint').textContent = balanced ? '' : 'Match the pours to the budget to start';
+  $('budgetFixBtn').hidden = balanced;
   document.querySelectorAll('#brewModeSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.brewMode));
   $('scaleSetup').style.display = settings.brewMode === 'scale' ? 'block' : 'none';
   $('scaleAddress').value = settings.scaleAddress;
   $('startBtn').textContent = settings.brewMode === 'scale' ? 'Scale brew' : 'Start brew';
   updateSummary();
+}
+
+// --- Confirm dialog ---
+// One in-app dialog, so asking a question never leaves the app's own look.
+let confirmPending = null;
+function askConfirm(message) {
+  $('confirmMsg').textContent = message;
+  $('confirmWrap').hidden = false;
+  $('confirmOk').focus();
+  return new Promise(resolve => { confirmPending = resolve; });
+}
+function confirmAnswer(ok) {
+  $('confirmWrap').hidden = true;
+  const resolve = confirmPending;
+  confirmPending = null;
+  if(resolve) resolve(ok);
 }
 
 // --- Theme ---
@@ -699,7 +738,6 @@ function checkScaleData(data) {
 }
 
 function scaleError(error) {
-  cancelAnimationFrame(scaleTimeFrame); scaleTimeFrame=null;
   scale.connected=false; scale.data=null;
   const message = error.name==='AbortError' || error instanceof TypeError
     ? 'Waiting for CoffeeScale… Turn it on, keep your phone on the same WiFi, and allow Chrome’s local network permission. Reconnecting automatically.'
@@ -713,12 +751,10 @@ function scaleError(error) {
   scaleText('scaleAction',started && !finished ? 'Stop pouring' : 'Waiting for scale');
   scaleText('scaleConnection','Reconnecting over WiFi');
   scaleText('scaleClock','—');
-  scaleText('scalePhaseTime','—');
   scaleText('scaleRemaining','Live weight unavailable');
   scaleText('scaleNextLabel','Connection');
   scaleText('scaleNextValue','Guidance resumes when the scale reconnects.');
   $('scaleWeightRing').style.strokeDashoffset=RING_CIRC;
-  $('scaleTimeProgress').value=0;
   scaleText('scaleNextTarget',''); scaleText('scaleNextAt','');
 }
 
@@ -880,24 +916,6 @@ function scalePhase(t,weight) {
     added:Math.max(0,weight-previous),next:cues[index+1] || null};
 }
 
-function renderScaleTimeProgress(phase) {
-  cancelAnimationFrame(scaleTimeFrame); scaleTimeFrame=null;
-  const active=started && !finished && scale.session!==null;
-  const seconds=active ? Math.max(0,scale.data.timer_s-phase.cue.at) : phase.elapsed;
-  const animate=active && scale.data.running && seconds<phase.seconds;
-  const draw=now=>{
-    scaleTimeFrame=null;
-    if(settings.brewMode!=='scale' || !scale.connected || !scale.data) return;
-    // Only the fill interpolates. Phase changes still use the board's clock.
-    // Freeze after a short gap instead of inventing time through a lost connection.
-    const sinceSample=animate ? Math.min(1,Math.max(0,(now-scaleSampleAt)/1000)) : 0;
-    const value=Math.min(1,(seconds+sinceSample)/phase.seconds);
-    $('scaleTimeProgress').value=value;
-    if(animate && value<1 && sinceSample<1) scaleTimeFrame=requestAnimationFrame(draw);
-  };
-  draw(performance.now());
-}
-
 function renderScaleGuidance() {
   if(settings.brewMode!=='scale' || !cues.length) return;
   const preparing=!started && !scale.armed && !finished;
@@ -911,17 +929,21 @@ function renderScaleGuidance() {
   const overtime=Math.max(0,phase.elapsed-seconds);
   let kind=pouring ? 'pour' : amount>0 ? 'wait' : 'drain';
   let stage=pouring ? 'Pour' : amount>0 ? 'Wait' : 'Drain';
-  let action=scalePhaseName(cue);
+  // The heading is the instruction, not the phase name: "Pour to 96g" tells you
+  // what to do, "Pour 2" only tells you where you are.
+  const isPourCue=/^Pour to /.test(cue.action);
+  let action;
   let detail='';
   let note=pouring ? `${Math.ceil(cue.water-weight)}g to go` : weight>cue.water+2 ? `${(weight-cue.water).toFixed(1)}g over target` : 'Target reached';
   let nextLabel='Next', nextValue=phase.next ? scalePhaseName(phase.next) : 'Finish brew';
   let nextTarget=phase.next && phase.next.phase!=='Done' && phase.next.water>cue.water ? `${phase.next.water}g` : '';
-  let nextAt=phase.next ? `at ${fmt(phase.next.at)}` : '';
-  if(phase.next && phase.next.phase==='Done') { nextLabel='Suggested finish'; nextValue=fmt(phase.next.at); nextAt=''; }
+  let nextAt=phase.next ? `in ${fmt(Math.max(0,phase.next.at-elapsed))}` : '';
+  if(phase.next && phase.next.phase==='Done') { nextLabel='Suggested finish'; nextValue=fmt(phase.next.at); }
   if(phase.next && phase.next.at<=elapsed && pouring) nextValue='Next phase is due · finish this pour first';
   if(overtime && pouring) { stage='Pour · Late'; note+=` · ${fmt(overtime)} over time`; }
   if(preparing || scale.armed) {
     kind='pour'; stage=preparing ? 'Ready' : 'Pour';
+    action=preparing ? 'Ready when you are' : cue.action;
     detail=scale.notice || (preparing ? 'Tare & start when ready.' : 'First pour starts the timer.');
     note='';
   } else if(finished) {
@@ -930,24 +952,27 @@ function renderScaleGuidance() {
     nextLabel='Recipe'; nextValue=`${settings.dose}g coffee · ${total}g water`;
     nextTarget=''; nextAt='';
   } else if(!scale.data.running) {
-    kind='wait'; stage='Timer stopped'; detail='Finish brew to end this session.';
-  } else if(!amount) {
-    action=scalePhaseName(cue);
-    detail='';
-    note='';
+    kind='wait'; stage='Timer stopped'; action='Timer stopped'; detail='Finish brew to end this session.';
+  } else if(cue.phase==='Draw down') {
+    action='Let it draw down'; detail=''; note='';
+  } else if(!isPourCue) {
+    action=cue.action; detail=''; note='';
+  } else if(pouring) {
+    action=`Pour to ${cue.water}g`; detail='';
+  } else if(amount>0) {
+    action=`Hold ${cue.water}g`; detail='';
+  } else {
+    action='Let it draw down'; detail=''; note='';
   }
   $('scaleLive').className=`scale-live is-${kind}`;
-  $('brewBtn').className=preparing || finished || !amount ? 'btn-go' : 'btn-secondary';
+  $('brewBtn').className=preparing || finished || !amount ? 'btn-go' : 'btn-stop';
   scaleText('scaleStage',stage); scaleText('scaleAction',action); scaleText('scaleGuidance',detail);
   scaleText('scaleTargetLabel','Scale weight');
   scaleText('scaleWeight',preparing ? '—' : weight.toFixed(1));
-  scaleText('scaleTarget',`/ ${cue.water} g`);
-  scaleText('scalePhaseTime',fmt(phase.elapsed)); scaleText('scaleTimeTarget',`/ ${fmt(seconds)}`);
-  scaleText('scaleTimeLabel','Phase time');
+  scaleText('scaleTarget',preparing ? 'target —' : `target ${cue.water}g`);
   scaleText('scaleRemaining',note); scaleText('scaleNextLabel',nextLabel); scaleText('scaleNextValue',nextValue);
   scaleText('scaleNextTarget',nextTarget); scaleText('scaleNextAt',nextAt);
   $('scaleWeightRing').style.strokeDashoffset=RING_CIRC*(1-(preparing ? 0 : Math.min(1,weight/Math.max(1,cue.water))));
-  renderScaleTimeProgress(phase);
   showCue(cue,total);
   $('waterLbl').textContent=`Water: ${weight.toFixed(1)}g / ${total}g`;
   $('waterFill').style.width=Math.min(100,Math.round(weight/total*100))+'%';
@@ -973,8 +998,9 @@ function updateSummary() {
   const total = totalWater();
   const preview = buildCues();
   const finish = preview[preview.length-1].at;
+  // The dose already sits in the stepper above, so the card only carries what
+  // cannot be read off the rest of the screen.
   $('summaryCard').innerHTML = `
-    <div class="sum-item"><div class="sum-val">${settings.dose}g</div><div class="sum-lbl">Coffee</div></div>
     <div class="sum-item"><div class="sum-val">${total}g</div><div class="sum-lbl">Water</div></div>
     <div class="sum-item"><div class="sum-val">~${fmt(finish)}</div><div class="sum-lbl">Time</div></div>`;
 }
@@ -982,7 +1008,7 @@ function adjustDose(d) {
   const before = settings.dose, after = Math.max(8,Math.min(40,before+d));
   // For custom, the pours are absolute grams, so scale them with the dose to keep
   // the recipe's shape (and budget balance). Built-in methods rescale themselves.
-  if(settings.method === 'custom' && after !== before) scaleCustomPours(customBudget(), Math.round(after * settings.customRatio));
+  if(settings.method === 'custom' && after !== before) { scaleCustomPours(customBudget(), Math.round(after * settings.customRatio)); settings.customBase = null; }
   settings.dose = after;
   saveSettings(); applySettings();
 }
@@ -1023,7 +1049,7 @@ function customBudget() { return Math.round(settings.dose * settings.customRatio
 function adjustCustomRatio(dir) {
   const next = +Math.max(12, Math.min(20, settings.customRatio + dir*0.5)).toFixed(1);
   // Scale the pours with the new budget, same as a dose change does.
-  if(next !== settings.customRatio) scaleCustomPours(customBudget(), Math.round(settings.dose * next));
+  if(next !== settings.customRatio) { scaleCustomPours(customBudget(), Math.round(settings.dose * next)); settings.customBase = null; }
   settings.customRatio = next;
   saveSettings(); applySettings();
 }
@@ -1032,9 +1058,29 @@ function renderBudget() {
   const used = settings.customPours.reduce((s, p) => s + p.g, 0);
   const diff = budget - used;
   const el = $('budgetBar');
-  if(diff === 0) { el.textContent = `All ${budget}g of water allocated`; el.className = 'budget ok'; }
-  else if(diff > 0) { el.textContent = `${used}g of ${budget}g used · ${diff}g still to pour`; el.className = 'budget under'; }
-  else { el.textContent = `${used}g of ${budget}g · ${-diff}g over budget`; el.className = 'budget over'; }
+  // The dose hint above already states the budget, so this only tracks the gap.
+  if(diff === 0) { el.textContent = 'All water allocated'; el.className = 'budget ok'; }
+  else if(diff > 0) { el.textContent = `${used}g allocated · ${diff}g still to pour`; el.className = 'budget under'; }
+  else { el.textContent = `${used}g allocated · ${-diff}g over budget`; el.className = 'budget over'; }
+}
+// Spend the whole budget: scale the pours to fit it, remainder on the last one.
+function balanceCustomPours() {
+  const budget = customBudget();
+  const pours = settings.customPours;
+  const used = pours.reduce((s, p) => s + p.g, 0);
+  if(!used || !pours.length) return;
+  let allocated = 0;
+  pours.forEach((p, i) => {
+    if(i < pours.length - 1) { p.g = Math.max(1, Math.round(p.g * budget / used)); allocated += p.g; }
+  });
+  let last = budget - allocated;
+  for(let i = pours.length - 2; i >= 0 && last < 1; i--) {
+    const take = Math.min(pours[i].g - 1, 1 - last);
+    pours[i].g -= take; last += take;
+  }
+  pours[pours.length-1].g = Math.max(1, last);
+  settings.customBase = null;
+  saveSettings(); applySettings();
 }
 function renderPourEditor() {
   const pours = settings.customPours;
@@ -1044,7 +1090,7 @@ function renderPourEditor() {
     return `
     <div class="pour-row">
       <div class="pr-head">
-        <span class="pr-lbl">Pour ${i+1}${i===0 ? ' · bloom' : ''} → ${cum}g total</span>
+        <span class="pr-lbl">Pour ${i+1}${i===0 ? ' · bloom' : ''}</span>
         <button class="pr-del" onclick="removePour(${i})" ${pours.length<=2 ? 'disabled' : ''}>×</button>
       </div>
       <div class="pr-controls">
@@ -1053,6 +1099,7 @@ function renderPourEditor() {
         </div>
         <div class="pr-field"><span class="pr-flbl">Water</span>
           <div class="mini-step"><button class="step-btn" onclick="adjustPour(${i},'g',-1)">−</button><span class="mini-val">${p.g}g</span><button class="step-btn" onclick="adjustPour(${i},'g',1)">+</button></div>
+          <div class="pr-total">→ ${cum}g total</div>
         </div>
       </div>
     </div>`;
@@ -1067,23 +1114,28 @@ function adjustPour(i, field, dir) {
   } else {
     p.g = Math.max(1, p.g + dir);
   }
+  settings.customBase = null;
   saveSettings(); applySettings();
 }
 function addPour() {
   const pours = settings.customPours, last = pours[pours.length-1];
   const remaining = customBudget() - pours.reduce((s, p) => s + p.g, 0);
   pours.push({ at: last.at + 45, g: Math.max(1, remaining) });
+  settings.customBase = null;
   saveSettings(); applySettings();
 }
 function removePour(i) {
   if(settings.customPours.length <= 2) return;
   settings.customPours.splice(i, 1);
+  settings.customBase = null;
   saveSettings(); applySettings();
 }
 // Seed the editor from a built-in recipe: adopt its ratio and dose, and turn its
 // pours into gram amounts, so the budget matches exactly and you can tweak.
-function loadRecipe(name) {
+// Hand-edited pours are worth keeping, so ask before they are replaced.
+async function loadRecipe(name) {
   const m = METHODS[name];
+  if(settings.customBase === null && !(await askConfirm(`Replace your pours with the ${m.name} recipe?`))) return;
   settings.customRatio = m.ratio;
   settings.dose = m.dose;
   const cues = m.build(m.dose, m.ratio);
@@ -1094,18 +1146,25 @@ function loadRecipe(name) {
   }
   settings.customPours = pours;
   settings.method = 'custom';
+  settings.customBase = name;
   saveSettings(); applySettings();
 }
 
 // --- Save / load named custom recipes (stored in settings.savedRecipes) ---
 function saveCurrentRecipe() {
   const name = $('recipeName').value.trim();
-  if(!name) return;
+  if(!name) {
+    $('saveHint').textContent = 'Give the recipe a name first';
+    $('recipeName').focus();
+    return;
+  }
+  $('saveHint').textContent = '';
   const recipe = { name, dose: settings.dose, ratio: settings.customRatio, pours: settings.customPours.map(p => ({...p})) };
   const i = settings.savedRecipes.findIndex(r => r.name === name);
   if(i >= 0) settings.savedRecipes[i] = recipe;       // overwrite by name
   else settings.savedRecipes.push(recipe);
   $('recipeName').value = '';
+  settings.customBase = 'saved:' + name;
   saveSettings(); applySettings();
 }
 function loadSavedRecipe(name) {
@@ -1115,10 +1174,11 @@ function loadSavedRecipe(name) {
   settings.customRatio = r.ratio;
   settings.customPours = r.pours.map(p => ({...p}));
   settings.method = 'custom';
+  settings.customBase = 'saved:' + name;
   saveSettings(); applySettings();
 }
-function deleteSavedRecipe(name) {
-  if(!confirm(`Delete "${name}"?`)) return;
+async function deleteSavedRecipe(name) {
+  if(!(await askConfirm(`Delete "${name}"?`))) return;
   settings.savedRecipes = settings.savedRecipes.filter(r => r.name !== name);
   saveSettings(); applySettings();
 }
@@ -1145,10 +1205,10 @@ const METHODS = {
       const total = Math.round(dose*ratio), bloom = Math.round(dose*2);
       const p1 = Math.round(total*0.52), p2 = Math.round(total*0.80);
       return [
-        { at:0,   action:`Pour to ${bloom}g`,  detail:'Bloom: pour evenly over the grounds to saturate fully, then wait.',          water:bloom, phase:'Bloom' },
-        { at:45,  action:`Pour to ${p1}g`,     detail:`Slow spiral from centre outward, until the scale reads ${p1}g.`,            water:p1,    phase:'First pour' },
-        { at:75,  action:`Pour to ${p2}g`,     detail:`Same spiral pattern, until the scale reads ${p2}g.`,                        water:p2,    phase:'Second pour' },
-        { at:105, action:`Pour to ${total}g`,  detail:`Pour to ${total}g total. Don't let the bed run dry.`,                       water:total, phase:'Final pour' },
+        { at:0,   action:`Pour to ${bloom}g`,  detail:'Pour evenly over the grounds to saturate fully, then wait.',   water:bloom, phase:'Bloom' },
+        { at:45,  action:`Pour to ${p1}g`,     detail:'Slow spiral from the centre outward.',                          water:p1,    phase:'First pour' },
+        { at:75,  action:`Pour to ${p2}g`,     detail:'Same spiral pattern.',                                          water:p2,    phase:'Second pour' },
+        { at:105, action:`Pour to ${total}g`,  detail:`Pour evenly. Don't let the bed run dry.`,                       water:total, phase:'Final pour' },
         { at:180, action:'Almost there',                 detail:'Target finish: 3:00–3:30. Watch the draw down.',                    water:total, phase:'Draw down' },
         { at:210, action:'Done — enjoy',                 detail:'Total brew time in range. Grind finer if fast, coarser if slow.',   water:total, phase:'Done' }
       ];
@@ -1162,8 +1222,8 @@ const METHODS = {
       const p1 = Math.round(total*0.6);
       return [
         { at:0,   action:`Pour to ${bloom}g`,  detail:'Bloom: pour 2× the coffee weight, then swirl the V60 to wet every ground. Wait until 0:45.', water:bloom, phase:'Bloom · swirl' },
-        { at:45,  action:`Pour to ${p1}g`,     detail:`Pour steadily to ${p1}g (60%) by about 1:15. Aim for the centre and spiral out.`,           water:p1,    phase:'Pour 1 · 0:45–1:15' },
-        { at:75,  action:`Pour to ${total}g`,  detail:`Slow down and pour to ${total}g by about 1:45, keeping the slurry high.`,                   water:total, phase:'Pour 2 · 1:15–1:45' },
+        { at:45,  action:`Pour to ${p1}g`,     detail:'Pour steadily by about 1:15. Aim for the centre and spiral out.',       water:p1,    phase:'Pour 1 · 0:45–1:15' },
+        { at:75,  action:`Pour to ${total}g`,  detail:'Slow down by about 1:45, keeping the slurry high.',                     water:total, phase:'Pour 2 · 1:15–1:45' },
         { at:105, action:'Stir, then swirl',                  detail:'Stir once clockwise and once anticlockwise to knock grounds off the wall, then gently swirl to flatten the bed.', water:total, phase:'Stir & swirl' },
         { at:195, action:'Draw down',                         detail:'Let it drain. The bed should be flat and even — a good draw down finishes around 3:30.',       water:total, phase:'Draw down' },
         { at:210, action:'Done — enjoy',                      detail:'Target ~3:15–3:45. Faster than that? Grind finer next time. Slower? Grind coarser.',          water:total, phase:'Done' }
@@ -1180,7 +1240,7 @@ const METHODS = {
         { at:45,  action:`Pour to ${s(0.4)}g`, detail:'Second pour completes the first 40% of the water.',                            water:s(0.4), phase:'Pour 2 · 40%' },
         { at:90,  action:`Pour to ${s(0.6)}g`, detail:'Now the 60% — these three pours build strength.',                              water:s(0.6), phase:'Pour 3 · 60%' },
         { at:135, action:`Pour to ${s(0.8)}g`, detail:'Keep the pours even and gentle.',                                              water:s(0.8), phase:'Pour 4 · 60%' },
-        { at:180, action:`Pour to ${total}g`,  detail:`Final pour to ${total}g total.`,                                              water:total,  phase:'Pour 5 · 60%' },
+        { at:180, action:`Pour to ${total}g`,  detail:'Final pour.',                                                            water:total,  phase:'Pour 5 · 60%' },
         { at:210, action:'Done — enjoy',           detail:'Target finish ~3:30. Grind coarser if it stalls.',                            water:total,  phase:'Done' }
       ];
     }
@@ -1196,7 +1256,7 @@ const METHODS = {
         return {
           at: p.at,
           action: `Pour to ${cum}g`,
-          detail: i===0 ? `Pour to ${cum}g to bloom and saturate the grounds.` : `Pour until the scale reads ${cum}g.`,
+          detail: i===0 ? 'Bloom and saturate the grounds.' : 'Pour slowly and evenly.',
           water: cum,
           phase: `Pour ${i+1}`
         };
@@ -1225,17 +1285,6 @@ function updateRing(t) {
     ring.style.strokeDashoffset = offset;
     ring.classList.toggle('done-ring', idx === cues.length - 1);
   }
-}
-
-// The ring fills across the current step, so name the step and show its clock.
-function updateStepReadout(t) {
-  if(!cues.length) return;
-  const steps = cues.length - 1;
-  const idx = Math.min(getCueIdx(t), steps - 1);
-  const start = cues[idx].at;
-  const end = idx < cues.length - 1 ? cues[idx + 1].at : start + 1;
-  $('stepLabel').textContent = `Step ${idx + 1} of ${steps}`;
-  $('stepClock').textContent = `${fmt(Math.max(0, t - start))} / ${fmt(end - start)}`;
 }
 
 function getAudioCtx() {
@@ -1280,17 +1329,24 @@ function showCue(c, total) {
   $('promptAction').textContent = c.action;
   $('promptDetail').textContent = c.detail;
   $('phaseLbl').textContent = c.phase;
-  $('waterLbl').textContent = `Water: ${c.water}g / ${total}g`;
+  // Colour the prompt by phase so the current step is obvious at a glance.
+  $('promptCard').style.setProperty('--phase-color', phaseColor(c));
+  $('waterLbl').textContent = `Water ${total}g`;
   $('waterFill').style.width = Math.round((c.water/total)*100) + '%';
+}
+function phaseColor(c) {
+  if(c.phase === 'Done') return 'var(--ok-text)';
+  if(c.phase === 'Draw down') return 'var(--warn)';
+  return 'var(--ring)';
 }
 
 function renderUpcoming(t) {
-  const up = cues.filter(c=>c.at>t).slice(0,3);
+  const up = cues.filter(c=>c.at>t).slice(0,4);
   const sec = $('upcomingSection');
   if(!up.length) { sec.style.display='none'; return; }
   sec.style.display='block';
-  $('upRow').innerHTML = up.map(c =>
-    `<div class="up-item"><div class="up-time">${fmt(c.at)}</div><div class="up-name">${c.phase}</div></div>`
+  $('upRow').innerHTML = up.map((c,i) =>
+    `<div class="up-item${i===0?' next':''}"><div class="up-time">${fmt(c.at)}</div><div class="up-name">${c.phase}</div></div>`
   ).join('');
 }
 
@@ -1305,7 +1361,9 @@ async function startBrew() {
   clearInterval(interval); releaseWakeLock();
   $('clock').textContent='0:00';
   $('clock').className='clock';
-  setTarget(total);
+  // The hero number is always "what the scale should read now": before the
+  // brew that is the first pour, not the whole recipe.
+  setTarget(cues[0].water);
   const ring = $('ringFill');
   if(ring) { ring.style.strokeDashoffset = RING_CIRC; ring.classList.remove('done-ring'); }
   $('phaseLbl').textContent='Ready';
@@ -1331,7 +1389,6 @@ async function startBrew() {
     renderScaleGuidance();
   }
   renderUpcoming(-1);
-  updateStepReadout(0);
   showScreen('brew');
   if(withScale && !scale.base && settings.scaleAddress) await connectScale();
 }
@@ -1345,7 +1402,6 @@ function tick() {
   } else elapsed = Math.round((Date.now() - startTs) / 1000);
   $('clock').textContent = fmt(elapsed);
   updateRing(elapsed);
-  updateStepReadout(elapsed);
   const total = totalWater();
   const idx = getCueIdx(elapsed);
   if(idx !== currentCue) {
@@ -1559,6 +1615,11 @@ try {
 // Catch the timer up immediately when the app regains focus mid-brew.
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'visible' && started && !paused && !finished) tick();
+});
+
+// Escape closes the confirm dialog.
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && confirmPending) confirmAnswer(false);
 });
 
 // Acquire wake lock on first user interaction so screen stays on across both screens
