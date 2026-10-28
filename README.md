@@ -5,7 +5,7 @@ An interactive pour-over brew timer that runs as a web app / phone PWA. Pick a m
 through the pours with a timer, ring, and prompts. It also has an **AI Barista** chat for
 troubleshooting your cup ("too sour", "draining too fast", etc.).
 
-The app follows your phone's light/dark setting by default. **Settings → Appearance** has an
+The app follows your phone's light/dark setting by default. **More → Appearance** has an
 **Auto / Light / Dark** switch if you want to override it; the choice is saved on the phone.
 
 The whole app is a single `index.html` file, hosted free on GitHub Pages.
@@ -15,10 +15,10 @@ The whole app is a single `index.html` file, hosted free on GitHub Pages.
 1. Install the V60 integration firmware from the CoffeeScale repo on the scale,
    and calibrate it with a known weight. Put your Android phone and scale on the
    same WiFi network.
-2. For the initial pairing, choose **WiFi scale**, tap **Find scale**, and select
-   **CoffeeScale** from Android Chrome's Bluetooth picker. The app reads the
-   scale's WiFi address automatically, disconnects Bluetooth, and connects over
-   WiFi. Allow local network access when Chrome asks. No IP copying is needed.
+2. For the initial pairing, choose **WiFi scale**, then tap **⋯** and use **Find scale**
+   under **WiFi scale**, and select **CoffeeScale** from Android Chrome's Bluetooth picker.
+   The app reads the scale's WiFi address automatically, disconnects Bluetooth, and
+   connects over WiFi. Allow local network access when Chrome asks. No IP copying is needed.
 3. Select your recipe and dose, then tap **Scale brew**.
 4. Tap **Tare & start**. The first pour starts the scale's timer automatically.
 5. Track the current phase's **added / required grams** and **elapsed / allotted
@@ -39,7 +39,7 @@ name; after a DHCP address change, a successful local-name connection updates
 the remembered IP. Modern Android supports `.local` resolution, but the router
 must allow local multicast for that recovery path. The scale's persistent device
 ID prevents another scale at an old IP from supplying your brew readings.
-Address entry is available inside **Connection troubleshooting** if needed.
+Address entry is available inside **⋯ → WiFi scale → Connection troubleshooting** if needed.
 
 The board owns pour detection and elapsed time. The app polls one request at a
 time, waits 200ms between successful readings, and shows a connection error instead

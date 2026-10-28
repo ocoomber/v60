@@ -84,7 +84,7 @@
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 8px; }
-  .help-scroll, #screenSettings, #screenBrew, #screenManualScale { scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
+  .help-scroll, #screenSettings, #screenBrew, #screenManualScale, #screenMore { scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
   @media (min-width: 700px) {
     body { align-items: center; padding: 24px 0; }
   }
@@ -121,10 +121,6 @@
   .step-val { font-size: 22px; font-weight: 600; color: var(--text); min-width: 52px; text-align: center; }
   .step-btn { width: 36px; height: 36px; border-radius: 50%; border: 0.5px solid var(--border2); background: var(--bg); font-size: 20px; cursor: pointer; color: var(--text); display: flex; align-items: center; justify-content: center; }
   .step-btn:hover { background: var(--bg3); }
-  .summary { background: var(--bg2); border-radius: var(--radius-lg); padding: 14px 16px; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .sum-item { text-align: center; }
-  .sum-val { font-family: var(--font-display); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
-  .sum-lbl { font-size: 11px; color: var(--text3); margin-top: 3px; }
   .btn-go { background: var(--fill); border: none; border-radius: var(--radius-lg); color: var(--fill-text); font-size: 16px; font-weight: 600; padding: 14px; cursor: pointer; width: 100%; }
   .btn-go:hover { background: var(--fill-hover); }
   .btn-go:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -144,11 +140,15 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .is-busy::after { animation: pulse 1s ease-in-out infinite; } @keyframes pulse { 50% { opacity: 0.3; } } }
   #screenSettings { gap: 12px; overflow-y: auto; overflow-x: hidden; }
-  .method-note { font-size: 12px; color: var(--text2); line-height: 1.5; margin-top: 8px; min-height: calc(3 * 1.5em); }
+  #screenMore { gap: 14px; overflow-y: auto; overflow-x: hidden; }
+  .method-note { font-size: 12px; color: var(--text2); line-height: 1.5; margin-top: 8px; }
   .dose-stepper { padding: 14px 18px; justify-content: center; gap: 20px; }
   .dose-stepper .step-val { font-family: var(--font-display); font-size: 34px; font-weight: 600; min-width: 70px; }
   .dose-stepper .step-btn { width: 44px; height: 44px; font-size: 24px; }
   .dose-hint { font-size: 12px; color: var(--text3); margin-top: 8px; text-align: center; }
+  .dose-hint:empty { display: none; }
+  /* The numbers that matter before a brew, one quiet line above the button. */
+  .start-summary { font-size: 12px; color: var(--text3); text-align: center; margin: 0 0 8px; font-variant-numeric: tabular-nums; }
   /* The primary action stays in thumb reach at the bottom of the screen. */
   .start-dock { position: sticky; bottom: 0; margin-top: auto; padding: 12px 0; background: var(--bg); }
   .start-dock::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 14px; transform: translateY(-100%); background: linear-gradient(to top, var(--bg), transparent); pointer-events: none; }
@@ -338,7 +338,7 @@
 
   <!-- Settings screen -->
   <div class="screen active" id="screenSettings">
-    <div class="app-header"><span class="app-title">V60</span><span class="hdr-btns"><button class="icon-btn" onclick="openBarista()">Barista</button><button class="icon-btn" onclick="showScreen('help')">Guide</button></span></div>
+    <div class="app-header"><span class="app-title">V60</span><span class="hdr-btns"><button class="icon-btn" onclick="openBarista()">Barista</button><button class="icon-btn" onclick="showScreen('more')" aria-label="More options">⋯</button></span></div>
     <div class="group"><span class="group-label">Method</span>
       <div class="seg" id="methodSeg">
         <button class="seg-btn" data-val="balanced" onclick="setMethod('balanced')">Balanced</button>
@@ -376,21 +376,24 @@
       <div class="save-row"><input id="recipeName" type="text" placeholder="Name this recipe" maxlength="24" oninput="$('saveHint').textContent=''"><button class="btn-secondary" onclick="saveCurrentRecipe()">Save</button></div>
       <div class="save-hint" id="saveHint"></div>
     </div>
-    <div class="group"><span class="group-label">Brew control</span>
+    <div class="group"><span class="group-label">Brew mode</span>
       <div class="seg" id="brewModeSeg">
         <button class="seg-btn sel" data-val="manual" onclick="setBrewMode('manual')">Manual timer</button>
         <button class="seg-btn" data-val="scale" onclick="setBrewMode('scale')">WiFi scale</button>
       </div>
-      <div id="scaleSetup" style="display:none">
-        <div class="scale-row"><button class="btn-secondary" id="scaleFindBtn" onclick="findScale()">Find scale</button></div>
-        <p class="scale-status" id="scaleStatus" role="status">Pair once with Find scale. After that, turn the scale on and open the app—it reconnects over WiFi. Keep phone and scale on the same network.</p>
-        <details class="help-sec"><summary class="help-h">Connection troubleshooting</summary>
-          <div class="scale-row"><input id="scaleAddress" aria-label="Scale address" placeholder="Scale address" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn-secondary" id="scaleConnectBtn" onclick="connectScale()">Connect</button></div>
-        </details>
-      </div>
-      <button class="btn-row" onclick="openManualScale()">Manual scale</button>
+      <p class="scale-status" id="scaleStatus" role="status">Waiting for CoffeeScale…</p>
     </div>
-    <div class="summary" id="summaryCard"></div>
+    <div class="start-dock">
+      <p class="start-summary" id="summaryCard"></p>
+      <p class="start-hint" id="startHint"></p>
+      <button class="btn-go" id="startBtn" onclick="startBrew()">Start brew</button>
+    </div>
+  </div>
+
+  <!-- More screen: everything that is not part of a normal brew -->
+  <div class="screen" id="screenMore">
+    <div class="app-header"><span class="app-title">More</span><button class="icon-btn" onclick="showScreen('settings')">Done</button></div>
+    <button class="btn-row" onclick="showScreen('help')">Guide</button>
     <div class="appearance-row"><span class="group-label">Appearance</span>
       <div class="seg" id="themeSeg">
         <button class="seg-btn" data-val="auto" onclick="setTheme('auto')">Auto</button>
@@ -398,10 +401,17 @@
         <button class="seg-btn" data-val="dark" onclick="setTheme('dark')">Dark</button>
       </div>
     </div>
-    <div class="start-dock">
-      <p class="start-hint" id="startHint"></p>
-      <button class="btn-go" id="startBtn" onclick="startBrew()">Start brew</button>
+    <button class="btn-row" onclick="openManualScale()">Manual scale</button>
+    <div class="group"><span class="group-label">WiFi scale</span>
+      <p class="scale-status" id="scaleMoreStatus" role="status">Not connected</p>
+      <div class="scale-row"><button class="btn-secondary" id="scaleFindBtn" onclick="findScale()">Find scale</button></div>
+      <p class="help-note">Pair once. After that, turn the scale on and open the app—it reconnects over WiFi. Keep the phone and the scale on the same network.</p>
+      <details class="help-sec"><summary class="help-h">Connection troubleshooting</summary>
+        <div class="scale-row"><input id="scaleAddress" aria-label="Scale address" placeholder="Scale address" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn-secondary" id="scaleConnectBtn" onclick="connectScale()">Connect</button></div>
+        <p class="help-note">Only needed if the app cannot reach the scale at its saved address.</p>
+      </details>
     </div>
+    <div class="help-version" id="moreVersion"></div>
   </div>
 
   <!-- Brew screen -->
@@ -488,7 +498,7 @@
 
   <!-- Guide screen -->
   <div class="screen" id="screenHelp">
-    <div class="app-header"><span class="app-title">Guide</span><button class="icon-btn" onclick="showScreen('settings')">Close</button></div>
+    <div class="app-header"><span class="app-title">Guide</span><button class="icon-btn" onclick="showScreen('more')">Close</button></div>
     <div class="help-scroll">
       <details class="help-sec" open>
         <summary class="help-h">Roast &amp; water temperature</summary>
@@ -558,7 +568,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-10-15.1';
+const APP_VERSION = '2026-10-28.1';
 const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
 const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
 const SCALE_HOST = 'coffeescale.local';
@@ -614,7 +624,7 @@ function applySettings() {
   $('doseVal').textContent = settings.dose + 'g';
   $('doseHint').textContent = settings.method === 'custom'
     ? `Budget: ${settings.dose}g × ${ratioLabel(settings.customRatio)} = ${customBudget()}g water`
-    : (settings.dose === m.dose ? `${m.name} suggests ${m.dose}g` : `${m.name} suggests ${m.dose}g · you set ${settings.dose}g`);
+    : (settings.dose === m.dose ? '' : `${m.name} suggests ${m.dose}g`);
   document.querySelectorAll('#methodSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.method));
   $('methodNote').textContent = m.note;
   if(settings.method === 'custom') { $('customGroup').style.display = 'block'; $('cRatioVal').textContent = ratioLabel(settings.customRatio); renderBudget(); renderPourEditor(); renderSavedRecipes(); }
@@ -625,8 +635,9 @@ function applySettings() {
   $('startHint').textContent = balanced ? '' : 'Match the pours to the budget to start';
   $('budgetFixBtn').hidden = balanced;
   document.querySelectorAll('#brewModeSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.brewMode));
-  $('scaleSetup').style.display = settings.brewMode === 'scale' ? 'block' : 'none';
+  $('scaleStatus').style.display = settings.brewMode === 'scale' ? 'block' : 'none';
   $('scaleAddress').value = settings.scaleAddress;
+  if(!scale.finding) $('scaleFindBtn').textContent = findScaleLabel();
   $('startBtn').textContent = settings.brewMode === 'scale' ? 'Scale brew' : 'Start brew';
   updateSummary();
 }
@@ -730,12 +741,13 @@ async function findScale() {
 }
 
 // The pairing takes a while, so the button has to say so.
+function findScaleLabel() { return settings.scaleId ? 'Pair a different scale' : 'Find scale'; }
 function setFindScaleBusy(busy) {
   const b = $('scaleFindBtn');
   if(!b) return;
   b.disabled = busy;
   b.classList.toggle('is-busy', busy);
-  b.textContent = busy ? 'Finding…' : 'Find scale';
+  b.textContent = busy ? 'Finding…' : findScaleLabel();
 }
 
 async function scaleFetch(path, method='GET') {
@@ -879,7 +891,7 @@ function acceptScaleData(data) {
 function scaleText(id,text) { if($(id).textContent!==text) $(id).textContent=text; }
 
 function setScaleStatus(message) {
-  scaleText('scaleStatus',message); scaleText('manualScaleStatus',message);
+  scaleText('scaleStatus',message); scaleText('scaleMoreStatus',message); scaleText('manualScaleStatus',message);
 }
 
 function renderManualScale() {
@@ -907,7 +919,7 @@ function closeManualScale() {
   if(settings.brewMode!=='scale') {
     clearTimeout(scale.poll); scale.generation++; scale.connected=false; scale.data=null;
   }
-  showScreen('settings');
+  showScreen('more');
 }
 
 async function tareManualScale() {
@@ -1044,11 +1056,9 @@ function updateSummary() {
   const total = totalWater();
   const preview = buildCues();
   const finish = preview[preview.length-1].at;
-  // The dose already sits in the stepper above, so the card only carries what
-  // cannot be read off the rest of the screen.
-  $('summaryCard').innerHTML = `
-    <div class="sum-item"><div class="sum-val">${total}g</div><div class="sum-lbl">Water</div></div>
-    <div class="sum-item"><div class="sum-val">~${fmt(finish)}</div><div class="sum-lbl">Time</div></div>`;
+  // One line next to Start: the dose is already in the stepper above, so this
+  // carries the water and time it produces.
+  $('summaryCard').textContent = `${settings.dose}g · ${total}g water · ~${fmt(finish)}`;
 }
 function adjustDose(d) {
   const before = settings.dose, after = Math.max(8,Math.min(40,before+d));
@@ -1654,6 +1664,7 @@ function buildHelp() {
     <div class="help-row"><span class="help-k">${m.name}</span><span class="help-v">${m.ratio % 1 ? m.ratio.toFixed(1) : m.ratio}:1</span></div>
     <p class="help-note">${m.note}</p>`).join('');
   $('helpVersion').textContent = `v60 ${APP_VERSION}`;
+  $('moreVersion').textContent = `v60 ${APP_VERSION}`;
 }
 
 buildHelp();
