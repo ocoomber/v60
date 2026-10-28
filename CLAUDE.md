@@ -54,9 +54,8 @@ Hosted free on **GitHub Pages** (auto-deploys on push to `main`; CDN cache ~10 m
 
 ## Screens & navigation
 Five `.screen` divs — `screenSettings`, `screenBrew`, `screenMore` (Guide, Appearance,
-Manual scale, scale pairing/troubleshooting), `screenHelp` (the Guide, collapsible
-`<details>`) and `screenBarista` (chat), plus `screenManualScale` (bean weighing).
-`showScreen(name)` toggles `.active`.
+scale pairing/troubleshooting), `screenHelp` (the Guide, collapsible `<details>`) and
+`screenBarista` (chat). `showScreen(name)` toggles `.active`.
 
 ## AI Barista (chat)
 - Client: `BARISTA_URL` const points at a **Cloudflare Worker**; `sendBarista()` POSTs

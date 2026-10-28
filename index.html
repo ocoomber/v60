@@ -84,7 +84,7 @@
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 8px; }
-  .help-scroll, #screenSettings, #screenBrew, #screenManualScale, #screenMore { scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
+  .help-scroll, #screenSettings, #screenBrew, #screenMore { scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
   @media (min-width: 700px) {
     body { align-items: center; padding: 24px 0; }
   }
@@ -206,11 +206,12 @@
   .scale-plan li { display:grid; grid-template-columns:45px 1fr auto; gap:10px; padding:9px 0; border-top:1px solid var(--border); font-size:13px; }
   .scale-plan time { font-variant-numeric:tabular-nums; color:var(--text2); }
   button:focus-visible, summary:focus-visible { outline:2px solid var(--green); outline-offset:3px; }
-  #screenManualScale { gap:18px; overflow-y:auto; overflow-x:hidden; }
-  .manual-scale-reading { flex:1; min-height:220px; display:flex; align-items:center; justify-content:center; gap:8px; font-variant-numeric:tabular-nums; }
-  .manual-scale-reading strong { font-size:clamp(52px,18vw,80px); font-weight:600; letter-spacing:-2px; }
-  .manual-scale-reading span { font-size:28px; color:var(--text2); }
-  #manualScaleStatus { min-height:3em; }
+  /* Beans on the main screen: the first step of the brew is weighing the dose. */
+  .beans-row { display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--bg2); border-radius:var(--radius-lg); padding:10px 16px; }
+  .beans-reading { display:flex; align-items:baseline; gap:3px; font-family:var(--font-display); font-variant-numeric:tabular-nums; }
+  .beans-reading strong { font-size:32px; font-weight:600; letter-spacing:-1px; color:var(--text); }
+  .beans-unit { font-size:15px; color:var(--text2); }
+  #beansGroup .scale-status { margin-top:6px; min-height:1.5em; }
   @media (max-height:740px) { .scale-ring { width:min(245px,68vw); } .scale-plan { margin-top:10px; } }
   @media (prefers-reduced-motion:reduce) { .scale-ring .ring-fill { transition:none; } }
   .help-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; margin-top: 4px; }
@@ -348,6 +349,13 @@
       </div>
       <div class="method-note" id="methodNote"></div>
     </div>
+    <div class="group" id="beansGroup" style="display:none"><span class="group-label">Beans on the scale</span>
+      <div class="beans-row">
+        <div class="beans-reading"><strong id="beansWeight">—</strong><span class="beans-unit">g</span></div>
+        <button class="btn-secondary" id="beansTareBtn" onclick="tareBeans()" disabled>Tare</button>
+      </div>
+      <p class="scale-status" id="scaleStatus" role="status">Connecting to CoffeeScale…</p>
+    </div>
     <div class="group dose-group"><span class="group-label">Coffee dose</span>
       <div class="stepper dose-stepper">
         <button class="step-btn" onclick="adjustDose(-1)">−</button>
@@ -381,7 +389,6 @@
         <button class="seg-btn sel" data-val="manual" onclick="setBrewMode('manual')">Manual timer</button>
         <button class="seg-btn" data-val="scale" onclick="setBrewMode('scale')">WiFi scale</button>
       </div>
-      <p class="scale-status" id="scaleStatus" role="status">Waiting for CoffeeScale…</p>
     </div>
     <div class="start-dock">
       <p class="start-summary" id="summaryCard"></p>
@@ -401,7 +408,6 @@
         <button class="seg-btn" data-val="dark" onclick="setTheme('dark')">Dark</button>
       </div>
     </div>
-    <button class="btn-row" onclick="openManualScale()">Manual scale</button>
     <div class="group"><span class="group-label">WiFi scale</span>
       <p class="scale-status" id="scaleMoreStatus" role="status">Not connected</p>
       <div class="scale-row"><button class="btn-secondary" id="scaleFindBtn" onclick="findScale()">Find scale</button></div>
@@ -488,14 +494,6 @@
     </div>
   </div>
 
-  <div class="screen" id="screenManualScale">
-    <div class="app-header"><span class="app-title">Manual scale</span><button class="icon-btn" onclick="closeManualScale()">Done</button></div>
-    <p class="scale-status" id="manualScaleStatus" role="status">Find your scale to start weighing.</p>
-    <div class="manual-scale-reading"><strong id="manualScaleWeight">—</strong><span>g</span></div>
-    <button class="btn-secondary" id="manualScaleFindBtn" onclick="findScale()">Find scale</button>
-    <button class="btn-go" id="manualScaleTareBtn" onclick="tareManualScale()" disabled>Tare</button>
-  </div>
-
   <!-- Guide screen -->
   <div class="screen" id="screenHelp">
     <div class="app-header"><span class="app-title">Guide</span><button class="icon-btn" onclick="showScreen('more')">Close</button></div>
@@ -568,7 +566,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-10-28.1';
+const APP_VERSION = '2026-10-28.2';
 const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
 const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
 const SCALE_HOST = 'coffeescale.local';
@@ -586,7 +584,7 @@ const DEFAULT_POURS = [ {at:0,g:48}, {at:45,g:48}, {at:90,g:48}, {at:135,g:48}, 
 // user has edited them, so a recipe load should ask before overwriting.
 let settings = { dose:13, method:'balanced', customRatio:16, customPours: DEFAULT_POURS.map(p => ({...p})), savedRecipes: [], brewMode:'manual', scaleAddress:'', scaleId:'', customBase:'default' };
 let elapsed=0, startTs=0, interval=null, started=false, finished=false, paused=false, fromBrew=false, currentCue=0, cues=[];
-let noSleep=null, audioCtx=null;
+let noSleep=null, audioCtx=null, currentScreen='settings';
 
 const $ = id => document.getElementById(id);
 // One request at a time for the ESP32's single-client server, including commands.
@@ -635,7 +633,10 @@ function applySettings() {
   $('startHint').textContent = balanced ? '' : 'Match the pours to the budget to start';
   $('budgetFixBtn').hidden = balanced;
   document.querySelectorAll('#brewModeSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.brewMode));
-  $('scaleStatus').style.display = settings.brewMode === 'scale' ? 'block' : 'none';
+  $('beansGroup').style.display = beansAvailable() ? 'block' : 'none';
+  // Only the unpaired state needs an instruction; a paired scale reports itself.
+  if(!settings.scaleId && !settings.scaleAddress) setScaleStatus('Pair your scale in ⋯ → WiFi scale.');
+  renderBeans();
   $('scaleAddress').value = settings.scaleAddress;
   if(!scale.finding) $('scaleFindBtn').textContent = findScaleLabel();
   $('startBtn').textContent = settings.brewMode === 'scale' ? 'Scale brew' : 'Start brew';
@@ -682,7 +683,7 @@ function setBrewMode(mode) {
   if(scale.finding || scale.command) return;
   settings.brewMode = mode;
   if(mode !== 'scale') { clearTimeout(scale.poll); scale.generation++; scale.connected=false; scale.data=null; }
-  saveSettings(); applySettings();
+  saveSettings(); applySettings(); syncWeighing();
 }
 
 function scaleURL(value) {
@@ -722,7 +723,7 @@ async function findScale() {
   if(scale.session!==null || scale.armPending!==null) { setScaleStatus('Finish the current brew before pairing a scale.'); return; }
   if(!navigator.bluetooth || !navigator.bluetooth.requestDevice) { setScaleStatus('Find scale needs Chrome on Android with Bluetooth enabled.'); return; }
   scale.finding=true; setFindScaleBusy(true);
-  renderManualScale();
+  renderBeans();
   clearTimeout(scale.poll); scale.generation++;
   setScaleStatus('Choose CoffeeScale. Bluetooth is only needed for this initial pairing.');
   try {
@@ -731,13 +732,12 @@ async function findScale() {
     const data=await readScalePairing(device);
     if(scale.pending) await scale.pending;
     settings.scaleId=data.id; settings.scaleAddress=data.ip;
-    if(!scale.weighing) settings.brewMode='scale';
     saveSettings(); applySettings();
     scale.finding=false;
     await connectScale(data.ip);
   } catch(e) {
     setScaleStatus(e.name==='NotFoundError' ? 'Pairing cancelled. Your saved scale is unchanged.' : e.message);
-  } finally { scale.finding=false; setFindScaleBusy(false); renderManualScale(); scheduleScalePoll(); }
+  } finally { scale.finding=false; setFindScaleBusy(false); renderBeans(); scheduleScalePoll(); }
 }
 
 // The pairing takes a while, so the button has to say so.
@@ -778,7 +778,7 @@ function scaleError(error) {
     ? 'Waiting for CoffeeScale… Turn it on, keep your phone on the same WiFi, and allow Chrome’s local network permission. Reconnecting automatically.'
     : error.message;
   setScaleStatus(message);
-  renderManualScale();
+  renderBeans();
   $('scaleWeight').textContent = '—';
   scaleText('scaleGuidance',message + (scale.session !== null || scale.armPending !== null ? ' The scale keeps its timer; guidance resumes when connected.' : ''));
   $('scaleLive').className='scale-live is-wait';
@@ -801,14 +801,14 @@ async function connectScale(address=$('scaleAddress').value.trim()) {
   try { base=scaleURL(address); } catch(e) { setScaleStatus(e.message); return; }
   clearTimeout(scale.poll); scale.generation++;
   scale.command=true; $('scaleConnectBtn').disabled=true;
-  renderManualScale();
+  renderBeans();
   if(scale.pending) await scale.pending;
   scale.base=base; scale.connected=false; scale.data=null;
   if(new URL(base).hostname!==SCALE_HOST) { settings.scaleAddress=new URL(base).hostname; saveSettings(); }
   setScaleStatus('Connecting… allow local network access if Chrome asks.');
   try { acceptScaleData(checkScaleData(await scaleFetch('/api/weight'))); }
   catch(e) { scaleError(e); alternateScaleAddress(); }
-  finally { scale.command=false; $('scaleConnectBtn').disabled=false; renderManualScale(); scheduleScalePoll(); }
+  finally { scale.command=false; $('scaleConnectBtn').disabled=false; renderBeans(); scheduleScalePoll(); }
 }
 
 function scheduleScalePoll() {
@@ -840,11 +840,11 @@ async function pollScale() {
 async function scaleCommand(path) {
   if(scale.command || scale.finding) throw new Error('Wait for the scale’s current request.');
   scale.command=true; clearTimeout(scale.poll); $('brewBtn').disabled=true;
-  renderManualScale();
+  renderBeans();
   try {
     if(scale.pending) await scale.pending;
     return await scaleFetch(path, 'POST');
-  } finally { scale.command=false; $('brewBtn').disabled=false; renderManualScale(); scheduleScalePoll(); }
+  } finally { scale.command=false; $('brewBtn').disabled=false; renderBeans(); scheduleScalePoll(); }
 }
 
 function acceptScaleData(data) {
@@ -854,7 +854,7 @@ function acceptScaleData(data) {
     try { scale.base=scaleURL(data.ip); settings.scaleAddress=data.ip; $('scaleAddress').value=data.ip; saveSettings(); } catch(e) {}
   }
   setScaleStatus('Scale connected · WiFi');
-  renderManualScale();
+  renderBeans();
   // If an arm response was lost, recover the new board session from its ID.
   if(scale.armPending !== null) {
     if(data.pour_mode && data.pour_id !== scale.armPending) {
@@ -891,44 +891,41 @@ function acceptScaleData(data) {
 function scaleText(id,text) { if($(id).textContent!==text) $(id).textContent=text; }
 
 function setScaleStatus(message) {
-  scaleText('scaleStatus',message); scaleText('scaleMoreStatus',message); scaleText('manualScaleStatus',message);
+  scaleText('scaleStatus',message); scaleText('scaleMoreStatus',message);
 }
 
-function renderManualScale() {
-  const ready=scale.connected && scale.data;
-  scaleText('manualScaleWeight',ready ? (Math.round(scale.data.g*10)/10).toFixed(1) : '—');
-  $('manualScaleTareBtn').disabled=!ready || scale.command || scale.finding;
-  $('manualScaleFindBtn').disabled=scale.command || scale.finding;
-  $('manualScaleFindBtn').style.display=ready ? 'none' : 'block';
-  $('manualScaleFindBtn').classList.toggle('is-busy', scale.finding);
-  $('manualScaleFindBtn').textContent=scale.finding ? 'Finding…' : 'Find scale';
+// Weighing the beans is the first step, so the main screen keeps a live reading
+// while it is open. It reuses the brew poll loop and never changes brew mode.
+function beansAvailable() { return !!(settings.scaleId || settings.scaleAddress || settings.brewMode === 'scale'); }
+
+function renderBeans() {
+  const ready = scale.connected && scale.data;
+  scaleText('beansWeight', ready ? (Math.round(scale.data.g*10)/10).toFixed(1) : '—');
+  $('beansTareBtn').disabled = !ready || scale.command || scale.finding || scale.session !== null;
 }
 
-async function openManualScale() {
-  if(scale.command || scale.finding || !(await endScaleBrew())) return;
-  scale.weighing=true; showScreen('manualScale');
-  renderManualScale(); await acquireWakeLock();
-  if(!scale.connected && (settings.scaleAddress || scale.base)) await connectScale(settings.scaleAddress || scale.base);
-  else if(!scale.connected) setScaleStatus('Find your scale to start weighing.');
-  scheduleScalePoll();
-}
-
-function closeManualScale() {
-  if(scale.command || scale.finding) return;
-  scale.weighing=false; releaseWakeLock();
-  if(settings.brewMode!=='scale') {
+async function syncWeighing() {
+  const on = currentScreen === 'settings' && scale.session === null && beansAvailable();
+  scale.weighing = on;
+  if(on) {
+    renderBeans();
+    if(scale.connected) scheduleScalePoll();
+    else if(settings.scaleAddress || scale.base) await connectScale(settings.scaleAddress || scale.base);
+    else setScaleStatus('Pair your scale in ⋯ → WiFi scale.');
+  } else if(settings.brewMode !== 'scale') {
+    // Leaving the main screen stops weighing; a scale brew keeps its own poll.
     clearTimeout(scale.poll); scale.generation++; scale.connected=false; scale.data=null;
   }
-  showScreen('more');
+  renderBeans();
 }
 
-async function tareManualScale() {
+async function tareBeans() {
   if(!scale.weighing || !scale.connected || scale.command || scale.finding || scale.session!==null) return;
   setScaleStatus('Zeroing…');
-  $('manualScaleTareBtn').classList.add('is-busy');
+  $('beansTareBtn').classList.add('is-busy');
   try { await scaleCommand('/api/tare'); await pollScale(); }
   catch(e) { scaleError(e); }
-  finally { $('manualScaleTareBtn').classList.remove('is-busy'); }
+  finally { $('beansTareBtn').classList.remove('is-busy'); }
 }
 
 // Recipe cue timestamps define phase boundaries. A phase includes its pour and
@@ -1585,8 +1582,11 @@ function baristaBack() {
 }
 
 function showScreen(name) {
+  currentScreen = name;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   $('screen' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+  // The main screen doubles as the bean scale, so weighing follows the screen.
+  syncWeighing();
 }
 
 // --- AI Barista (chat) ---
@@ -1670,8 +1670,8 @@ function buildHelp() {
 buildHelp();
 loadSettings();
 applyTheme();
-// A saved pairing reconnects over WiFi, without another Bluetooth picker.
-if(settings.brewMode==='scale' && settings.scaleAddress) connectScale(settings.scaleAddress);
+// A paired scale connects without Bluetooth. Weighing follows the open screen.
+syncWeighing();
 
 // While the theme is on Auto, follow the phone's light/dark setting.
 try {

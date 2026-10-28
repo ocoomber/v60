@@ -45,11 +45,12 @@ awk 'n==1 && /^<\/script>$/{exit} /^<script>$/{n=1; next} n==1{print}' index.htm
 - Timer-only ring, prompt and upcoming cards are hidden in scale mode. The complete recipe sits inside **View recipe**, using cumulative targets and concise phase labels. No stir/swirl or other technique instructions in the scale view.
 - Start uses **Tare & start**; the board still owns tare, first-pour detection and timing. Avoid repeatedly updating unchanged live-region instructions while polling. Drawdown remains active beyond the suggested finish until the user ends the brew.
 
-## Manual scale page
-- **More → Manual scale** opens a page for weighing beans inside the V60. Show live grams and Tare; no timer, recipe targets or brewing instructions.
-- Reuse pairing, identity validation and the serialized scale request loop. Poll while the page is open even when the saved brew mode is Manual timer. Pairing here must not change that preference.
-- Opening the page does not tare or arm a brew. Tare is an explicit POST `/api/tare`; do not retry that command automatically. Finish an active V60 scale session before entering this page.
-- Keep the existing V60 manifest/install identity; this page is part of V60, not a second PWA.
+## Bean weighing (main screen)
+- **Beans on the scale** sits on the main screen above the dose stepper: live grams and an explicit **Tare**. No timer, recipe targets or brewing instructions there.
+- Show the tile when a scale is paired (`settings.scaleId`) or an address is known, or when WiFi scale mode is selected; hide it for manual-timer users with no scale.
+- Poll while the main screen is open, even in Manual timer mode. Leaving the screen stops the poll and, outside WiFi scale mode, drops the connection. Pairing must not change `settings.brewMode`.
+- Reuse pairing, identity validation and the serialized scale request loop. Opening the app does not tare or arm a brew; Tare is an explicit POST `/api/tare` and is never retried automatically. Disable Tare while another scale command is in flight, when disconnected, or while a brew session is active.
+- Keep the existing V60 manifest/install identity; this is part of V60, not a second PWA.
 
 ## Appearance
 - **More → Appearance** is an Auto / Light / Dark switch, saved as `settings.theme` in `localStorage['v60-settings']` (`'auto' | 'light' | 'dark'`, default `'auto'`). Migrate any other value to `'auto'` in `loadSettings()`.

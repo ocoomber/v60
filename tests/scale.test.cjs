@@ -13,7 +13,7 @@ function app(fetch = async () => response(reading()), saved=null) {
   const timeouts=new Map(); let timerId=0;
   const frames=new Map(); let frameId=0, now=0;
   for(const [,id] of html.matchAll(/id="([^"]+)"/g)) elements[id] = {
-    textContent:'',innerHTML:'',value:'',style:{},className:'',disabled:false,
+    textContent:'',innerHTML:'',value:'',style:{setProperty(){}},className:'',disabled:false,
     classList:{add(){},remove(){},toggle(){}},
   };
   const context = vm.createContext({document:{
@@ -405,7 +405,8 @@ test('Find scale pairs once, learns the address, disconnects Bluetooth and uses 
   await p.run('findScale()');
   assert.equal(pickers,1);assert.equal(device.disconnects,1);
   assert.equal(p.run('settings.scaleId'),pairedId);assert.equal(p.run('settings.scaleAddress'),'10.24.3.87');
-  assert.equal(p.run('settings.brewMode'),'scale');assert.equal(p.run('scale.connected'),true);
+  // Pairing only pairs; it must not silently change how brews are started.
+  assert.equal(p.run('settings.brewMode'),'manual');assert.equal(p.run('scale.connected'),true);
   assert.deepEqual(calls,['http://10.24.3.87/api/weight']);
   await p.run('pollScale()');assert.equal(pickers,1,'weight polling does not reopen Bluetooth');
 });
@@ -470,7 +471,7 @@ test('Find scale reports unsupported browsers without changing a working WiFi co
   assert.match(p.elements.scaleStatus.textContent,/Chrome on Android/);assert.equal(p.run('scale.connected'),true);
 });
 
-test('manual scale reconnects and tares without starting a brew or changing brew mode', async () => {
+test('bean weighing reconnects and tares on the main screen without starting a brew or changing brew mode', async () => {
   const calls=[];let grams=15.4;
   const p=app(async(url,options)=>{
     const route=new URL(url).pathname;calls.push([route,options.method]);
@@ -478,47 +479,48 @@ test('manual scale reconnects and tares without starting a brew or changing brew
     return response(reading({g:grams}));
   });
   p.run("settings.scaleAddress='192.168.1.60'");
-  await p.run('openManualScale()');
+  await p.run('syncWeighing()');
   assert.equal(p.run('settings.brewMode'),'manual');
   assert.equal(p.run('scale.weighing'),true);
-  assert.equal(p.elements.manualScaleWeight.textContent,'15.4');
-  assert.equal(p.elements.manualScaleTareBtn.disabled,false);
+  assert.equal(p.elements.beansWeight.textContent,'15.4');
+  assert.equal(p.elements.beansTareBtn.disabled,false);
   assert.deepEqual(calls,[['/api/weight','GET']]);
-  await p.run('tareManualScale()');
+  await p.run('tareBeans()');
   assert.deepEqual(calls,[['/api/weight','GET'],['/api/tare','POST'],['/api/weight','GET']]);
-  assert.equal(p.elements.manualScaleWeight.textContent,'0.0');
+  assert.equal(p.elements.beansWeight.textContent,'0.0');
   assert.equal(p.run('scale.session'),null);
-  p.run('closeManualScale()');
+  p.run("showScreen('brew')");
   assert.equal(p.run('scale.weighing'),false);
   assert.equal(p.run('scale.connected'),false);
 });
 
-test('manual scale keeps negative readings, blanks stale weight and disables offline tare', async () => {
+test('bean weighing keeps negative readings, blanks stale weight and disables offline tare', async () => {
   const calls=[];const p=app(async(url)=>{calls.push(url);return response(reading());});
-  await p.run('openManualScale()');
+  p.run('scale.weighing=true');
   feed(p,{g:-2.3});
-  assert.equal(p.elements.manualScaleWeight.textContent,'-2.3');
+  assert.equal(p.elements.beansWeight.textContent,'-2.3');
   p.run("scaleError(new TypeError('offline'))");
-  assert.equal(p.elements.manualScaleWeight.textContent,'—');
-  assert.equal(p.elements.manualScaleTareBtn.disabled,true);
-  await p.run('tareManualScale()');
+  assert.equal(p.elements.beansWeight.textContent,'—');
+  assert.equal(p.elements.beansTareBtn.disabled,true);
+  await p.run('tareBeans()');
   assert.equal(calls.length,0);
 });
 
-test('manual scale pairing uses the shared scale and preserves the manual timer preference', async () => {
+test('pairing uses the shared scale and preserves the manual timer preference', async () => {
   const p=app(async()=>response(reading({g:13,device_id:pairedId})));
   const device=bluetoothDevice(pairing());
   p.setBluetooth({async requestDevice(){return device;}});
-  await p.run('openManualScale();');await p.run('findScale()');
+  await p.run('findScale()');
   assert.equal(p.run('settings.brewMode'),'manual');
   assert.equal(p.run('settings.scaleId'),pairedId);
-  assert.equal(p.elements.manualScaleWeight.textContent,'13.0');
+  assert.equal(p.elements.beansWeight.textContent,'13.0');
   assert.equal(device.disconnects,1);
-  p.timeout(200);await flush();
+  await p.run('syncWeighing()');
+  assert.equal(p.run('scale.weighing'),true);
   assert.equal(p.run('scale.connected'),true);
 });
 
-test('manual scale tare waits for an in-flight reading and prevents a second tare', async () => {
+test('bean tare waits for an in-flight reading and prevents a second tare', async () => {
   const calls=[];let resolvePoll;
   const p=app((url,options)=>{
     calls.push([new URL(url).pathname,options.method]);
@@ -526,21 +528,22 @@ test('manual scale tare waits for an in-flight reading and prevents a second tar
     return Promise.resolve(response(options.method==='POST'?{ok:true}:reading()));
   });
   p.run("scale.weighing=true;scale.base='http://192.168.1.60'");feed(p,{g:15});
-  const poll=p.run('pollScale()'),tare=p.run('tareManualScale()');
-  assert.equal(p.elements.manualScaleTareBtn.disabled,true);
-  await p.run('tareManualScale()');assert.equal(calls.length,1);
+  const poll=p.run('pollScale()'),tare=p.run('tareBeans()');
+  assert.equal(p.elements.beansTareBtn.disabled,true);
+  await p.run('tareBeans()');assert.equal(calls.length,1);
   resolvePoll(response(reading({g:15})));await poll;await tare;
   assert.deepEqual(calls,[['/api/weight','GET'],['/api/tare','POST'],['/api/weight','GET']]);
 });
 
-test('manual scale ends an existing scale brew before allowing bean weighing', async () => {
+test('returning to the main screen ends an active scale brew before bean weighing', async () => {
   const calls=[];const p=app(async(url)=>{calls.push(new URL(url).pathname);return response({ok:true});});
   await scaleBrew(p);p.run('scale.session=7;scale.armed=true');
-  await p.run('openManualScale()');
+  await p.run('backToSettings()');
   assert.deepEqual(calls,['/api/pour/end']);
   assert.equal(p.run('scale.session'),null);
   assert.equal(p.run('scale.weighing'),true);
   assert.equal(p.run('settings.brewMode'),'scale');
+  assert.equal(p.elements.beansTareBtn.disabled,false);
 });
 
 test('a pour only completes at its displayed target, and cannot reopen after completion', async () => {

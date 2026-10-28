@@ -15,11 +15,14 @@ The whole app is a single `index.html` file, hosted free on GitHub Pages.
 1. Install the V60 integration firmware from the CoffeeScale repo on the scale,
    and calibrate it with a known weight. Put your Android phone and scale on the
    same WiFi network.
-2. For the initial pairing, choose **WiFi scale**, then tap **⋯** and use **Find scale**
-   under **WiFi scale**, and select **CoffeeScale** from Android Chrome's Bluetooth picker.
-   The app reads the scale's WiFi address automatically, disconnects Bluetooth, and
-   connects over WiFi. Allow local network access when Chrome asks. No IP copying is needed.
-3. Select your recipe and dose, then tap **Scale brew**.
+2. For the initial pairing, open **⋯ → WiFi scale**, tap **Find scale**, and select
+   **CoffeeScale** from Android Chrome's Bluetooth picker. The app reads the scale's
+   WiFi address automatically, disconnects Bluetooth, and connects over WiFi. Allow
+   local network access when Chrome asks. No IP copying is needed. Pairing leaves the
+   brew mode alone — pick **WiFi scale** on the main screen to brew with the scale.
+3. **Beans on the scale** on the main screen shows live grams: set the V60 on the
+   scale, tap **Tare**, then weigh your dose. Select your recipe and dose, then tap
+   **Scale brew**.
 4. Tap **Tare & start**. The first pour starts the scale's timer automatically.
 5. Track the current phase's **added / required grams** and **elapsed / allotted
    time**. For example, the second Balanced pour at a 15g dose might show
