@@ -268,17 +268,15 @@
   .clock { font-family: var(--font-display); font-size: clamp(30px, 9vw, 40px); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); line-height: 1.05; letter-spacing: -1px; margin-top: 2px; transition: color 0.3s; }
   .clock.done-c { color: var(--text3); }
   .bt-target { font-size: 13px; color: var(--text3); margin-top: 4px; font-variant-numeric: tabular-nums; }
-  /* The brew timeline: where you are between the first pour and the finish. */
+  /* The phase bar: how far through the current step you are. */
   .timeline { margin: 2px 0 0; }
-  .tl-track { position: relative; height: 8px; border-radius: 8px; background: var(--track); }
-  .tl-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 8px; background: var(--fill); }
-  .tl-ticks { position: absolute; inset: 0; }
-  .tl-tick { position: absolute; top: -3px; width: 1px; height: 14px; background: var(--border2); }
-  .tl-knob { position: absolute; top: 50%; left: 0; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--fill); border: 3px solid var(--bg); }
-  .tl-labels { position: relative; height: 15px; margin-top: 8px; font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; }
-  .tl-lab { position: absolute; transform: translateX(-50%); white-space: nowrap; }
-  .tl-lab.left { left: 0; transform: none; }
-  .tl-lab.right { right: 0; transform: none; }
+  .tl-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 7px; }
+  .tl-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+  .tl-now { font-size: 12px; color: var(--text2); font-variant-numeric: tabular-nums; }
+  .tl-track { position: relative; height: 8px; border-radius: 8px; background: var(--track); --p: 0; }
+  /* The knob travels between the ends, so it never hangs off the track. */
+  .tl-fill { position: absolute; left: 8px; top: 0; bottom: 0; width: calc((100% - 16px) * var(--p)); border-radius: 8px; background: var(--fill); }
+  .tl-knob { position: absolute; top: 50%; left: calc(8px + (100% - 16px) * var(--p)); width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--fill); border: 3px solid var(--bg); }
   /* The recipe as a list: done, now, later. */
   .steps { list-style: none; margin: 0; padding: 0; }
   .st-row { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 12px; padding: 10px 0; border-top: 0.5px solid var(--border); }
@@ -289,12 +287,9 @@
   .st-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
   .st-grams { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
   .st-row.upcoming .st-grams { color: var(--text3); }
-  .st-phase { font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; min-height: 1em; }
   .st-done { width: 22px; height: 22px; border-radius: 50%; background: var(--fill); color: var(--fill-text); display: inline-flex; align-items: center; justify-content: center; }
+  .st-now { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--fill); display: block; }
   .st-todo { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border2); display: block; }
-  .st-ring { width: 22px; height: 22px; transform: rotate(-90deg); }
-  .st-arc-track { fill: none; stroke: var(--fill); stroke-width: 2; opacity: 0.3; }
-  .st-arc { fill: none; stroke: var(--fill); stroke-width: 2.6; stroke-linecap: round; transition: stroke-dashoffset 0.3s linear; }
   .brew-actions { display: block; }
   #screenBrew > .brew-actions > .btn-stop { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; }
   .brew-links { display: flex; justify-content: center; gap: 22px; margin-top: 8px; }
@@ -432,12 +427,11 @@
     </div>
 
     <div class="timeline">
-      <div class="tl-track">
-        <div class="tl-fill" id="tlFill"></div>
-        <div class="tl-ticks" id="tlTicks"></div>
-        <div class="tl-knob" id="tlKnob"></div>
+      <div class="tl-head"><span class="tl-label">Phase time</span><span class="tl-now" id="tlNow">0:00 / 0:00</span></div>
+      <div class="tl-track" id="tlTrack">
+        <div class="tl-fill"></div>
+        <div class="tl-knob"></div>
       </div>
-      <div class="tl-labels" id="tlLabels"></div>
     </div>
 
     <ol class="steps" id="stepList"></ol>
@@ -897,13 +891,13 @@ function scalePhase(t,weight) {
 
 
 // The scale feeds the same board as the manual timer: it owns the ring's
-// number (the live weight) and the one line of guidance under it.
+// number (the live weight) and says what to aim for underneath it.
 function renderScaleGuidance() {
   if(settings.brewMode!=='scale' || !cues.length) return;
   const preparing=!started && !scale.armed && !finished;
-  $('ringCaption').textContent='scale weight';
   if(!scale.connected || !scale.data) {
     $('targetWeight').textContent='—';
+    $('ringCaption').textContent='scale weight';
     $('brewNote').textContent='Waiting for the scale — check that it is on and on this network.';
     updateBrewButton();
     return;
@@ -914,19 +908,25 @@ function renderScaleGuidance() {
   const overtime=Math.max(0,phase.elapsed-seconds);
   const isPourCue=/^Pour to /.test(cue.action);
 
-  $('targetWeight').textContent=weight.toFixed(1);
-
-  let note='';
-  if(preparing) note=scale.notice || 'Tare & start when ready.';
-  else if(scale.armed) note='First pour starts the timer.';
-  else if(finished) note=scale.cancelled ? 'Brew cancelled.' : 'Brew complete.';
-  else if(!scale.data.running) note='Timer stopped — finish the brew to end this session.';
-  else if(cue.phase==='Draw down' || (!isPourCue && amount<=0)) note='Let it draw down.';
-  else if(!isPourCue) note=cue.action;
-  else if(pouring) note=`${Math.ceil(cue.water-weight)} g to go`;
-  else if(weight>cue.water+2) note=`${(weight-cue.water).toFixed(1)} g over target`;
-  else note='Target reached';
+  // The caption is the instruction, so the aim is always next to the weight.
+  let caption='', note='';
+  if(preparing) {
+    caption=`Pour to ${cue.water} g`;
+    note=scale.notice || 'Tare & start when ready.';
+    $('targetWeight').textContent='—';
+  } else {
+    $('targetWeight').textContent=weight.toFixed(1);
+    if(scale.armed) { caption=`Pour to ${cue.water} g`; note='First pour starts the timer.'; }
+    else if(finished) { caption='scale weight'; note=scale.cancelled ? 'Brew cancelled.' : 'Brew complete.'; }
+    else if(!scale.data.running) { caption='scale weight'; note='Timer stopped — finish the brew to end this session.'; }
+    else if(cue.phase==='Draw down' || (!isPourCue && amount<=0)) { caption='Let it draw down'; note=''; }
+    else if(!isPourCue) { caption=cue.action; note=''; }
+    else if(pouring) { caption=`Pour to ${cue.water} g`; note=`${Math.ceil(cue.water-weight)} g to go`; }
+    else if(amount>0) { caption=`Hold ${cue.water} g`; note=weight>cue.water+2 ? `${(weight-cue.water).toFixed(1)} g over target` : 'Target reached'; }
+    else { caption='Let it draw down'; note=''; }
+  }
   if(overtime && pouring) note+=` · ${fmt(overtime)} over time`;
+  $('ringCaption').textContent=caption;
   $('brewNote').textContent=note;
   updateBrewButton();
 }
@@ -1218,7 +1218,6 @@ function buildCues() { return METHODS[settings.method].build(settings.dose, METH
 function fmt(s) { return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
 function getCueIdx(t) { let i=0; for(let j=0;j<cues.length;j++){ if(t>=cues[j].at) i=j; } return i; }
 
-const STEP_CIRC = 62.8; // circumference of a step marker ring (2π × r, r=10)
 // --- The brew board ---
 // One board drives both brew modes: the cues are the steps, the clock is the
 // brew time, and a connected scale only changes what the ring shows.
@@ -1233,14 +1232,14 @@ function stepRows() {
     cue:c, index:i,
     isPour:/^Pour to /.test(c.action),
     isBloom:/^Bloom/.test(c.phase),
-    label:c.phase, grams:null, pourIndex:0, end:c.at
+    label:c.phase, grams:null, end:c.at
   }));
-  const hasBloom = rows.some(r => r.isBloom);
   let n = 0;
   rows.forEach(r => {
     if(r.isPour) {
-      if(r.isBloom) { r.label = 'Bloom'; r.pourIndex = 1; }
-      else { n++; r.label = 'Pour ' + n; r.pourIndex = hasBloom ? n+1 : n; }
+      // The bloom is the first pour, but it reads as its own step.
+      if(r.isBloom) r.label = 'Bloom';
+      else { n++; r.label = 'Pour ' + n; }
       r.grams = r.cue.water;
     }
     r.end = rows[r.index+1] ? rows[r.index+1].cue.at : r.cue.at + 60;
@@ -1271,28 +1270,10 @@ function buildSteps() {
     const state = r.index < current ? 'done' : r.index === current ? 'current' : 'upcoming';
     const mark = state === 'done'
       ? '<span class="st-done"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6.5"/></svg></span>'
-      : state === 'current'
-        ? '<svg class="st-ring" viewBox="0 0 24 24"><circle class="st-arc-track" cx="12" cy="12" r="10"/><circle class="st-arc" cx="12" cy="12" r="10" stroke-dasharray="62.8" stroke-dashoffset="62.8"/></svg>'
-        : '<span class="st-todo"></span>';
+      : state === 'current' ? '<span class="st-now"></span>' : '<span class="st-todo"></span>';
     return `<li class="st-row ${state}" data-i="${r.index}">${mark}<span class="st-label">${r.label}</span>`
-      + `<span class="st-meta"><span class="st-grams">${r.grams!=null ? r.grams+' g' : '&mdash;'}</span><span class="st-phase"></span></span></li>`;
+      + `<span class="st-meta"><span class="st-grams">${r.grams!=null ? r.grams+' g' : '&mdash;'}</span></span></li>`;
   }).join('');
-  buildTimeline();
-}
-
-// The brew timeline: the whole recipe, with a tick per step and a knob for now.
-function buildTimeline() {
-  const finish = brewFinish();
-  $('tlTicks').innerHTML = boardRows.map(r =>
-    `<span class="tl-tick" style="left:${finish>0 ? (r.cue.at/finish*100).toFixed(2) : '0'}%"></span>`).join('');
-  const labs = ['<span class="tl-lab left">0:00</span>'];
-  for(let m=60; finish>0 && m<finish; m+=60) {
-    const p = m/finish*100;
-    if(p > 86) continue;   // too close to the finish label to read
-    labs.push(`<span class="tl-lab" style="left:${p.toFixed(2)}%">${fmt(m)}</span>`);
-  }
-  labs.push(`<span class="tl-lab right">${fmt(finish)}</span>`);
-  $('tlLabels').innerHTML = labs.join('');
 }
 
 // Everything on the board that both brew modes share.
@@ -1311,40 +1292,36 @@ function renderBoard(t) {
   $('clock').textContent = fmt(t);
   $('brewTarget').textContent = 'target ' + fmt(finish);
 
-  const fill = settings.brewMode==='scale' ? scaleRingFill(row) : stepFill(t, row);
+  const fill = ringFill(t, row);
   $('ringFill').style.strokeDashoffset = RING_CIRC * (1 - fill);
   $('ringFill').classList.toggle('done-ring', finished);
 
-  // The current step keeps its own clock, on its own row.
-  const cell = $('stepList').querySelector('.st-row.current .st-phase');
-  if(cell) cell.textContent = `${fmt(Math.max(0, t-row.cue.at))} / ${fmt(Math.max(1, row.end-row.cue.at))}`;
-  const arc = $('stepList').querySelector('.st-row.current .st-arc');
-  if(arc) arc.style.strokeDashoffset = STEP_CIRC * (1 - stepFill(t, row));
-
-  const p = finish>0 ? Math.max(0, Math.min(1, t/finish)) : 0;
-  $('tlFill').style.width = (p*100)+'%';
-  $('tlKnob').style.left = (p*100)+'%';
+  // The phase clock and its bar: how far through this step you are.
+  const dur = Math.max(1, row.end - row.cue.at);
+  const inPhase = Math.max(0, t - row.cue.at);
+  const p = Math.min(1, inPhase/dur);
+  $('tlNow').textContent = `${fmt(inPhase)} / ${fmt(dur)}`;
+  $('tlTrack').style.setProperty('--p', p);
 
   if(settings.brewMode!=='scale') renderManualBoard(t);
 }
 
-// The manual timer has no weight to show, so the ring counts the step.
-function stepFill(t, row) {
-  const dur = Math.max(1, row.end - row.cue.at);
-  return Math.max(0, Math.min(1, (t - row.cue.at)/dur));
-}
-// With a scale, the ring is the weight against the target.
-function scaleRingFill(row) {
-  if(!scale.connected || !scale.data) return 0;
-  return Math.max(0, Math.min(1, Math.max(0, scale.data.g) / Math.max(1, row.cue.water)));
+// The ring is the gauge for the whole brew: the clock in manual mode, the
+// weight against the target when a scale is on the job.
+function ringFill(t, row) {
+  if(settings.brewMode==='scale') {
+    if(!scale.connected || !scale.data) return 0;
+    return Math.max(0, Math.min(1, Math.max(0, scale.data.g) / Math.max(1, row.cue.water)));
+  }
+  const finish = brewFinish();
+  return finish>0 ? Math.max(0, Math.min(1, t/finish)) : 0;
 }
 
+// The header says where you are in the recipe, in words.
 function subtitleFor(row) {
   if(!row) return 'Ready';
   if(!started && !finished) return 'Ready';
-  const pours = boardRows.filter(r => r.isPour).length;
-  if(row.isPour) return `${row.label} · ${row.pourIndex} of ${pours}`;
-  return `${row.label} · Finish`;
+  return row.label;
 }
 
 function getAudioCtx() {
