@@ -379,6 +379,37 @@ test('manual mode still starts, pauses, resumes and finishes by time', async () 
   assert.equal(p.elements.brewBtn.textContent,'Brew again');
 });
 
+// The step list is the recipe as rows: done, now, later.
+function stepRowsOf(p) {
+  return [...p.elements.stepList.innerHTML.matchAll(/class="st-row (done|current|upcoming)"[^>]*>(.*?)<\/li>/g)].map(m=>({
+    state:m[1],
+    label:(m[2].match(/st-label">([^<]*)</)||[])[1],
+    grams:(m[2].match(/st-grams">([^<]*)</)||[])[1],
+  }));
+}
+
+test('the step list shows the recipe and marks the step the brew is on', async () => {
+  const p=app(); await p.run('startBrew()');
+  let r=stepRowsOf(p);
+  assert.deepEqual(r.map(x=>x.label),['Bloom','Pour 1','Pour 2','Pour 3','Draw down']);
+  assert.deepEqual(r.map(x=>x.grams),['26 g','108 g','166 g','208 g','&mdash;']);
+  assert.deepEqual(r.map(x=>x.state),['current','upcoming','upcoming','upcoming','upcoming']);
+  p.run('startTs=Date.now()-60000;tick()');
+  r=stepRowsOf(p);
+  assert.deepEqual(r.map(x=>x.state),['done','current','upcoming','upcoming','upcoming']);
+  p.run('startTs=Date.now()-130000;tick()');
+  r=stepRowsOf(p);
+  assert.deepEqual(r.map(x=>x.state),['done','done','done','current','upcoming']);
+});
+
+test('in scale mode the step list follows the weight, not the clock', async () => {
+  const p=app(); await scaleBrew(p); p.run('scale.session=7');
+  feed(p,{g:26,timer_s:10,running:true,pour_mode:true,pour_id:7});
+  assert.deepEqual(stepRowsOf(p).map(x=>x.state),['current','upcoming','upcoming','upcoming','upcoming']);
+  feed(p,{g:108,timer_s:50,running:true,pour_mode:true,pour_id:7});
+  assert.deepEqual(stepRowsOf(p).map(x=>x.state),['done','current','upcoming','upcoming','upcoming']);
+});
+
 test('private-mode localStorage errors leave manual and scale controls usable', async () => {
   const p=app();p.run("localStorage.getItem=()=>{throw new Error('blocked')};localStorage.setItem=localStorage.getItem;loadSettings();saveSettings()");
   await scaleBrew(p);
