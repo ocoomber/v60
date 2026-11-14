@@ -83,9 +83,10 @@ test('uses the board clock and resumes at the right recipe cue after a connectio
   assert.equal(p.elements.clock.textContent,'0:10');
   feed(p,{g:100,timer_s:55.9,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.elements.clock.textContent,'0:55');
-  assert.match(p.elements.scaleRemaining.textContent,/25g to go/);
-  assert.equal(p.elements.waterLbl.textContent,'Water: 100.0g / 240g');
-  assert.equal(p.elements.waterFill.style.width,'42%');
+  assert.match(p.elements.scaleRemaining.textContent,/8g to go/);
+  assert.equal(p.elements.scaleTarget.textContent,'target 108g');
+  assert.equal(p.elements.waterLbl.textContent,'Water: 100.0g / 208g');
+  assert.equal(p.elements.waterFill.style.width,'48%');
 });
 
 test('remembers completed targets through a weight dip instead of reopening an old pour', async () => {
@@ -93,13 +94,13 @@ test('remembers completed targets through a weight dip instead of reopening an o
   feed(p,{g:30,timer_s:12,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.elements.scalePhaseTime.textContent,'0:12'); assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45'); assert.match(p.elements.scaleStage.textContent,/Wait/);
   feed(p,{g:35,timer_s:15,running:true,pour_mode:true,pour_id:7});
-  assert.match(p.elements.scaleRemaining.textContent,/5.0g over target/);
+  assert.match(p.elements.scaleRemaining.textContent,/9.0g over target/);
   feed(p,{g:20,timer_s:50,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.promptAction.textContent,'Pour to 125g');
-  assert.equal(p.elements.scaleTarget.textContent,'/ 125 g');
+  assert.equal(p.elements.promptAction.textContent,'Pour to 108g');
+  assert.equal(p.elements.scaleTarget.textContent,'target 108g');
   feed(p,{g:30,timer_s:52,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.promptAction.textContent,'Pour to 125g');
-  assert.match(p.elements.scaleRemaining.textContent,/95g to go/);
+  assert.equal(p.elements.promptAction.textContent,'Pour to 108g');
+  assert.match(p.elements.scaleRemaining.textContent,/78g to go/);
 });
 
 test('all built-in and custom methods use measured cumulative water targets', async () => {
@@ -115,10 +116,10 @@ test('all built-in and custom methods use measured cumulative water targets', as
 
 test('displays cumulative scale weight and phase time against their targets', async () => {
   const p=app();await scaleBrew(p);
-  assert.equal(p.elements.scaleAction.textContent,'Bloom');
+  assert.equal(p.elements.scaleAction.textContent,'Ready when you are');
   assert.equal(p.elements.brewBtn.textContent,'Tare & start');
   assert.equal(p.elements.scaleMeasurements.style.display,'block');
-  assert.equal(p.elements.scaleTarget.textContent,'/ 30 g');
+  assert.equal(p.elements.scaleTarget.textContent,'target —');
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45');
   assert.equal(p.elements.scaleWeightRing.style.strokeDashoffset,552.9);
   assert.equal(p.elements.scaleTimeProgress.value,0);
@@ -126,7 +127,7 @@ test('displays cumulative scale weight and phase time against their targets', as
   feed(p,{g:20,timer_s:10,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.elements.scaleWeight.textContent,'20.0');
   assert.equal(p.elements.scalePhaseTime.textContent,'0:10');
-  assert.ok(Math.abs(p.elements.scaleWeightRing.style.strokeDashoffset-552.9*(1-20/30))<0.001);
+  assert.ok(Math.abs(p.elements.scaleWeightRing.style.strokeDashoffset-552.9*(1-20/26))<0.001);
   assert.equal(p.elements.scaleTimeProgress.value,10/45);
   assert.match(p.elements.scaleStage.textContent,/Pour/);
   feed(p,{g:30,timer_s:12,running:true,pour_mode:true,pour_id:7});
@@ -139,15 +140,15 @@ test('displays cumulative scale weight and phase time against their targets', as
   assert.match(p.elements.scaleStage.textContent,/Wait/);
   assert.equal(p.elements.scalePhaseTime.textContent,'0:44');
   feed(p,{g:100,timer_s:55,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'First pour');
+  assert.equal(p.elements.scaleAction.textContent,'Pour to 108g');
   assert.equal(p.elements.scaleWeight.textContent,'100.0');
-  assert.equal(p.elements.scaleTarget.textContent,'/ 125 g');
+  assert.equal(p.elements.scaleTarget.textContent,'target 108g');
   assert.equal(p.elements.scalePhaseTime.textContent,'0:10');
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:30');
   assert.match(p.elements.scaleStage.textContent,/Pour/);
-  assert.equal(p.elements.scaleNextTarget.textContent,'192g');
-  assert.equal(p.elements.scaleNextAt.textContent,'at 1:15');
-  assert.ok(Math.abs(p.elements.scaleWeightRing.style.strokeDashoffset-552.9*(1-100/125))<0.001);
+  assert.equal(p.elements.scaleNextTarget.textContent,'166g');
+  assert.equal(p.elements.scaleNextAt.textContent,'in 0:20');
+  assert.ok(Math.abs(p.elements.scaleWeightRing.style.strokeDashoffset-552.9*(1-100/108))<0.001);
   assert.equal(p.elements.scaleTimeProgress.value,10/30);
 });
 
@@ -163,10 +164,10 @@ test('time fill moves between readings without advancing the board clock or phas
   assert.equal(p.elements.scalePhaseTime.textContent,'0:44');
   p.frame(400);
   assert.equal(p.elements.scaleTimeProgress.value,1);
-  assert.equal(p.elements.scaleAction.textContent,'Bloom');
+  assert.equal(p.elements.scaleAction.textContent,'Hold 26g');
   feed(p,{g:30,timer_s:45.1,running:true,pour_mode:true,pour_id:7});
   assert.ok(Math.abs(p.elements.scaleTimeProgress.value-0.1/30)<1e-10);
-  assert.equal(p.elements.scaleAction.textContent,'First pour');
+  assert.equal(p.elements.scaleAction.textContent,'Pour to 108g');
 });
 
 test('time fill freezes for stale or stopped readings and clears on disconnect', async () => {
@@ -187,8 +188,8 @@ test('time fill freezes for stale or stopped readings and clears on disconnect',
 test('late pours keep their phase target and show time exceeding its allotted interval', async () => {
   const p=app();await scaleBrew(p);p.run('scale.session=7');
   feed(p,{g:20,timer_s:50,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Bloom');
-  assert.equal(p.elements.scaleTarget.textContent,'/ 30 g');
+  assert.equal(p.elements.scaleAction.textContent,'Pour to 26g');
+  assert.equal(p.elements.scaleTarget.textContent,'target 26g');
   assert.equal(p.elements.scalePhaseTime.textContent,'0:50');
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45');
   assert.match(p.elements.scaleRemaining.textContent,/0:05 over time/);
@@ -196,29 +197,30 @@ test('late pours keep their phase target and show time exceeding its allotted in
   assert.equal(p.elements.scaleTimeProgress.value,1);
   assert.ok(p.elements.scaleWeightRing.style.strokeDashoffset>0);
   feed(p,{g:30,timer_s:52,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'First pour');
+  assert.equal(p.elements.scaleAction.textContent,'Pour to 108g');
   assert.equal(p.elements.scaleWeight.textContent,'30.0');
   assert.equal(p.elements.scalePhaseTime.textContent,'0:07');
 });
 
 test('final pour waits, then timed drawdown remains active until the user finishes', async () => {
   const p=app();await scaleBrew(p);p.run('scale.session=7');
-  feed(p,{g:240,timer_s:120,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Final pour');
+  const total=p.run('totalWater()');
+  feed(p,{g:total,timer_s:120,running:true,pour_mode:true,pour_id:7});
+  assert.equal(p.elements.scaleAction.textContent,'Hold 208g');
   assert.match(p.elements.scaleStage.textContent,/Wait/);
-  assert.equal(p.elements.scaleWeight.textContent,'240.0');
-  assert.equal(p.elements.scaleTarget.textContent,'/ 240 g');
+  assert.equal(p.elements.scaleWeight.textContent,'208.0');
+  assert.equal(p.elements.scaleTarget.textContent,'target 208g');
   assert.equal(p.elements.scalePhaseTime.textContent,'0:15');
   assert.equal(p.elements.scaleWeightRing.style.strokeDashoffset,0);
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 1:15');
-  feed(p,{g:240,timer_s:180,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Drawdown');
-  assert.equal(p.elements.scaleWeight.textContent,'240.0');
-  assert.equal(p.elements.scaleTarget.textContent,'/ 240 g');
+  feed(p,{g:total,timer_s:180,running:true,pour_mode:true,pour_id:7});
+  assert.equal(p.elements.scaleAction.textContent,'Let it draw down');
+  assert.equal(p.elements.scaleWeight.textContent,'208.0');
+  assert.equal(p.elements.scaleTarget.textContent,'target 208g');
   assert.equal(p.elements.scalePhaseTime.textContent,'0:00');
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:30');
-  feed(p,{g:240,timer_s:250,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Drawdown');
+  feed(p,{g:total,timer_s:250,running:true,pour_mode:true,pour_id:7});
+  assert.equal(p.elements.scaleAction.textContent,'Let it draw down');
   assert.equal(p.elements.scalePhaseTime.textContent,'1:10');
   assert.equal(p.run('finished'),false);
   await p.run('endScaleBrew()');
@@ -233,28 +235,30 @@ test('cancelling before the first pour reports cancellation and resets phase tim
   assert.equal(p.elements.scaleAction.textContent,'Brew cancelled');
   assert.equal(p.elements.brewBtn.textContent,'Brew again');
   await p.run('startBrew()');
-  assert.equal(p.elements.scaleAction.textContent,'Bloom');
+  assert.equal(p.elements.scaleAction.textContent,'Ready when you are');
   assert.equal(p.elements.scalePhaseTime.textContent,'0:00');
   assert.equal(p.run('scale.cancelled'),false);
 });
 
-test('Hoffmann keeps recipe timing without showing technique instructions', async () => {
+test('Hoffmann keeps recipe timing and hides the stir step in the plan list', async () => {
   const p=app();p.run("settings.method='hoffmann'");await scaleBrew(p);p.run('scale.session=7');
   const total=p.run('totalWater()');
   feed(p,{g:100,timer_s:55,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:30');
   assert.equal(p.elements.scalePhaseTime.textContent,'0:10');
   feed(p,{g:total,timer_s:90,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Pour 2');
+  assert.equal(p.elements.scaleAction.textContent,'Hold 217g');
   assert.match(p.elements.scaleStage.textContent,/Wait/);
   feed(p,{g:total,timer_s:105,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Wait');
+  // The stir step is a Wait in the recipe list. The heading still shows the
+  // recipe instruction; CLAUDE.md asks for "Wait" there too — open question.
   assert.equal(p.elements.scaleGuidance.textContent,'');
   assert.doesNotMatch(p.elements.scalePlanList.innerHTML,/stir|swirl/i);
+  assert.match(p.elements.scalePlanList.innerHTML,/Wait/);
   assert.equal(p.elements.scalePhaseTime.textContent,'0:00');
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 1:30');
   feed(p,{g:total,timer_s:195,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'Drawdown');
+  assert.equal(p.elements.scaleAction.textContent,'Let it draw down');
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:15');
 });
 
@@ -280,8 +284,8 @@ test('recipe finish time does not stop a slow scale brew or discard its missing 
   const p=app(); await scaleBrew(p); p.run('scale.session=7');
   feed(p,{g:200,timer_s:250,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.run('finished'),false);
-  assert.equal(p.elements.promptAction.textContent,'Pour to 240g');
-  assert.match(p.elements.scaleRemaining.textContent,/40g to go/);
+  assert.equal(p.elements.promptAction.textContent,'Pour to 208g');
+  assert.match(p.elements.scaleRemaining.textContent,/8g to go/);
   assert.equal(p.elements.clock.textContent,'4:10');
 });
 
@@ -548,13 +552,13 @@ test('returning to the main screen ends an active scale brew before bean weighin
 
 test('a pour only completes at its displayed target, and cannot reopen after completion', async () => {
   const p=app();await scaleBrew(p);p.run('scale.session=7');
-  feed(p,{g:28,timer_s:12,running:true,pour_mode:true,pour_id:7});
+  feed(p,{g:24,timer_s:12,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.elements.scaleStage.textContent,'Pour');
   assert.equal(p.elements.scaleRemaining.textContent,'2g to go');
   feed(p,{g:30,timer_s:13,running:true,pour_mode:true,pour_id:7});
   feed(p,{g:27,timer_s:14,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.elements.scaleStage.textContent,'Wait');
   feed(p,{g:27,timer_s:46,running:true,pour_mode:true,pour_id:7});
-  assert.equal(p.elements.scaleAction.textContent,'First pour');
-  assert.equal(p.elements.scaleTarget.textContent,'/ 125 g');
+  assert.equal(p.elements.scaleAction.textContent,'Pour to 108g');
+  assert.equal(p.elements.scaleTarget.textContent,'target 108g');
 });
