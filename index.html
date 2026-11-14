@@ -157,6 +157,54 @@
   .scale-row { display:flex; gap:8px; margin-top:10px; }
   .scale-row input { min-width:0; flex:1; padding:10px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg); color:var(--text); font-size:16px; }
   .scale-status { font-size:12px; color:var(--text2); line-height:1.5; margin-top:8px; }
+  #screenBrew.scale-brew { gap:14px; overflow-y:auto; overflow-x:hidden; }
+  .scale-brew > .ring-outer, .scale-brew > .ring-foot, .scale-brew > .prompt-card,
+  .scale-brew > .water-wrap, .scale-brew > .upcoming { display:none !important; }
+  .scale-brew > .brew-actions > :first-child { flex:1; }
+  .scale-brew > .brew-actions > :first-child.btn-stop { flex:0 0 auto; }
+  .scale-brew .app-title { font-size:16px; }
+  .scale-live { --step-color:var(--ring); flex:1; }
+  .scale-live.is-pour { --step-color:var(--ring); }
+  .scale-live.is-wait { --step-color:var(--warn); }
+  .scale-live.is-drain { --step-color:var(--text2); }
+  .scale-live.is-done { --step-color:var(--ok-text); }
+  .scale-heading { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-top:16px; }
+  .scale-stage { color:var(--step-color); font-size:19px; font-weight:600; }
+  .scale-action { font-family:var(--font-display); font-size:24px; font-weight:600; line-height:1.2; letter-spacing:-.5px; }
+  .scale-guidance { font-size:13px; line-height:1.45; color:var(--text2); margin-top:8px; }
+  .scale-guidance:empty { display:none; }
+  .scale-measurements { margin-top:16px; }
+  .scale-ring { position:relative; width:min(285px,72vw); aspect-ratio:1; margin:0 auto; }
+  .scale-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
+  .scale-ring .ring-fill { stroke:var(--step-color); transition:stroke-dashoffset .2s linear; }
+  .scale-ring-centre { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .scale-ratio { display:flex; justify-content:center; align-items:baseline; gap:5px; }
+  .scale-number-label { color:var(--text2); font-size:12px; margin-bottom:8px; }
+  .scale-reading { font-family:var(--font-display); font-size:clamp(34px,11vw,48px); font-weight:600; line-height:1.1; font-variant-numeric:tabular-nums; letter-spacing:-1px; white-space:nowrap; }
+  .scale-target { font-family:var(--font-display); font-size:15px; font-weight:500; font-variant-numeric:tabular-nums; color:var(--text2); margin-top:2px; white-space:nowrap; }
+  .scale-remaining { font-size:12px; color:var(--text2); text-align:center; margin-top:12px; min-height:1.5em; }
+  /* Phase time: how far through the current step you are, as a bar and a clock. */
+  .scale-phase-time { margin-top:24px; }
+  .scale-time-heading { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .scale-time-heading .scale-number-label { margin-bottom:0; }
+  .scale-phase-time .scale-reading { font-size:22px; letter-spacing:0; }
+  .scale-phase-time .scale-target { font-size:18px; }
+  .scale-time-progress { display:block; width:100%; height:8px; margin-top:10px; appearance:none; border:0; border-radius:8px; overflow:hidden; background:var(--bg3); color:var(--step-color); }
+  .scale-time-progress::-webkit-progress-bar { background:var(--track); border-radius:8px; }
+  .scale-time-progress::-webkit-progress-value { background:var(--step-color); border-radius:8px; }
+  .scale-time-progress::-moz-progress-bar { background:var(--step-color); border-radius:8px; }
+  .scale-next { margin-top:16px; border-top:1px solid var(--border); padding-top:14px; display:flex; justify-content:space-between; gap:12px; }
+  .scale-next-label { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px; }
+  .scale-next-value { font-size:14px; font-weight:600; line-height:1.4; }
+  .scale-next-meta { text-align:right; font-size:13px; line-height:1.6; color:var(--text2); font-variant-numeric:tabular-nums; }
+  .scale-footer { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:14px; }
+  .scale-connection { font-size:12px; color:var(--text2); }
+  .scale-time { text-align:right; }
+  .scale-clock { font-size:18px; font-variant-numeric:tabular-nums; line-height:1.2; }
+  .scale-plan { border-top:1px solid var(--border); margin-top:18px; }
+  .scale-plan summary { cursor:pointer; font-size:13px; color:var(--text2); padding:13px 0; }
+  .scale-plan li { display:grid; grid-template-columns:45px 1fr auto; gap:10px; padding:9px 0; border-top:1px solid var(--border); font-size:13px; }
+  .scale-plan time { font-variant-numeric:tabular-nums; color:var(--text2); }
   button:focus-visible, summary:focus-visible { outline:2px solid var(--green); outline-offset:3px; }
   /* Beans on the main screen: the first step of the brew is weighing the dose. */
   .beans-row { display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--bg2); border-radius:var(--radius-lg); padding:10px 16px; }
@@ -241,65 +289,43 @@
   .pr-total { font-size: 11px; color: var(--text3); text-align: center; margin-top: 5px; }
   .pour-add { margin-top: 10px; }
   .pour-add .btn-secondary { width: 100%; }
-  #screenBrew { gap: clamp(8px, 1.8dvh, 14px); overflow-y: auto; overflow-x: hidden; }
+  #screenBrew { gap: clamp(8px, 3dvh, 24px); overflow-y: auto; overflow-x: hidden; }
   /* The action row stays reachable when the brew fills the screen. */
   #screenBrew > .brew-actions { margin-top: auto; padding: 12px 0 4px; flex-shrink: 0; position: sticky; bottom: 0; background: var(--bg); }
   #screenBrew > .brew-actions::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 14px; transform: translateY(-100%); background: linear-gradient(to top, var(--bg), transparent); pointer-events: none; }
-  /* The board: header, ring, brew time, timeline, the steps, the action. */
-  .brew-head { align-items: flex-start; gap: 12px; }
-  .brew-headings { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-  .brew-sub { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .icon-only { padding: 0; width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-  .icon-only svg { display: block; }
-  .ring-outer { position: relative; width: min(230px, 58vw); height: min(230px, 58vw); margin: 0 auto; }
+  .ring-outer { position: relative; width: min(280px, 68vw); height: min(280px, 68vw); margin: 0 auto; }
   .ring-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
   .ring-track { fill: none; stroke: var(--track); stroke-width: 6; }
   .ring-fill { fill: none; stroke: var(--ring); stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
   .ring-fill.done-ring { stroke: var(--ok-text); }
-  .ring-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .target { font-family: var(--font-display); font-size: clamp(44px, 13vw, 58px); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); line-height: 0.95; letter-spacing: -1.5px; }
-  .ring-unit { font-size: 20px; font-weight: 600; color: var(--text3); margin-top: 2px; }
-  .ring-caption { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 10px; }
-  /* One quiet line under the ring: the scale's guidance, or the step's detail. */
-  .brew-note { font-size: 12px; line-height: 1.4; color: var(--text2); text-align: center; margin: 0; min-height: 1.2em; }
-  .brew-note:empty { display: none; }
-  .brew-time { text-align: center; }
-  .bt-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
-  .clock { font-family: var(--font-display); font-size: clamp(30px, 9vw, 40px); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); line-height: 1.05; letter-spacing: -1px; margin-top: 2px; transition: color 0.3s; }
+  .ring-inner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+  .target { font-family: var(--font-display); font-size: 56px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); line-height: 0.95; letter-spacing: -1px; }
+  .target .unit { font-size: 26px; font-weight: 600; color: var(--crema); margin-left: 1px; }
+  .clock { font-size: 22px; font-weight: 400; font-variant-numeric: tabular-nums; color: var(--text3); line-height: 1; transition: color 0.3s; }
+  .clock.running { color: var(--ok-text); }
   .clock.done-c { color: var(--text3); }
-  .bt-target { font-size: 13px; color: var(--text3); margin-top: 4px; font-variant-numeric: tabular-nums; }
-  /* The brew timeline: where you are between the first pour and the finish. */
-  .timeline { margin: 2px 0 0; }
-  .tl-track { position: relative; height: 8px; border-radius: 8px; background: var(--track); }
-  .tl-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 8px; background: var(--fill); }
-  .tl-ticks { position: absolute; inset: 0; }
-  .tl-tick { position: absolute; top: -3px; width: 1px; height: 14px; background: var(--border2); }
-  .tl-knob { position: absolute; top: 50%; left: 0; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: var(--fill); border: 3px solid var(--bg); }
-  .tl-labels { position: relative; height: 15px; margin-top: 8px; font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; }
-  .tl-lab { position: absolute; transform: translateX(-50%); white-space: nowrap; }
-  .tl-lab.left { left: 0; transform: none; }
-  .tl-lab.right { right: 0; transform: none; }
-  /* The recipe as a list: done, now, later. */
-  .steps { list-style: none; margin: 0; padding: 0; }
-  .st-row { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 12px; padding: 10px 0; border-top: 0.5px solid var(--border); }
-  .st-row:first-child { border-top: none; }
-  .st-label { font-size: 15px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.04em; }
-  .st-row.current .st-label { color: var(--text); }
-  .st-row.done .st-label { color: var(--text3); }
-  .st-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; }
-  .st-grams { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
-  .st-row.upcoming .st-grams { color: var(--text3); }
-  .st-phase { font-size: 11px; color: var(--text3); font-variant-numeric: tabular-nums; min-height: 1em; }
-  .st-done { width: 22px; height: 22px; border-radius: 50%; background: var(--fill); color: var(--fill-text); display: inline-flex; align-items: center; justify-content: center; }
-  .st-todo { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border2); display: block; }
-  .st-ring { width: 22px; height: 22px; transform: rotate(-90deg); }
-  .st-arc-track { fill: none; stroke: var(--fill); stroke-width: 2; opacity: 0.3; }
-  .st-arc { fill: none; stroke: var(--fill); stroke-width: 2.6; stroke-linecap: round; transition: stroke-dashoffset 0.3s linear; }
-  .brew-actions { display: block; }
-  #screenBrew > .brew-actions > .btn-stop { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; }
-  .brew-links { display: flex; justify-content: center; gap: 22px; margin-top: 8px; }
-  .btn-link { background: none; border: none; padding: 6px 2px; font-size: 13px; color: var(--text3); cursor: pointer; }
-  .btn-link:hover { color: var(--text2); }
+  .phase { font-size: 11px; color: var(--crema); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 2px; text-align: center; font-weight: 600; }
+  /* The ring fills across the current step, so say so. */
+  .ring-foot { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 12px; color: var(--text2); font-variant-numeric: tabular-nums; }
+  .ring-foot .step-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+  .prompt-card { background: var(--bg); border: 0.5px solid var(--border); border-left: 3px solid var(--phase-color, var(--border)); border-radius: var(--radius-lg); padding: 16px 18px; margin: 0; min-height: 80px; transition: border-color 0.3s; }
+  .prompt-action { font-size: 20px; font-weight: 600; color: var(--phase-color, var(--text)); margin: 0 0 6px; }
+  .prompt-detail { font-size: 14px; color: var(--text2); line-height: 1.6; }
+  .water-wrap { margin: 0; }
+  .water-lbl { font-size: 12px; color: var(--text3); margin: 0 0 6px; }
+  .water-bar { height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
+  .water-fill { height: 100%; background: var(--ring); border-radius: 3px; transition: width 1s linear; }
+  .upcoming { margin: 0; }
+  .up-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 8px; }
+  .up-row { display: flex; gap: 8px; }
+  .up-item { flex: 1; background: var(--bg2); border-radius: var(--radius); padding: 8px 10px; }
+  /* The next step is the one you act on, so it is the one that stands out. */
+  .up-item.next { background: var(--green-light); }
+  .up-item.next .up-time { color: var(--ok-text); font-weight: 600; }
+  .up-time { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text2); }
+  .up-name { font-size: 12px; color: var(--text); font-weight: 500; margin-top: 2px; }
+  .brew-actions { display: flex; gap: 10px; }
+  .brew-actions .btn-go { flex: 1; }
   .flash { animation: fl 0.6s ease; }
   @keyframes fl { 0%,100% { box-shadow: none; } 50% { box-shadow: 0 0 0 3px var(--green-light); } }
   @media (prefers-reduced-motion: reduce) {
@@ -313,9 +339,7 @@
 
   <!-- Settings screen -->
   <div class="screen active" id="screenSettings">
-    <div class="app-header"><span class="app-title">V60</span><span class="hdr-btns"><button class="icon-btn" onclick="openBarista()">Barista</button><button class="icon-btn icon-only" onclick="showScreen('more')" aria-label="Settings">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.1 14.9a1.5 1.5 0 0 0 .3 1.7l.1.1a1.9 1.9 0 1 1-2.7 2.7l-.1-.1a1.5 1.5 0 0 0-1.7-.3 1.5 1.5 0 0 0-.9 1.4v.2a1.9 1.9 0 1 1-3.8 0v-.1a1.5 1.5 0 0 0-1-1.4 1.5 1.5 0 0 0-1.7.3l-.1.1a1.9 1.9 0 1 1-2.7-2.7l.1-.1a1.5 1.5 0 0 0 .3-1.7 1.5 1.5 0 0 0-1.4-.9h-.2a1.9 1.9 0 1 1 0-3.8h.1a1.5 1.5 0 0 0 1.4-1 1.5 1.5 0 0 0-.3-1.7l-.1-.1a1.9 1.9 0 1 1 2.7-2.7l.1.1a1.5 1.5 0 0 0 1.7.3h.1a1.5 1.5 0 0 0 .9-1.4v-.2a1.9 1.9 0 1 1 3.8 0v.1a1.5 1.5 0 0 0 .9 1.4 1.5 1.5 0 0 0 1.7-.3l.1-.1a1.9 1.9 0 1 1 2.7 2.7l-.1.1a1.5 1.5 0 0 0-.3 1.7v.1a1.5 1.5 0 0 0 1.4.9h.2a1.9 1.9 0 1 1 0 3.8h-.1a1.5 1.5 0 0 0-1.4.9z"/></svg>
-    </button></span></div>
+    <div class="app-header"><span class="app-title">V60</span><span class="hdr-btns"><button class="icon-btn" onclick="openBarista()">Barista</button><button class="icon-btn" onclick="showScreen('more')" aria-label="More options">⋯</button></span></div>
     <div class="group"><span class="group-label">Method</span>
       <div class="seg" id="methodSeg">
         <button class="seg-btn" data-val="balanced" onclick="setMethod('balanced')">Balanced</button>
@@ -396,58 +420,77 @@
     <div class="help-version" id="moreVersion"></div>
   </div>
 
-  <!-- Brew screen: one board for both brew modes -->
+  <!-- Brew screen -->
   <div class="screen" id="screenBrew">
-    <div class="app-header brew-head">
-      <div class="brew-headings">
-        <span class="app-title" id="brewTitle">V60</span>
-        <span class="brew-sub" id="brewSub">Ready</span>
-      </div>
+    <div class="app-header">
+      <span class="app-title" id="brewTitle">Brewing</span>
       <span class="hdr-btns">
-        <button class="icon-btn icon-only" onclick="brewToBarista()" aria-label="Ask the Barista">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5z"/></svg>
-        </button>
+        <button class="icon-btn" id="pauseBtn" onclick="handlePauseBtn()" style="display:none">Pause</button>
+        <button class="icon-btn" onclick="brewToBarista()">Barista</button>
       </span>
     </div>
-
     <div class="ring-outer">
-      <svg class="ring-svg" viewBox="0 0 200 200" role="img" aria-label="Brew progress" aria-describedby="targetWeight">
+      <svg class="ring-svg" viewBox="0 0 200 200">
         <circle class="ring-track" cx="100" cy="100" r="88"/>
         <circle class="ring-fill" id="ringFill" cx="100" cy="100" r="88"
           stroke-dasharray="552.9" stroke-dashoffset="552.9"/>
       </svg>
       <div class="ring-inner">
-        <div class="target" id="targetWeight">—</div>
-        <div class="ring-unit">g</div>
-        <div class="ring-caption" id="ringCaption">target</div>
+        <div class="phase" id="phaseLbl">Ready</div>
+        <div class="target" id="targetWeight">0<span class="unit">g</span></div>
+        <div class="clock" id="clock">0:00</div>
       </div>
     </div>
-
-    <p class="brew-note" id="brewNote"></p>
-
-    <div class="brew-time">
-      <div class="bt-label">Brew time</div>
-      <div class="clock" id="clock">0:00</div>
-      <div class="bt-target" id="brewTarget">target —</div>
+    <div class="ring-foot">
+      <span class="step-lbl" id="stepLabel">Phase time</span>
+      <span id="stepClock">0:00 / 0:45</span>
     </div>
-
-    <div class="timeline">
-      <div class="tl-track">
-        <div class="tl-fill" id="tlFill"></div>
-        <div class="tl-ticks" id="tlTicks"></div>
-        <div class="tl-knob" id="tlKnob"></div>
+    <div class="prompt-card" id="promptCard">
+      <div class="prompt-action" id="promptAction">Ready to brew</div>
+      <div class="prompt-detail" id="promptDetail"></div>
+    </div>
+    <div class="water-wrap" id="waterSection" style="display:none">
+      <div class="water-lbl" id="waterLbl"></div>
+      <div class="water-bar"><div class="water-fill" id="waterFill" style="width:0%"></div></div>
+    </div>
+    <div class="scale-live" id="scaleLive" style="display:none">
+      <div class="scale-connection" id="scaleConnection">Waiting for scale</div>
+      <div role="status" aria-live="polite" aria-atomic="true">
+        <div class="scale-heading"><h1 class="scale-action" id="scaleAction">Bloom</h1><span class="scale-stage" id="scaleStage">Ready</span></div>
+        <p class="scale-guidance" id="scaleGuidance">First pour starts the timer.</p>
       </div>
-      <div class="tl-labels" id="tlLabels"></div>
+      <div class="scale-measurements" id="scaleMeasurements" style="display:none">
+        <div class="scale-ring">
+          <svg viewBox="0 0 200 200" role="img" aria-label="Weight progress" aria-describedby="scaleWeight scaleTarget">
+            <circle class="ring-track" cx="100" cy="100" r="88"/>
+            <circle class="ring-fill" id="scaleWeightRing" cx="100" cy="100" r="88" stroke-dasharray="552.9" stroke-dashoffset="552.9"/>
+          </svg>
+          <div class="scale-ring-centre"><div class="scale-number-label" id="scaleTargetLabel">Scale weight</div><div class="scale-reading" id="scaleWeight">—</div><div class="scale-target" id="scaleTarget">target —</div><div class="scale-remaining" id="scaleRemaining"></div></div>
+        </div>
+        <div class="scale-phase-time">
+          <div class="scale-time-heading"><div class="scale-number-label" id="scaleTimeLabel">Phase time</div><div class="scale-ratio"><span class="scale-reading" id="scalePhaseTime">0:00</span><span class="scale-target" id="scaleTimeTarget">/ —</span></div></div>
+          <progress class="scale-time-progress" id="scaleTimeProgress" max="1" value="0" aria-labelledby="scaleTimeLabel" aria-describedby="scalePhaseTime scaleTimeTarget"></progress>
+        </div>
+      </div>
+      <div class="scale-footer">
+        <div class="scale-connection">Brew time</div><div class="scale-clock" id="scaleClock">0:00</div>
+      </div>
+      <div class="scale-next" id="scaleNext">
+        <div><div class="scale-next-label" id="scaleNextLabel">Next</div><div class="scale-next-value" id="scaleNextValue">—</div></div>
+        <div class="scale-next-meta"><div id="scaleNextTarget"></div><div id="scaleNextAt"></div></div>
+      </div>
+      <details class="scale-plan" id="scalePlan">
+        <summary id="scalePlanSummary">View recipe</summary>
+        <ol id="scalePlanList"></ol>
+      </details>
     </div>
-
-    <ol class="steps" id="stepList"></ol>
-
+    <div class="upcoming" id="upcomingSection">
+      <div class="up-title">Coming up</div>
+      <div class="up-row" id="upRow"></div>
+    </div>
     <div class="brew-actions">
       <button class="btn-go" id="brewBtn" onclick="handleBrewBtn()">Start</button>
-      <div class="brew-links">
-        <button class="btn-link" onclick="restartBrew()">Restart</button>
-        <button class="btn-link" onclick="backToSettings()">Settings</button>
-      </div>
+      <button class="btn-secondary" onclick="backToSettings()">Settings</button>
     </div>
   </div>
 
@@ -546,7 +589,7 @@ let noSleep=null, audioCtx=null, currentScreen='settings';
 const $ = id => document.getElementById(id);
 // One request at a time for the ESP32's single-client server, including commands.
 const scale = { base:'', connected:false, data:null, poll:null, pending:null, command:false, finding:false, session:null, armPending:null, armed:false, generation:0, weighing:false, phaseIndex:0, phaseReached:false };
-let scaleSampleAt=0;
+let scaleSampleAt=0, scaleTimeFrame=null;
 
 function loadSettings() {
   try {
@@ -592,7 +635,7 @@ function applySettings() {
   document.querySelectorAll('#brewModeSeg .seg-btn').forEach(b => b.classList.toggle('sel', b.dataset.val === settings.brewMode));
   $('beansGroup').style.display = beansAvailable() ? 'block' : 'none';
   // Only the unpaired state needs an instruction; a paired scale reports itself.
-  if(!settings.scaleId && !settings.scaleAddress) setScaleStatus('Pair your scale in More → WiFi scale.');
+  if(!settings.scaleId && !settings.scaleAddress) setScaleStatus('Pair your scale in ⋯ → WiFi scale.');
   renderBeans();
   $('scaleAddress').value = settings.scaleAddress;
   if(!scale.finding) $('scaleFindBtn').textContent = findScaleLabel();
@@ -729,16 +772,27 @@ function checkScaleData(data) {
 }
 
 function scaleError(error) {
+  cancelAnimationFrame(scaleTimeFrame); scaleTimeFrame=null;
   scale.connected=false; scale.data=null;
   const message = error.name==='AbortError' || error instanceof TypeError
     ? 'Waiting for CoffeeScale… Turn it on, keep your phone on the same WiFi, and allow Chrome’s local network permission. Reconnecting automatically.'
     : error.message;
   setScaleStatus(message);
   renderBeans();
-  if(settings.brewMode==='scale' && currentScreen==='brew') {
-    $('targetWeight').textContent = '—';
-    $('brewNote').textContent = message + (scale.session !== null || scale.armPending !== null ? ' The scale keeps its timer; guidance resumes when connected.' : '');
-  }
+  $('scaleWeight').textContent = '—';
+  scaleText('scaleGuidance',message + (scale.session !== null || scale.armPending !== null ? ' The scale keeps its timer; guidance resumes when connected.' : ''));
+  $('scaleLive').className='scale-live is-wait';
+  scaleText('scaleStage','Connection lost');
+  scaleText('scaleAction',started && !finished ? 'Stop pouring' : 'Waiting for scale');
+  scaleText('scaleConnection','Reconnecting over WiFi');
+  scaleText('scaleClock','—');
+  scaleText('scalePhaseTime','—');
+  scaleText('scaleRemaining','Live weight unavailable');
+  scaleText('scaleNextLabel','Connection');
+  scaleText('scaleNextValue','Guidance resumes when the scale reconnects.');
+  $('scaleWeightRing').style.strokeDashoffset=RING_CIRC;
+  $('scaleTimeProgress').value=0;
+  scaleText('scaleNextTarget',''); scaleText('scaleNextAt','');
 }
 
 async function connectScale(address=$('scaleAddress').value.trim()) {
@@ -805,26 +859,28 @@ function acceptScaleData(data) {
   if(scale.armPending !== null) {
     if(data.pour_mode && data.pour_id !== scale.armPending) {
       scale.session=data.pour_id; scale.armed=data.pour_armed;
-      acquireWakeLock();
-    }
+      $('brewBtn').textContent='Cancel'; acquireWakeLock();
+    } else $('brewBtn').textContent='Tare & start';
     scale.armPending=null;
-    updateBrewButton();
   }
   if(scale.session !== null) {
     if(!data.pour_mode || data.pour_id !== scale.session) {
       scale.session=null; scale.armed=false; started=false; finished=false;
       scale.phaseIndex=0; scale.phaseReached=false;
-      releaseWakeLock();
+      releaseWakeLock(); $('brewBtn').textContent='Tare & start';
       elapsed=0; $('clock').textContent='0:00'; $('clock').className='clock';
+      $('phaseLbl').textContent='Ready'; setTarget(totalWater());
+      $('promptAction').textContent='Set up the V60 again';
+      $('promptDetail').textContent='The previous scale session is no longer active.';
+      $('waterSection').style.display='none'; renderUpcoming(-1);
       scale.notice='Scale reset. Tare & start for a new brew.';
-      updateBrewButton();
       renderScaleGuidance();
       return;
     }
     if(data.running && !started) {
       scale.armed=false; started=true; currentCue=-1;
-      $('clock').className='clock';
-      updateBrewButton();
+      $('clock').className='clock running'; $('brewBtn').textContent='Finish brew';
+      $('waterSection').style.display='block';
     }
     if(started && !finished) tick();
   }
@@ -855,7 +911,7 @@ async function syncWeighing() {
     renderBeans();
     if(scale.connected) scheduleScalePoll();
     else if(settings.scaleAddress || scale.base) await connectScale(settings.scaleAddress || scale.base);
-    else setScaleStatus('Pair your scale in More → WiFi scale.');
+    else setScaleStatus('Pair your scale in ⋯ → WiFi scale.');
   } else if(settings.brewMode !== 'scale') {
     // Leaving the main screen stops weighing; a scale brew keeps its own poll.
     clearTimeout(scale.poll); scale.generation++; scale.connected=false; scale.data=null;
@@ -894,41 +950,93 @@ function scalePhase(t,weight) {
     added:Math.max(0,weight-previous),next:cues[index+1] || null};
 }
 
+function renderScaleTimeProgress(phase) {
+  cancelAnimationFrame(scaleTimeFrame); scaleTimeFrame=null;
+  const active=started && !finished && scale.session!==null;
+  const seconds=active ? Math.max(0,scale.data.timer_s-phase.cue.at) : phase.elapsed;
+  const animate=active && scale.data.running && seconds<phase.seconds;
+  const draw=now=>{
+    scaleTimeFrame=null;
+    if(settings.brewMode!=='scale' || !scale.connected || !scale.data) return;
+    // Only the fill interpolates. Phase changes still use the board's clock.
+    // Freeze after a short gap instead of inventing time through a lost connection.
+    const sinceSample=animate ? Math.min(1,Math.max(0,(now-scaleSampleAt)/1000)) : 0;
+    const value=Math.min(1,(seconds+sinceSample)/phase.seconds);
+    $('scaleTimeProgress').value=value;
+    if(animate && value<1 && sinceSample<1) scaleTimeFrame=requestAnimationFrame(draw);
+  };
+  draw(performance.now());
+}
 
-
-// The scale feeds the same board as the manual timer: it owns the ring's
-// number (the live weight) and the one line of guidance under it.
 function renderScaleGuidance() {
   if(settings.brewMode!=='scale' || !cues.length) return;
   const preparing=!started && !scale.armed && !finished;
-  $('ringCaption').textContent='scale weight';
-  if(!scale.connected || !scale.data) {
-    $('targetWeight').textContent='—';
-    $('brewNote').textContent='Waiting for the scale — check that it is on and on this network.';
-    updateBrewButton();
-    return;
-  }
-  const weight=Math.max(0,Math.round(scale.data.g*10)/10);
+  $('scaleMeasurements').style.display='block';
+  scaleText('scaleClock',fmt(elapsed));
+  scaleText('scaleConnection',scale.connected ? 'Scale connected · WiFi' : 'Waiting for scale');
+  if(!scale.connected || !scale.data) { scaleError(new TypeError('offline')); return; }
+  const weight=Math.max(0,Math.round(scale.data.g*10)/10), total=totalWater();
   const phase=scalePhase(elapsed,weight), {cue,amount,seconds}=phase;
   const pouring=amount>0 && !scale.phaseReached;
   const overtime=Math.max(0,phase.elapsed-seconds);
+  let kind=pouring ? 'pour' : amount>0 ? 'wait' : 'drain';
+  let stage=pouring ? 'Pour' : amount>0 ? 'Wait' : 'Drain';
+  // The heading is the instruction, not the phase name: "Pour to 96g" tells you
+  // what to do, "Pour 2" only tells you where you are.
   const isPourCue=/^Pour to /.test(cue.action);
+  let action;
+  let detail='';
+  let note=pouring ? `${Math.ceil(cue.water-weight)}g to go` : weight>cue.water+2 ? `${(weight-cue.water).toFixed(1)}g over target` : 'Target reached';
+  let nextLabel='Next', nextValue=phase.next ? scalePhaseName(phase.next) : 'Finish brew';
+  let nextTarget=phase.next && phase.next.phase!=='Done' && phase.next.water>cue.water ? `${phase.next.water}g` : '';
+  let nextAt=phase.next ? `in ${fmt(Math.max(0,phase.next.at-elapsed))}` : '';
+  if(phase.next && phase.next.phase==='Done') { nextLabel='Suggested finish'; nextValue=fmt(phase.next.at); }
+  if(phase.next && phase.next.at<=elapsed && pouring) nextValue='Next phase is due · finish this pour first';
+  if(overtime && pouring) { stage='Pour · Late'; note+=` · ${fmt(overtime)} over time`; }
+  if(preparing || scale.armed) {
+    kind='pour'; stage=preparing ? 'Ready' : 'Pour';
+    action=preparing ? 'Ready when you are' : cue.action;
+    detail=scale.notice || (preparing ? 'Tare & start when ready.' : 'First pour starts the timer.');
+    note='';
+  } else if(finished) {
+    kind='done'; stage=scale.cancelled ? 'Cancelled' : 'Finished';
+    action=scale.cancelled ? 'Brew cancelled' : 'Brew complete'; detail=''; note='';
+    nextLabel='Recipe'; nextValue=`${settings.dose}g coffee · ${total}g water`;
+    nextTarget=''; nextAt='';
+  } else if(!scale.data.running) {
+    kind='wait'; stage='Timer stopped'; action='Timer stopped'; detail='Finish brew to end this session.';
+  } else if(cue.phase==='Draw down') {
+    action='Let it draw down'; detail=''; note='';
+  } else if(!isPourCue) {
+    action=cue.action; detail=''; note='';
+  } else if(pouring) {
+    action=`Pour to ${cue.water}g`; detail='';
+  } else if(amount>0) {
+    action=`Hold ${cue.water}g`; detail='';
+  } else {
+    action='Let it draw down'; detail=''; note='';
+  }
+  $('scaleLive').className=`scale-live is-${kind}`;
+  $('brewBtn').className=preparing || finished || !amount ? 'btn-go' : 'btn-stop';
+  scaleText('scaleStage',stage); scaleText('scaleAction',action); scaleText('scaleGuidance',detail);
+  scaleText('scaleTargetLabel','Scale weight');
+  scaleText('scaleWeight',preparing ? '—' : weight.toFixed(1));
+  scaleText('scaleTarget',preparing ? 'target —' : `target ${cue.water}g`);
+  scaleText('scalePhaseTime',fmt(phase.elapsed)); scaleText('scaleTimeTarget',`/ ${fmt(seconds)}`);
+  scaleText('scaleTimeLabel','Phase time');
+  scaleText('scaleRemaining',note); scaleText('scaleNextLabel',nextLabel); scaleText('scaleNextValue',nextValue);
+  scaleText('scaleNextTarget',nextTarget); scaleText('scaleNextAt',nextAt);
+  $('scaleWeightRing').style.strokeDashoffset=RING_CIRC*(1-(preparing ? 0 : Math.min(1,weight/Math.max(1,cue.water))));
+  renderScaleTimeProgress(phase);
+  showCue(cue,total);
+  $('waterLbl').textContent=`Water: ${weight.toFixed(1)}g / ${total}g`;
+  $('waterFill').style.width=Math.min(100,Math.round(weight/total*100))+'%';
+}
 
-  $('targetWeight').textContent=weight.toFixed(1);
-
-  let note='';
-  if(preparing) note=scale.notice || 'Tare & start when ready.';
-  else if(scale.armed) note='First pour starts the timer.';
-  else if(finished) note=scale.cancelled ? 'Brew cancelled.' : 'Brew complete.';
-  else if(!scale.data.running) note='Timer stopped — finish the brew to end this session.';
-  else if(cue.phase==='Draw down' || (!isPourCue && amount<=0)) note='Let it draw down.';
-  else if(!isPourCue) note=cue.action;
-  else if(pouring) note=`${Math.ceil(cue.water-weight)} g to go`;
-  else if(weight>cue.water+2) note=`${(weight-cue.water).toFixed(1)} g over target`;
-  else note='Target reached';
-  if(overtime && pouring) note+=` · ${fmt(overtime)} over time`;
-  $('brewNote').textContent=note;
-  updateBrewButton();
+function scalePhaseName(cue) {
+  if(cue.phase==='Draw down') return 'Drawdown';
+  if(cue.phase==='Stir & swirl') return 'Wait';
+  return cue.phase.split(' · ')[0];
 }
 
 async function endScaleBrew() {
@@ -937,8 +1045,7 @@ async function endScaleBrew() {
   catch(e) { scaleError(e); return false; }
   scale.cancelled=!started;
   scale.session=null; scale.armPending=null; scale.armed=false; started=false; finished=true;
-  $('clock').className='clock done-c'; releaseWakeLock();
-  updateBrewButton();
+  $('brewBtn').textContent='Brew again'; $('clock').className='clock done-c'; releaseWakeLock();
   renderScaleGuidance();
   return true;
 }
@@ -1218,133 +1325,29 @@ function buildCues() { return METHODS[settings.method].build(settings.dose, METH
 function fmt(s) { return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
 function getCueIdx(t) { let i=0; for(let j=0;j<cues.length;j++){ if(t>=cues[j].at) i=j; } return i; }
 
-const STEP_CIRC = 62.8; // circumference of a step marker ring (2π × r, r=10)
-// --- The brew board ---
-// One board drives both brew modes: the cues are the steps, the clock is the
-// brew time, and a connected scale only changes what the ring shows.
-let boardRows = [], boardCurrent = -1;
-
-function brewFinish() { return cues.length ? cues[cues.length-1].at : 0; }
-
-// The recipe as rows. A pour is a cue that asks for water; the bloom counts as
-// the first pour, so the list reads BLOOM, POUR 1, POUR 2.
-function stepRows() {
-  const rows = cues.slice(0, Math.max(0, cues.length-1)).map((c,i) => ({
-    cue:c, index:i,
-    isPour:/^Pour to /.test(c.action),
-    isBloom:/^Bloom/.test(c.phase),
-    label:c.phase, grams:null, pourIndex:0, end:c.at
-  }));
-  const hasBloom = rows.some(r => r.isBloom);
-  let n = 0;
-  rows.forEach(r => {
-    if(r.isPour) {
-      if(r.isBloom) { r.label = 'Bloom'; r.pourIndex = 1; }
-      else { n++; r.label = 'Pour ' + n; r.pourIndex = hasBloom ? n+1 : n; }
-      r.grams = r.cue.water;
-    }
-    r.end = rows[r.index+1] ? rows[r.index+1].cue.at : r.cue.at + 60;
-  });
-  return rows;
-}
-
-// Which step the brew is on: the clock decides in manual mode, the scale's
-// weight decides in scale mode.
-function currentStep() {
-  if(!cues.length) return 0;
-  const last = Math.max(0, cues.length-2);
-  if(settings.brewMode==='scale') return Math.min(Math.max(0, scale.phaseIndex), last);
-  return Math.min(getCueIdx(elapsed), last);
-}
-
-function methodLabel() {
-  if(settings.method==='custom' && settings.customBase && settings.customBase.startsWith('saved:')) return settings.customBase.slice(6);
-  return METHODS[settings.method].name;
-}
-
-// The list of steps: done, now, later.
-function buildSteps() {
-  boardRows = stepRows();
-  const current = currentStep();
-  boardCurrent = current;
-  $('stepList').innerHTML = boardRows.map(r => {
-    const state = r.index < current ? 'done' : r.index === current ? 'current' : 'upcoming';
-    const mark = state === 'done'
-      ? '<span class="st-done"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6.5"/></svg></span>'
-      : state === 'current'
-        ? '<svg class="st-ring" viewBox="0 0 24 24"><circle class="st-arc-track" cx="12" cy="12" r="10"/><circle class="st-arc" cx="12" cy="12" r="10" stroke-dasharray="62.8" stroke-dashoffset="62.8"/></svg>'
-        : '<span class="st-todo"></span>';
-    return `<li class="st-row ${state}" data-i="${r.index}">${mark}<span class="st-label">${r.label}</span>`
-      + `<span class="st-meta"><span class="st-grams">${r.grams!=null ? r.grams+' g' : '&mdash;'}</span><span class="st-phase"></span></span></li>`;
-  }).join('');
-  buildTimeline();
-}
-
-// The brew timeline: the whole recipe, with a tick per step and a knob for now.
-function buildTimeline() {
-  const finish = brewFinish();
-  $('tlTicks').innerHTML = boardRows.map(r =>
-    `<span class="tl-tick" style="left:${finish>0 ? (r.cue.at/finish*100).toFixed(2) : '0'}%"></span>`).join('');
-  const labs = ['<span class="tl-lab left">0:00</span>'];
-  for(let m=60; finish>0 && m<finish; m+=60) {
-    const p = m/finish*100;
-    if(p > 86) continue;   // too close to the finish label to read
-    labs.push(`<span class="tl-lab" style="left:${p.toFixed(2)}%">${fmt(m)}</span>`);
-  }
-  labs.push(`<span class="tl-lab right">${fmt(finish)}</span>`);
-  $('tlLabels').innerHTML = labs.join('');
-}
-
-// Everything on the board that both brew modes share.
-function renderBoard(t) {
+function updateRing(t) {
   if(!cues.length) return;
-  // The scale moves the step forward, so it goes first.
-  if(settings.brewMode==='scale') renderScaleGuidance();
-  const current = currentStep();
-  if(current !== boardCurrent) buildSteps();
-  const row = boardRows[Math.min(current, boardRows.length-1)];
-  if(!row) return;
-  const finish = brewFinish();
-
-  $('brewTitle').textContent = 'V60 · ' + methodLabel();
-  $('brewSub').textContent = subtitleFor(row);
-  $('clock').textContent = fmt(t);
-  $('brewTarget').textContent = 'target ' + fmt(finish);
-
-  const fill = settings.brewMode==='scale' ? scaleRingFill(row) : stepFill(t, row);
-  $('ringFill').style.strokeDashoffset = RING_CIRC * (1 - fill);
-  $('ringFill').classList.toggle('done-ring', finished);
-
-  // The current step keeps its own clock, on its own row.
-  const cell = $('stepList').querySelector('.st-row.current .st-phase');
-  if(cell) cell.textContent = `${fmt(Math.max(0, t-row.cue.at))} / ${fmt(Math.max(1, row.end-row.cue.at))}`;
-  const arc = $('stepList').querySelector('.st-row.current .st-arc');
-  if(arc) arc.style.strokeDashoffset = STEP_CIRC * (1 - stepFill(t, row));
-
-  const p = finish>0 ? Math.max(0, Math.min(1, t/finish)) : 0;
-  $('tlFill').style.width = (p*100)+'%';
-  $('tlKnob').style.left = (p*100)+'%';
-
-  if(settings.brewMode!=='scale') renderManualBoard(t);
+  const idx = getCueIdx(t);
+  const start = cues[idx].at;
+  const end = idx < cues.length - 1 ? cues[idx + 1].at : start + 1;
+  const duration = end - start;
+  const progress = duration > 0 ? Math.max(0, Math.min(1, (t - start) / duration)) : 1;
+  const offset = RING_CIRC * (1 - progress);
+  const ring = $('ringFill');
+  if(ring) {
+    ring.style.strokeDashoffset = offset;
+    ring.classList.toggle('done-ring', idx === cues.length - 1);
+  }
 }
 
-// The manual timer has no weight to show, so the ring counts the step.
-function stepFill(t, row) {
-  const dur = Math.max(1, row.end - row.cue.at);
-  return Math.max(0, Math.min(1, (t - row.cue.at)/dur));
-}
-// With a scale, the ring is the weight against the target.
-function scaleRingFill(row) {
-  if(!scale.connected || !scale.data) return 0;
-  return Math.max(0, Math.min(1, Math.max(0, scale.data.g) / Math.max(1, row.cue.water)));
-}
-
-function subtitleFor(row) {
-  if(!row) return 'Ready';
-  if(!started && !finished) return 'Ready';
-  const pours = boardRows.filter(r => r.isPour).length;
-  if(row.isPour) return `${row.label} · ${row.pourIndex} of ${pours}`;
-  return `${row.label} · Finish`;
+// The ring fills across the current step; this is that progress in numbers.
+function updateStepReadout(t) {
+  if(!cues.length) return;
+  const steps = cues.length - 1;
+  const idx = Math.min(getCueIdx(t), steps - 1);
+  const start = cues[idx].at;
+  const end = idx < cues.length - 1 ? cues[idx + 1].at : start + 1;
+  $('stepClock').textContent = `${fmt(Math.max(0, t - start))} / ${fmt(end - start)}`;
 }
 
 function getAudioCtx() {
@@ -1380,58 +1383,78 @@ function releaseWakeLock() {
   try { if(noSleep) noSleep.disable(); } catch(e) {}
 }
 
-// The manual timer has no weight to show, so the big number is what the scale
-// should read now, and the one quiet line is the step's instruction.
-function renderManualBoard(t) {
-  const row = boardRows[Math.min(currentStep(), boardRows.length-1)];
-  if(!row) return;
-  $('targetWeight').textContent = row.cue.water;
-  $('ringCaption').textContent = 'target';
-  $('brewNote').textContent = started ? row.cue.detail : 'Filter rinsed, bed levelled. Hit start when ready.';
+// The big number inside the ring is "what the scale should read now" — the
+// cumulative target for the current cue. Keep the unit span out of the numerals.
+function setTarget(g) { $('targetWeight').innerHTML = `${g}<span class="unit">g</span>`; }
+
+function showCue(c, total) {
+  setTarget(c.water);
+  $('promptAction').textContent = c.action;
+  $('promptDetail').textContent = c.detail;
+  $('phaseLbl').textContent = c.phase;
+  // Colour the prompt by phase so the current step is obvious at a glance.
+  $('promptCard').style.setProperty('--phase-color', phaseColor(c));
+  $('waterLbl').textContent = `Water ${total}g`;
+  $('waterFill').style.width = Math.round((c.water/total)*100) + '%';
+}
+function phaseColor(c) {
+  if(c.phase === 'Done') return 'var(--ok-text)';
+  if(c.phase === 'Draw down') return 'var(--warn)';
+  return 'var(--ring)';
 }
 
-// The one button is always the next thing to do.
-function updateBrewButton() {
-  const btn = $('brewBtn');
-  if(!btn) return;
-  if(settings.brewMode==='scale') {
-    if(finished) { btn.textContent='Brew again'; btn.className='btn-go'; }
-    else if(started) { btn.textContent='Finish brew'; btn.className='btn-stop'; }
-    else if(scale.session !== null || scale.armPending !== null) { btn.textContent='Cancel'; btn.className='btn-secondary'; }
-    else { btn.textContent='Tare & start'; btn.className='btn-go'; }
-    return;
-  }
-  if(finished) { btn.textContent='Brew again'; btn.className='btn-go'; return; }
-  if(!started) {
-    const first = boardRows[0];
-    btn.textContent = first ? 'Start ' + first.label.toLowerCase() : 'Start';
-    btn.className='btn-go';
-    return;
-  }
-  btn.textContent = paused ? 'Resume' : 'Pause';
-  btn.className='btn-go';
+function renderUpcoming(t) {
+  const up = cues.filter(c=>c.at>t).slice(0,4);
+  const sec = $('upcomingSection');
+  if(!up.length) { sec.style.display='none'; return; }
+  sec.style.display='block';
+  $('upRow').innerHTML = up.map((c,i) =>
+    `<div class="up-item${i===0?' next':''}"><div class="up-time">${fmt(c.at)}</div><div class="up-name">${c.phase}</div></div>`
+  ).join('');
 }
 
 async function startBrew() {
   if(scale.finding || scale.command) return;
   if(!(await endScaleBrew())) return;
   cues = buildCues();
+  const total = totalWater();
+  $('brewTitle').textContent = `Brewing — ${METHODS[settings.method].name}`;
   elapsed=0; started=false; finished=false; paused=false; fromBrew=false; currentCue=0;
   scale.phaseIndex=0; scale.phaseReached=false;
   clearInterval(interval); releaseWakeLock();
   $('clock').textContent='0:00';
   $('clock').className='clock';
+  // The hero number is always "what the scale should read now": before the
+  // brew that is the first pour, not the whole recipe.
+  setTarget(cues[0].water);
   const ring = $('ringFill');
   if(ring) { ring.style.strokeDashoffset = RING_CIRC; ring.classList.remove('done-ring'); }
-  boardCurrent=-1;
-  buildSteps();
-  renderBoard(0);
-  updateBrewButton();
-  showScreen('brew');
-  if(settings.brewMode==='scale') {
+  $('phaseLbl').textContent='Ready';
+  $('promptAction').textContent=`${settings.dose}g coffee · ${total}g water`;
+  $('promptDetail').textContent='Filter rinsed, bed levelled. Hit start when ready.';
+  $('waterSection').style.display='none';
+  $('brewBtn').textContent='Start';
+  $('brewBtn').className='btn-go';
+  $('pauseBtn').style.display='none';
+  const withScale=settings.brewMode==='scale';
+  $('screenBrew').classList.toggle('scale-brew',withScale);
+  $('scaleLive').style.display=withScale ? 'block' : 'none';
+  if(withScale) {
+    $('brewTitle').textContent=METHODS[settings.method].name + ' · scale brew';
+    $('brewBtn').textContent='Tare & start';
     scale.notice=''; scale.cancelled=false;
-    if(!scale.base && settings.scaleAddress) await connectScale();
+    $('scalePlan').open=false;
+    $('scalePlanSummary').textContent=`View recipe · ${settings.dose}g coffee / ${total}g water`;
+    $('scalePlanList').innerHTML=cues.filter(c=>c.phase!=='Done').map((c,i)=>{
+      const end=cues[i+1] ? cues[i+1].at : c.at;
+      return `<li><time>${fmt(c.at)}</time><span>${scalePhaseName(c)}<br>${fmt(end-c.at)} phase</span><span>${c.water}g</span></li>`;
+    }).join('');
+    renderScaleGuidance();
   }
+  renderUpcoming(-1);
+  updateStepReadout(0);
+  showScreen('brew');
+  if(withScale && !scale.base && settings.scaleAddress) await connectScale();
 }
 
 function tick() {
@@ -1441,18 +1464,30 @@ function tick() {
     if(!scale.connected || !scale.data || scale.session===null) return;
     elapsed=Math.floor(scale.data.timer_s);
   } else elapsed = Math.round((Date.now() - startTs) / 1000);
+  $('clock').textContent = fmt(elapsed);
+  updateRing(elapsed);
+  updateStepReadout(elapsed);
+  const total = totalWater();
   const idx = getCueIdx(elapsed);
   if(idx !== currentCue) {
     currentCue = idx;
+    showCue(cues[idx], total);
+    const card = $('promptCard');
+    card.classList.add('flash');
+    setTimeout(() => card.classList.remove('flash'), 700);
     const isDone = idx === cues.length-1;
     if(settings.brewMode!=='scale') beep(isDone ? 'done' : 'cue');
     if(isDone && settings.brewMode!=='scale') {
       clearInterval(interval); finished=true;
       $('clock').className = 'clock done-c';
+      $('brewBtn').textContent = 'Brew again';
+      $('brewBtn').className = 'btn-secondary';
+      $('pauseBtn').style.display='none';
       releaseWakeLock();
     }
   }
-  renderBoard(elapsed);
+  renderUpcoming(elapsed);
+  if(settings.brewMode==='scale') renderScaleGuidance();
 }
 
 async function handleBrewBtn() {
@@ -1462,56 +1497,58 @@ async function handleBrewBtn() {
     if(scale.session !== null || scale.armPending !== null) { await endScaleBrew(); return; }
     if(!scale.connected) { renderScaleGuidance(); return; }
     await acquireWakeLock();
-    scale.notice='';
-    $('brewNote').textContent='Keep the V60 still for a moment.';
+    scale.notice=''; scaleText('scaleAction','Zeroing the scale');
+    scaleText('scaleGuidance','Keep the V60 still for a moment.');
     scale.armPending=scale.data.pour_id;
-    updateBrewButton();
+    $('brewBtn').textContent='Cancel'; $('brewBtn').className='btn-secondary';
     try {
       elapsed=0; currentCue=0; $('clock').textContent='0:00';
       const data=checkScaleData(await scaleCommand('/api/pour/arm'));
       if(!data.pour_mode || (!data.pour_armed && !data.running)) throw new Error('Scale did not arm. Try again.');
       scale.session=data.pour_id; scale.armPending=null; scale.armed=data.pour_armed;
-      updateBrewButton();
+      $('brewBtn').textContent='Cancel'; $('brewBtn').className='btn-secondary';
       acceptScaleData(data);
-    } catch(e) { scaleError(e); releaseWakeLock(); updateBrewButton(); }
+    } catch(e) { scaleError(e); releaseWakeLock(); }
     return;
   }
   if(!started) {
     started = true;
     getAudioCtx();
     await acquireWakeLock();
+    const total = totalWater();
+    $('clock').className='clock running';
+    showCue(cues[0], total);
+    $('waterSection').style.display='block';
+    $('brewBtn').textContent='Reset';
+    $('brewBtn').className='btn-secondary';
+    $('pauseBtn').style.display='';
+    $('pauseBtn').textContent='Pause';
     paused=false;
-    beep('cue');
+    renderUpcoming(0); beep('cue');
     startTs = Date.now();
     interval = setInterval(tick, 1000);
-    renderBoard(0);
-    updateBrewButton();
-    return;
+  } else {
+    clearInterval(interval); paused=false;
+    $('pauseBtn').style.display='none';
+    startBrew();
   }
-  handlePauseBtn();
 }
 
 function handlePauseBtn() {
   if(!started || finished) return;
   paused = !paused;
+  const btn = $('pauseBtn');
   if(paused) {
     clearInterval(interval); interval=null;
+    btn.textContent='Resume';
     $('clock').className='clock';
   } else {
     startTs = Date.now() - elapsed*1000; // resume the wall clock where it paused
     interval = setInterval(tick, 1000);
-    $('clock').className='clock';
+    btn.textContent='Pause';
+    $('clock').className='clock running';
     acquireWakeLock();
   }
-  updateBrewButton();
-}
-
-// Restart the same recipe from the top.
-async function restartBrew() {
-  if(settings.brewMode==='scale' && !(await endScaleBrew())) return;
-  clearInterval(interval); interval=null;
-  releaseWakeLock();
-  startBrew();
 }
 
 async function backToSettings() {
@@ -1519,6 +1556,7 @@ async function backToSettings() {
   if(started && !finished && !paused) {
     clearInterval(interval); interval=null;
     paused = true;
+    $('pauseBtn').textContent = 'Resume';
     $('clock').className = 'clock';
     releaseWakeLock();
   }
@@ -1530,6 +1568,7 @@ function brewToBarista() {
   if(settings.brewMode!=='scale' && started && !finished && !paused) {
     clearInterval(interval); interval=null;
     paused = true;
+    $('pauseBtn').textContent = 'Resume';
     $('clock').className = 'clock';
     releaseWakeLock();
   }
