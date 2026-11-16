@@ -146,8 +146,6 @@ test('displays cumulative scale weight and phase time against their targets', as
   assert.equal(p.elements.scalePhaseTime.textContent,'0:10');
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:30');
   assert.match(p.elements.scaleStage.textContent,/Pour/);
-  assert.equal(p.elements.scaleNextTarget.textContent,'166g');
-  assert.equal(p.elements.scaleNextAt.textContent,'in 0:20');
   assert.ok(Math.abs(p.elements.scaleWeightRing.style.strokeDashoffset-552.9*(1-100/108))<0.001);
   assert.equal(p.elements.scaleTimeProgress.value,10/30);
 });
@@ -193,7 +191,6 @@ test('late pours keep their phase target and show time exceeding its allotted in
   assert.equal(p.elements.scalePhaseTime.textContent,'0:50');
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45');
   assert.match(p.elements.scaleRemaining.textContent,/0:05 over time/);
-  assert.match(p.elements.scaleNextValue.textContent,/finish this pour first/);
   assert.equal(p.elements.scaleTimeProgress.value,1);
   assert.ok(p.elements.scaleWeightRing.style.strokeDashoffset>0);
   feed(p,{g:30,timer_s:52,running:true,pour_mode:true,pour_id:7});
@@ -260,6 +257,13 @@ test('Hoffmann keeps recipe timing and hides the stir step in the plan list', as
   feed(p,{g:total,timer_s:195,running:true,pour_mode:true,pour_id:7});
   assert.equal(p.elements.scaleAction.textContent,'Let it draw down');
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:15');
+});
+
+test('the brew screen drops the next-phase card and closes with the recipe link', () => {
+  assert.doesNotMatch(html, /scale-next|scaleNext/);
+  // The plan disclosure follows the action row, so it is the last thing on the screen.
+  assert.ok(html.indexOf('id="scalePlan"') > html.indexOf('class="brew-actions"'));
+  assert.ok(html.indexOf('id="scalePlan"') > html.indexOf('id="stepList"'));
 });
 
 test('disconnection blanks live weight and phase time, then catches up on reconnect', async () => {

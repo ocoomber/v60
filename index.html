@@ -157,7 +157,7 @@
   .scale-row { display:flex; gap:8px; margin-top:10px; }
   .scale-row input { min-width:0; flex:1; padding:10px; border:0.5px solid var(--border2); border-radius:var(--radius); background:var(--bg); color:var(--text); font-size:16px; }
   .scale-status { font-size:12px; color:var(--text2); line-height:1.5; margin-top:8px; }
-  #screenBrew.scale-brew { gap:14px; overflow-y:auto; overflow-x:hidden; }
+  #screenBrew.scale-brew { gap:8px; overflow-y:auto; overflow-x:hidden; }
   .scale-brew > .ring-outer, .scale-brew > .ring-foot, .scale-brew > .prompt-card,
   .scale-brew > .water-wrap { display:none !important; }
   .scale-brew > .brew-actions > :first-child { flex:1; }
@@ -170,13 +170,13 @@
   .scale-live.is-wait { --step-color:var(--warn); }
   .scale-live.is-drain { --step-color:var(--text2); }
   .scale-live.is-done { --step-color:var(--ok-text); }
-  .scale-heading { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-top:16px; }
+  .scale-heading { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-top:10px; }
   .scale-stage { color:var(--step-color); font-size:19px; font-weight:600; }
   .scale-action { font-family:var(--font-display); font-size:24px; font-weight:600; line-height:1.2; letter-spacing:-.5px; }
-  .scale-guidance { font-size:13px; line-height:1.45; color:var(--text2); margin-top:8px; }
+  .scale-guidance { font-size:13px; line-height:1.45; color:var(--text2); margin-top:6px; }
   .scale-guidance:empty { display:none; }
-  .scale-measurements { margin-top:16px; }
-  .scale-ring { position:relative; width:min(285px,72vw); aspect-ratio:1; margin:0 auto; }
+  .scale-measurements { margin-top:12px; }
+  .scale-ring { position:relative; width:min(200px,56vw); aspect-ratio:1; margin:0 auto; }
   .scale-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
   .scale-ring .ring-fill { stroke:var(--step-color); transition:stroke-dashoffset .2s linear; }
   .scale-ring-centre { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
@@ -184,27 +184,26 @@
   .scale-number-label { color:var(--text2); font-size:12px; margin-bottom:8px; }
   .scale-reading { font-family:var(--font-display); font-size:clamp(34px,11vw,48px); font-weight:600; line-height:1.1; font-variant-numeric:tabular-nums; letter-spacing:-1px; white-space:nowrap; }
   .scale-target { font-family:var(--font-display); font-size:15px; font-weight:500; font-variant-numeric:tabular-nums; color:var(--text2); margin-top:2px; white-space:nowrap; }
-  .scale-remaining { font-size:12px; color:var(--text2); text-align:center; margin-top:12px; min-height:1.5em; }
+  .scale-remaining { font-size:12px; color:var(--text2); text-align:center; margin-top:8px; min-height:1.5em; }
   /* Phase time: how far through the current step you are, as a bar and a clock. */
-  .scale-phase-time { margin-top:24px; }
+  .scale-phase-time { margin-top:12px; }
   .scale-time-heading { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
   .scale-time-heading .scale-number-label { margin-bottom:0; }
   .scale-phase-time .scale-reading { font-size:22px; letter-spacing:0; }
   .scale-phase-time .scale-target { font-size:18px; }
-  .scale-time-progress { display:block; width:100%; height:8px; margin-top:10px; appearance:none; border:0; border-radius:8px; overflow:hidden; background:var(--bg3); color:var(--step-color); }
+  .scale-time-progress { display:block; width:100%; height:8px; margin-top:8px; appearance:none; border:0; border-radius:8px; overflow:hidden; background:var(--bg3); color:var(--step-color); }
   .scale-time-progress::-webkit-progress-bar { background:var(--track); border-radius:8px; }
   .scale-time-progress::-webkit-progress-value { background:var(--step-color); border-radius:8px; }
   .scale-time-progress::-moz-progress-bar { background:var(--step-color); border-radius:8px; }
-  .scale-next { margin-top:16px; border-top:1px solid var(--border); padding-top:14px; display:flex; justify-content:space-between; gap:12px; }
-  .scale-next-label { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px; }
-  .scale-next-value { font-size:14px; font-weight:600; line-height:1.4; }
-  .scale-next-meta { text-align:right; font-size:13px; line-height:1.6; color:var(--text2); font-variant-numeric:tabular-nums; }
-  .scale-footer { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:14px; }
+  .scale-footer { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:8px; }
   .scale-connection { font-size:12px; color:var(--text2); }
   .scale-time { text-align:right; }
   .scale-clock { font-size:18px; font-variant-numeric:tabular-nums; line-height:1.2; }
-  .scale-plan { border-top:1px solid var(--border); margin-top:18px; }
-  .scale-plan summary { cursor:pointer; font-size:13px; color:var(--text2); padding:13px 0; }
+  /* The recipe list sits under the action row: the last thing on the screen. */
+  .scale-plan { border-top:1px solid var(--border); margin-top:14px; }
+  .scale-plan summary { cursor:pointer; font-size:13px; color:var(--text2); padding:6px 0; text-align:center; }
+  .scale-brew > .scale-plan { margin-top:0; }
+  #screenBrew:not(.scale-brew) > .scale-plan { display:none; }
   .scale-plan li { display:grid; grid-template-columns:45px 1fr auto; gap:10px; padding:9px 0; border-top:1px solid var(--border); font-size:13px; }
   .scale-plan time { font-variant-numeric:tabular-nums; color:var(--text2); }
   button:focus-visible, summary:focus-visible { outline:2px solid var(--green); outline-offset:3px; }
@@ -214,7 +213,7 @@
   .beans-reading strong { font-size:32px; font-weight:600; letter-spacing:-1px; color:var(--text); }
   .beans-unit { font-size:15px; color:var(--text2); }
   #beansGroup .scale-status { margin-top:6px; min-height:1.5em; }
-  @media (max-height:740px) { .scale-ring { width:min(245px,68vw); } .scale-plan { margin-top:10px; } }
+  @media (max-height:740px) { .scale-ring { width:min(170px,48vw); } .scale-plan { margin-top:8px; } }
   @media (prefers-reduced-motion:reduce) { .scale-ring .ring-fill { transition:none; } }
   .help-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; margin-top: 4px; }
   .help-sec { margin-bottom: 6px; border-bottom: 0.5px solid var(--border); }
@@ -319,7 +318,7 @@
   .water-fill { height: 100%; background: var(--ring); border-radius: 3px; transition: width 1s linear; }
   /* The recipe as a list: done, now, later. */
   .steps { list-style: none; margin: 0; padding: 0; }
-  .st-row { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 12px; padding: 10px 0; border-top: 0.5px solid var(--border); }
+  .st-row { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 12px; padding: 6px 0; border-top: 0.5px solid var(--border); }
   .st-row:first-child { border-top: none; }
   .st-label { font-size: 15px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.04em; }
   .st-row.current .st-label { color: var(--text); }
@@ -481,20 +480,16 @@
       <div class="scale-footer">
         <div class="scale-connection">Brew time</div><div class="scale-clock" id="scaleClock">0:00</div>
       </div>
-      <div class="scale-next" id="scaleNext">
-        <div><div class="scale-next-label" id="scaleNextLabel">Next</div><div class="scale-next-value" id="scaleNextValue">—</div></div>
-        <div class="scale-next-meta"><div id="scaleNextTarget"></div><div id="scaleNextAt"></div></div>
-      </div>
-      <details class="scale-plan" id="scalePlan">
-        <summary id="scalePlanSummary">View recipe</summary>
-        <ol id="scalePlanList"></ol>
-      </details>
     </div>
     <ol class="steps" id="stepList"></ol>
     <div class="brew-actions">
       <button class="btn-go" id="brewBtn" onclick="handleBrewBtn()">Start</button>
       <button class="btn-secondary" onclick="backToSettings()">Settings</button>
     </div>
+    <details class="scale-plan" id="scalePlan">
+      <summary id="scalePlanSummary">View recipe</summary>
+      <ol id="scalePlanList"></ol>
+    </details>
   </div>
 
   <!-- Guide screen -->
@@ -569,7 +564,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-11-14.2';
+const APP_VERSION = '2026-11-16.1';
 const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
 const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
 const SCALE_HOST = 'coffeescale.local';
@@ -791,11 +786,8 @@ function scaleError(error) {
   scaleText('scaleClock','—');
   scaleText('scalePhaseTime','—');
   scaleText('scaleRemaining','Live weight unavailable');
-  scaleText('scaleNextLabel','Connection');
-  scaleText('scaleNextValue','Guidance resumes when the scale reconnects.');
   $('scaleWeightRing').style.strokeDashoffset=RING_CIRC;
   $('scaleTimeProgress').value=0;
-  scaleText('scaleNextTarget',''); scaleText('scaleNextAt','');
 }
 
 async function connectScale(address=$('scaleAddress').value.trim()) {
@@ -990,11 +982,6 @@ function renderScaleGuidance() {
   let action;
   let detail='';
   let note=pouring ? `${Math.ceil(cue.water-weight)}g to go` : weight>cue.water+2 ? `${(weight-cue.water).toFixed(1)}g over target` : 'Target reached';
-  let nextLabel='Next', nextValue=phase.next ? scalePhaseName(phase.next) : 'Finish brew';
-  let nextTarget=phase.next && phase.next.phase!=='Done' && phase.next.water>cue.water ? `${phase.next.water}g` : '';
-  let nextAt=phase.next ? `in ${fmt(Math.max(0,phase.next.at-elapsed))}` : '';
-  if(phase.next && phase.next.phase==='Done') { nextLabel='Suggested finish'; nextValue=fmt(phase.next.at); }
-  if(phase.next && phase.next.at<=elapsed && pouring) nextValue='Next phase is due · finish this pour first';
   if(overtime && pouring) { stage='Pour · Late'; note+=` · ${fmt(overtime)} over time`; }
   if(preparing || scale.armed) {
     kind='pour'; stage=preparing ? 'Ready' : 'Pour';
@@ -1004,8 +991,6 @@ function renderScaleGuidance() {
   } else if(finished) {
     kind='done'; stage=scale.cancelled ? 'Cancelled' : 'Finished';
     action=scale.cancelled ? 'Brew cancelled' : 'Brew complete'; detail=''; note='';
-    nextLabel='Recipe'; nextValue=`${settings.dose}g coffee · ${total}g water`;
-    nextTarget=''; nextAt='';
   } else if(!scale.data.running) {
     kind='wait'; stage='Timer stopped'; action='Timer stopped'; detail='Finish brew to end this session.';
   } else if(cue.phase==='Draw down') {
@@ -1027,8 +1012,7 @@ function renderScaleGuidance() {
   scaleText('scaleTarget',preparing ? 'target —' : `target ${cue.water}g`);
   scaleText('scalePhaseTime',fmt(phase.elapsed)); scaleText('scaleTimeTarget',`/ ${fmt(seconds)}`);
   scaleText('scaleTimeLabel','Phase time');
-  scaleText('scaleRemaining',note); scaleText('scaleNextLabel',nextLabel); scaleText('scaleNextValue',nextValue);
-  scaleText('scaleNextTarget',nextTarget); scaleText('scaleNextAt',nextAt);
+  scaleText('scaleRemaining',note);
   $('scaleWeightRing').style.strokeDashoffset=RING_CIRC*(1-(preparing ? 0 : Math.min(1,weight/Math.max(1,cue.water))));
   renderScaleTimeProgress(phase);
   showCue(cue,total);
