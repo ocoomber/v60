@@ -118,7 +118,7 @@ test('displays cumulative scale weight and phase time against their targets', as
   const p=app();await scaleBrew(p);
   assert.equal(p.elements.scaleAction.textContent,'Ready when you are');
   assert.equal(p.elements.brewBtn.textContent,'Tare & start');
-  assert.equal(p.elements.scaleMeasurements.style.display,'block');
+  assert.notEqual(p.elements.scaleMeasurements.style.display,'none');
   assert.equal(p.elements.scaleTarget.textContent,'target —');
   assert.equal(p.elements.scaleTimeTarget.textContent,'/ 0:45');
   assert.equal(p.elements.scaleWeightRing.style.strokeDashoffset,552.9);

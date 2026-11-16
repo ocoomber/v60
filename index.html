@@ -162,10 +162,12 @@
   .scale-brew > .water-wrap { display:none !important; }
   .scale-brew > .brew-actions > :first-child { flex:1; }
   .scale-brew > .brew-actions > :first-child.btn-stop { flex:0 0 auto; }
+  /* The ring takes the leftover height instead of leaving a gap above the buttons. */
+  .scale-brew > .brew-actions { margin-top:0; }
   .scale-brew .app-title { font-size:16px; }
-  /* The block keeps its own height so the step list sits right under it; the
-     spare room falls between the list and the button. */
-  .scale-live { --step-color:var(--ring); flex:0 0 auto; }
+  /* The board grows into the free space; the ring is the part that grows. On a
+     screen too short to fit, nothing shrinks: the screen scrolls instead. */
+  .scale-live { --step-color:var(--ring); flex:1 0 auto; display:flex; flex-direction:column; min-height:0; }
   .scale-live.is-pour { --step-color:var(--ring); }
   .scale-live.is-wait { --step-color:var(--warn); }
   .scale-live.is-drain { --step-color:var(--text2); }
@@ -175,14 +177,20 @@
   .scale-action { font-family:var(--font-display); font-size:24px; font-weight:600; line-height:1.2; letter-spacing:-.5px; }
   .scale-guidance { font-size:13px; line-height:1.45; color:var(--text2); margin-top:6px; }
   .scale-guidance:empty { display:none; }
-  .scale-measurements { margin-top:12px; }
-  .scale-ring { position:relative; width:min(200px,56vw); aspect-ratio:1; margin:0 auto; }
+  .scale-measurements { margin-top:12px; flex:1 0 auto; display:flex; flex-direction:column; min-height:0; }
+  .scale-ring { position:relative; flex:1 1 0; width:100%; max-width:340px; min-height:160px; margin:0 auto; }
   .scale-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
   .scale-ring .ring-fill { stroke:var(--step-color); transition:stroke-dashoffset .2s linear; }
   .scale-ring-centre { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
   .scale-ratio { display:flex; justify-content:center; align-items:baseline; gap:5px; }
   .scale-number-label { color:var(--text2); font-size:12px; margin-bottom:8px; }
   .scale-reading { font-family:var(--font-display); font-size:clamp(34px,11vw,48px); font-weight:600; line-height:1.1; font-variant-numeric:tabular-nums; letter-spacing:-1px; white-space:nowrap; }
+  /* The ring is sized by the space left over, so the reading scales with the
+     circle rather than staying phone-width-sized inside it. */
+  @supports (container-type: size) {
+    .scale-ring { container-type: size; }
+    .scale-ring .scale-reading { font-size:clamp(32px,min(24cqw,24cqh),64px); }
+  }
   .scale-target { font-family:var(--font-display); font-size:15px; font-weight:500; font-variant-numeric:tabular-nums; color:var(--text2); margin-top:2px; white-space:nowrap; }
   .scale-remaining { font-size:12px; color:var(--text2); text-align:center; margin-top:8px; min-height:1.5em; }
   /* Phase time: how far through the current step you are, as a bar and a clock. */
@@ -213,7 +221,7 @@
   .beans-reading strong { font-size:32px; font-weight:600; letter-spacing:-1px; color:var(--text); }
   .beans-unit { font-size:15px; color:var(--text2); }
   #beansGroup .scale-status { margin-top:6px; min-height:1.5em; }
-  @media (max-height:740px) { .scale-ring { width:min(170px,48vw); } .scale-plan { margin-top:8px; } }
+  @media (max-height:740px) { .scale-plan { margin-top:8px; } }
   @media (prefers-reduced-motion:reduce) { .scale-ring .ring-fill { transition:none; } }
   .help-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; margin-top: 4px; }
   .help-sec { margin-bottom: 6px; border-bottom: 0.5px solid var(--border); }
@@ -564,7 +572,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-11-16.1';
+const APP_VERSION = '2026-11-16.2';
 const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
 const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
 const SCALE_HOST = 'coffeescale.local';
@@ -966,7 +974,7 @@ function renderScaleTimeProgress(phase) {
 function renderScaleGuidance() {
   if(settings.brewMode!=='scale' || !cues.length) return;
   const preparing=!started && !scale.armed && !finished;
-  $('scaleMeasurements').style.display='block';
+  $('scaleMeasurements').style.display='';
   scaleText('scaleClock',fmt(elapsed));
   scaleText('scaleConnection',scale.connected ? 'Scale connected · WiFi' : 'Waiting for scale');
   if(!scale.connected || !scale.data) { scaleError(new TypeError('offline')); return; }
@@ -1460,7 +1468,7 @@ async function startBrew() {
   $('pauseBtn').style.display='none';
   const withScale=settings.brewMode==='scale';
   $('screenBrew').classList.toggle('scale-brew',withScale);
-  $('scaleLive').style.display=withScale ? 'block' : 'none';
+  $('scaleLive').style.display=withScale ? '' : 'none';
   if(withScale) {
     $('brewTitle').textContent=METHODS[settings.method].name + ' · scale brew';
     $('brewBtn').textContent='Tare & start';
