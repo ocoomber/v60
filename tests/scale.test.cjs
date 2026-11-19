@@ -179,7 +179,10 @@ test('alert volume is a separate in-app setting, and zero silences the chimes', 
   const p=app();
   assert.equal(p.run('alertLevel()'),1);
   p.run('setAlertVolume(50)');
-  assert.equal(p.run('alertLevel()'),0.25);
+  assert.ok(Math.abs(p.run('alertLevel()') - 0.1) < 1e-9);
+  p.run('setAlertVolume(75)');
+  assert.ok(Math.abs(p.run('alertLevel()') - Math.pow(10,-0.5)) < 1e-9);
+  p.run('setAlertVolume(50)');
   assert.equal(p.elements.alertVolume.value,50);
   assert.equal(p.elements.alertVolumeVal.textContent,'50%');
   p.run('setAlertVolume(0)');
