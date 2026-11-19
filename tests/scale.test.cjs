@@ -150,6 +150,31 @@ test('displays cumulative scale weight and phase time against their targets', as
   assert.equal(p.elements.scaleTimeProgress.value,10/30);
 });
 
+test('a soft double chime marks each completed phase exactly once', async () => {
+  const p=app();await scaleBrew(p);p.run("scale.session=7;var tones=[];beep=t=>tones.push(t)");
+  const heard=()=>p.run('tones.join(",")');
+  feed(p,{g:30,timer_s:12,running:true,pour_mode:true,pour_id:7});
+  assert.equal(heard(),'');
+  feed(p,{g:30,timer_s:32,running:true,pour_mode:true,pour_id:7});
+  assert.equal(heard(),'','the clock alone does not end a phase');
+  feed(p,{g:30,timer_s:46,running:true,pour_mode:true,pour_id:7});
+  assert.equal(heard(),'phase','bloom ends at the next cue');
+  feed(p,{g:30,timer_s:48,running:true,pour_mode:true,pour_id:7});
+  assert.equal(heard(),'phase','a phase is announced only once');
+  feed(p,{g:110,timer_s:91,running:true,pour_mode:true,pour_id:7});
+  assert.equal(heard(),'phase,phase');
+});
+
+test('rejoining a running scale brew does not chime for phases already passed', async () => {
+  const p=app();await scaleBrew(p);p.run("scale.session=7;var tones=[];beep=t=>tones.push(t)");
+  const heard=()=>p.run('tones.join(",")');
+  feed(p,{g:110,timer_s:95,running:true,pour_mode:true,pour_id:7});
+  assert.equal(heard(),'');
+  assert.equal(p.run('scale.announced'),2);
+  feed(p,{g:170,timer_s:136,running:true,pour_mode:true,pour_id:7});
+  assert.equal(heard(),'phase');
+});
+
 test('time fill moves between readings without advancing the board clock or phase', async () => {
   const p=app();await scaleBrew(p);p.run('scale.session=7');
   feed(p,{g:30,timer_s:44.5,running:true,pour_mode:true,pour_id:7});

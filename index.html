@@ -572,7 +572,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-11-16.2';
+const APP_VERSION = '2026-11-19.1';
 const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
 const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
 const SCALE_HOST = 'coffeescale.local';
@@ -594,7 +594,7 @@ let noSleep=null, audioCtx=null, currentScreen='settings';
 
 const $ = id => document.getElementById(id);
 // One request at a time for the ESP32's single-client server, including commands.
-const scale = { base:'', connected:false, data:null, poll:null, pending:null, command:false, finding:false, session:null, armPending:null, armed:false, generation:0, weighing:false, phaseIndex:0, phaseReached:false };
+const scale = { base:'', connected:false, data:null, poll:null, pending:null, command:false, finding:false, session:null, armPending:null, armed:false, generation:0, weighing:false, phaseIndex:0, phaseReached:false, announced:0 };
 let scaleSampleAt=0, scaleTimeFrame=null;
 
 function loadSettings() {
@@ -869,7 +869,7 @@ function acceptScaleData(data) {
   if(scale.session !== null) {
     if(!data.pour_mode || data.pour_id !== scale.session) {
       scale.session=null; scale.armed=false; started=false; finished=false;
-      scale.phaseIndex=0; scale.phaseReached=false;
+      scale.phaseIndex=0; scale.phaseReached=false; scale.announced=0; scale.skipChime=false;
       releaseWakeLock(); $('brewBtn').textContent='Tare & start';
       elapsed=0; $('clock').textContent='0:00'; $('clock').className='clock';
       $('phaseLbl').textContent='Ready'; setTarget(totalWater());
@@ -882,6 +882,8 @@ function acceptScaleData(data) {
     }
     if(data.running && !started) {
       scale.armed=false; started=true; currentCue=-1;
+      // Do not chime for phases the board already passed while we were away.
+      scale.skipChime=true;
       $('clock').className='clock running'; $('brewBtn').textContent='Finish brew';
       $('waterSection').style.display='block';
     }
@@ -980,6 +982,13 @@ function renderScaleGuidance() {
   if(!scale.connected || !scale.data) { scaleError(new TypeError('offline')); return; }
   const weight=Math.max(0,Math.round(scale.data.g*10)/10), total=totalWater();
   const phase=scalePhase(elapsed,weight), {cue,amount,seconds}=phase;
+  // A phase ends when the board's clock crosses the next cue with its water
+  // target met. Announce that once, quietly: the phone is often face down.
+  if(started && !finished && !scale.armed && phase.index > scale.announced) {
+    scale.announced=phase.index;
+    if(!scale.skipChime) beep('phase');
+  }
+  scale.skipChime=false;
   const pouring=amount>0 && !scale.phaseReached;
   const overtime=Math.max(0,phase.elapsed-seconds);
   let kind=pouring ? 'pour' : amount>0 ? 'wait' : 'drain';
@@ -1351,9 +1360,27 @@ function getAudioCtx() {
   return audioCtx;
 }
 
+// Chrome only lets a page make sound after a tap, so the start tap releases the
+// audio context. Scale mode never called it before its first phase chime.
+function unlockAudio() { try { getAudioCtx(); } catch(e) {} }
+
 function beep(type) {
   try {
     const ctx = getAudioCtx();
+    // A phase boundary is a nudge, not an alarm: two short, quiet tones.
+    if(type === 'phase') {
+      for(let i = 0; i < 2; i++) {
+        const t = ctx.currentTime + i * 0.16;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(784, t);
+        gain.gain.setValueAtTime(0.07, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.055);
+        osc.start(t); osc.stop(t + 0.055);
+      }
+      return;
+    }
     const gap = 0.12;
     for(let i = 0; i < 3; i++) {
       const t = ctx.currentTime + i * gap;
@@ -1450,7 +1477,7 @@ async function startBrew() {
   const total = totalWater();
   $('brewTitle').textContent = `Brewing — ${METHODS[settings.method].name}`;
   elapsed=0; started=false; finished=false; paused=false; fromBrew=false; currentCue=0;
-  scale.phaseIndex=0; scale.phaseReached=false;
+  scale.phaseIndex=0; scale.phaseReached=false; scale.announced=0; scale.skipChime=false;
   clearInterval(interval); releaseWakeLock();
   $('clock').textContent='0:00';
   $('clock').className='clock';
@@ -1528,6 +1555,7 @@ async function handleBrewBtn() {
   if(settings.brewMode==='scale') {
     if(scale.session !== null || scale.armPending !== null) { await endScaleBrew(); return; }
     if(!scale.connected) { renderScaleGuidance(); return; }
+    unlockAudio();
     await acquireWakeLock();
     scale.notice=''; scaleText('scaleAction','Zeroing the scale');
     scaleText('scaleGuidance','Keep the V60 still for a moment.');
