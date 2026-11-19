@@ -175,6 +175,29 @@ test('rejoining a running scale brew does not chime for phases already passed', 
   assert.equal(heard(),'phase');
 });
 
+test('alert volume is a separate in-app setting, and zero silences the chimes', () => {
+  const p=app();
+  assert.equal(p.run('alertLevel()'),1);
+  p.run('setAlertVolume(50)');
+  assert.equal(p.run('alertLevel()'),0.25);
+  assert.equal(p.elements.alertVolume.value,50);
+  assert.equal(p.elements.alertVolumeVal.textContent,'50%');
+  p.run('setAlertVolume(0)');
+  assert.equal(p.elements.alertVolumeVal.textContent,'Silent');
+  // Muted, no tone is even built.
+  p.run("var made=0; getAudioCtx=()=>({currentTime:0,createOscillator(){made++;return {connect(){},frequency:{setValueAtTime(){}},start(){},stop(){}}},createGain(){return {connect(){},gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}}}},destination:{}})");
+  p.run("beep('cue')");
+  assert.equal(p.run('made'),0);
+  p.run('setAlertVolume(100)'); p.run("beep('cue')");
+  assert.equal(p.run('made'),3);
+});
+
+test('a saved alert volume survives reload and invalid values fall back to full', () => {
+  assert.equal(app(undefined,{alertVolume:0}).run('settings.alertVolume'),0);
+  assert.equal(app(undefined,{alertVolume:'loud'}).run('settings.alertVolume'),100);
+  assert.equal(app(undefined,{alertVolume:400}).run('settings.alertVolume'),100);
+});
+
 test('time fill moves between readings without advancing the board clock or phase', async () => {
   const p=app();await scaleBrew(p);p.run('scale.session=7');
   feed(p,{g:30,timer_s:44.5,running:true,pour_mode:true,pour_id:7});

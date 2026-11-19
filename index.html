@@ -266,6 +266,10 @@
   .appearance-row .group-label { margin: 0; }
   .appearance-row .seg { flex: 0 0 auto; }
   .appearance-row .seg-btn { flex: 0 0 auto; padding: 8px 12px; font-size: 13px; }
+  /* Alert volume: one quiet control, with the phone's volume as the ceiling. */
+  .sound-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--text2); }
+  .sound-row output { color: var(--text); font-variant-numeric: tabular-nums; }
+  .sound-range { width: 100%; margin: 10px 0 4px; accent-color: var(--fill); }
   .modal-wrap { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(0,0,0,0.45); }
   .modal-wrap[hidden] { display: none; }
   .modal { width: 100%; max-width: 320px; background: var(--bg); border-radius: var(--radius-lg); padding: 18px; box-shadow: 0 18px 50px rgba(0,0,0,0.28); }
@@ -421,6 +425,12 @@
         <button class="seg-btn" data-val="dark" onclick="setTheme('dark')">Dark</button>
       </div>
     </div>
+    <div class="group"><span class="group-label">Brew alerts</span>
+      <div class="sound-row"><span>Chime volume</span><output id="alertVolumeVal" for="alertVolume">100%</output></div>
+      <input class="sound-range" type="range" id="alertVolume" min="0" max="100" step="5" value="100"
+        aria-label="Chime volume" oninput="setAlertVolume(this.value)" onchange="previewAlert()">
+      <p class="help-note">Only the app’s own chimes. Your phone’s volume still sets the ceiling; 0 is silent.</p>
+    </div>
     <div class="group"><span class="group-label">WiFi scale</span>
       <p class="scale-status" id="scaleMoreStatus" role="status">Not connected</p>
       <div class="scale-row"><button class="btn-secondary" id="scaleFindBtn" onclick="findScale()">Find scale</button></div>
@@ -572,7 +582,7 @@
 const ROAST_TEMPS = { light:'94–96°C', medium:'92–94°C', dark:'88–91°C' };
 const ROAST_NOTES = { light:'Light roasts need higher temp to fully extract sweetness.', medium:'A balanced temperature for most single origins.', dark:'Lower temp prevents bitterness from over-extracting dark roasts.' };
 const STORAGE_KEY = 'v60-settings';
-const APP_VERSION = '2026-11-19.1';
+const APP_VERSION = '2026-11-19.2';
 const DISCOVERY_SERVICE = '72cf0001-5dc4-4a38-8f16-7b63ad328a20';
 const DISCOVERY_ADDRESS = '72cf0002-5dc4-4a38-8f16-7b63ad328a20';
 const SCALE_HOST = 'coffeescale.local';
@@ -588,7 +598,7 @@ const DEFAULT_POURS = [ {at:0,g:48}, {at:45,g:48}, {at:90,g:48}, {at:135,g:48}, 
 
 // customBase remembers which built-in recipe the pours came from. null means the
 // user has edited them, so a recipe load should ask before overwriting.
-let settings = { dose:13, method:'balanced', customRatio:16, customPours: DEFAULT_POURS.map(p => ({...p})), savedRecipes: [], brewMode:'manual', scaleAddress:'', scaleId:'', customBase:'default' };
+let settings = { dose:13, method:'balanced', customRatio:16, customPours: DEFAULT_POURS.map(p => ({...p})), savedRecipes: [], brewMode:'manual', scaleAddress:'', scaleId:'', customBase:'default', alertVolume:100 };
 let elapsed=0, startTs=0, interval=null, started=false, finished=false, paused=false, fromBrew=false, currentCue=0, cues=[];
 let noSleep=null, audioCtx=null, currentScreen='settings';
 
@@ -613,6 +623,9 @@ function loadSettings() {
   if(!Array.isArray(settings.savedRecipes)) settings.savedRecipes = [];
   if(typeof settings.customBase !== 'string') settings.customBase = null;
   if(!['auto','light','dark'].includes(settings.theme)) settings.theme = 'auto';
+  // Alert volume is a percentage of the app's own chime level; 0 is silent.
+  if(typeof settings.alertVolume !== 'number' || !Number.isFinite(settings.alertVolume)) settings.alertVolume = 100;
+  settings.alertVolume = Math.max(0, Math.min(100, Math.round(settings.alertVolume)));
   // Drop saved recipes from older storage shapes (e.g. fraction-based pours).
   settings.savedRecipes = settings.savedRecipes.filter(r => r && typeof r.name === 'string'
     && typeof r.dose === 'number' && typeof r.ratio === 'number'
@@ -646,6 +659,7 @@ function applySettings() {
   $('scaleAddress').value = settings.scaleAddress;
   if(!scale.finding) $('scaleFindBtn').textContent = findScaleLabel();
   $('startBtn').textContent = settings.brewMode === 'scale' ? 'Scale brew' : 'Start brew';
+  applyAlertVolume();
   updateSummary();
 }
 
@@ -684,6 +698,29 @@ function setTheme(choice) {
   saveSettings();
   applyTheme();
 }
+
+// --- Alerts ---
+// The chimes get their own level, independent of the phone's media volume, so
+// they can be turned down (or off) without silencing everything else. Web audio
+// can only attenuate: the phone's own volume is still the ceiling.
+let audioMaster = null;
+function alertLevel() {
+  const v = Math.max(0, Math.min(100, Number(settings.alertVolume)));
+  return Number.isFinite(v) ? Math.pow(v/100, 2) : 1;
+}
+function setAlertVolume(value) {
+  const v = Math.round(Number(value) / 5) * 5;
+  settings.alertVolume = Number.isFinite(v) ? Math.max(0, Math.min(100, v)) : 100;
+  saveSettings();
+  applyAlertVolume();
+}
+function applyAlertVolume() {
+  const v = settings.alertVolume;
+  $('alertVolume').value = v;
+  $('alertVolumeVal').textContent = v ? `${v}%` : 'Silent';
+}
+// Dragging only previews on release, so the slider does not stutter a tone.
+function previewAlert() { beep('phase'); }
 
 function setBrewMode(mode) {
   if(scale.finding || scale.command) return;
@@ -1365,15 +1402,19 @@ function getAudioCtx() {
 function unlockAudio() { try { getAudioCtx(); } catch(e) {} }
 
 function beep(type) {
+  const level = alertLevel();
+  if(!level) return;
   try {
     const ctx = getAudioCtx();
+    if(!audioMaster) { audioMaster = ctx.createGain(); audioMaster.connect(ctx.destination); }
+    audioMaster.gain.value = level;
     // A phase boundary is a nudge, not an alarm: two short, quiet tones.
     if(type === 'phase') {
       for(let i = 0; i < 2; i++) {
         const t = ctx.currentTime + i * 0.16;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.connect(gain); gain.connect(ctx.destination);
+        osc.connect(gain); gain.connect(audioMaster);
         osc.frequency.setValueAtTime(784, t);
         gain.gain.setValueAtTime(0.07, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.055);
@@ -1386,7 +1427,7 @@ function beep(type) {
       const t = ctx.currentTime + i * gap;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
+      osc.connect(gain); gain.connect(audioMaster);
       osc.frequency.setValueAtTime(type === 'done' && i === 2 ? 1046 : 880, t);
       gain.gain.setValueAtTime(0.15, t);
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
